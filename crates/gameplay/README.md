@@ -84,16 +84,18 @@ Inputs for lanes outside 0 to 3 are ignored.
 
 Where Swift's result depends on how `advance` and inputs interleave, the rules above win:
 
-1. **Chart time of time-based events.** Swift stamps misses with the time of the `advance` that notices them
-   (a note lock with the time of the press or advance). Here they carry the time they were due.
+1. **Chart time and order of time-based events.** Swift stamps misses with the time of the `advance` that notices
+   them (a note lock with the time of the press or advance), so a hit made after a note's window closed, before
+   a call noticed the miss, extends the combo and the miss then resets it. Here misses carry the time they were due
+   and come before any later hit, so combo and max combo no longer depend on the cadence either.
 2. **A press after the window closed, before an advance noticed.** Swift consumes the press as a miss of the
    old note, with a hit error and the press's time. Here the note was already missed at `start + g`, and the
    press goes to the next note of the lane or is ignored.
 3. **A release after the tail window, before an advance noticed.** Swift misses the hold at the release time;
    here it was missed at `end + 1.5 g`.
 4. **Other lanes' misses.** Swift's press and release resolve only their own lane's note lock; a miss in another
-   lane waits for the next `advance`. Here every input resolves everything due. The outcomes are the same, only
-   the event order and times follow rule 1.
+   lane waits for the next `advance`. Here every input resolves everything due, so the event order and times, and
+   with them the combo, follow rule 1.
 5. **Out-of-order input.** Swift's clock follows each input's stamp, also backwards. Here it never moves back
    (late delivery above).
 
