@@ -9,7 +9,8 @@ scripts/build-apple.sh        # macOS arm64, iOS arm64, iOS simulator arm64; als
 cd swift && swift build && swift test
 ```
 
-`swift test` runs every fixture of [`conformance/gameplay`](../conformance/gameplay) through `GameplaySession`.
+`swift test` runs every fixture of [`conformance/gameplay`](../conformance/gameplay) through `GameplaySession`, and
+its `.osu` files through `parseOsu(text:)`.
 An app depends on the package with `.package(path: "../ensomi-runtime/swift")`.
 
 ## Where the app's types went
@@ -17,14 +18,18 @@ An app depends on the package with `.package(path: "../ensomi-runtime/swift")`.
 | App (EnsomiCore) | Here |
 | --- | --- |
 | `Mania4KJudgementEngine` | `GameplaySession`: `input(input:)`, `advance(watermarkMs:)`, `score()`, `laneStates()`, `visibleObjects(lowerMs:upperMs:)`, `isResolved()`, `lateInputs()` |
+| `Mania4KJudgementEngine.ingest`, `validateEndOfStream` | `GameplaySession.streaming(ruleset:)`, then `appendTokens(tokens:coverageMs:endOfStream:)` (or `append(objects:...)` for protocol pages); `decidedThroughMs()`, `coverageMs()` |
+| `Mania4KHitObject` | `ChartToken` (`lane`, `timeMs`, `kind`: `TokenKind`) |
+| `OsuMania4KBeatmapStream.parseBeatmap` | `parseOsu(text:)` returning `OsuBeatmap` (`chart`, `title`, `artist`), throwing `OsuError`; the caller reads the file |
 | `Mania4KGameplayFeedbackState` | `GameplayFeedback` (a class) |
 | `Mania4KNoteRenderLayout.geometry` / `yPosition` | `noteGeometry(object:renderTimeMs:scrollTimeMs:receptorY:)` / `noteYPosition(...)` |
 | `Mania4KJudgementEvent` | `JudgementEvent`: `object`, `part`, `tier`, `offsetMs` (= `hitErrorMs`), `timeMs` (= `chartTimeMs`), `objectTimeMs`; `judgement` in `Conveniences.swift` |
 | `Mania4KScoreState` | `Score`: `tierCounts`, `accuracy`, `combo`, `maxCombo`, `suggestedAudioOffsetMs`; `perfectCount`, `goodCount`, `missCount`, `judgedObjectCount` on `TierCounts` |
 | `Mania4KMalodyTier`, `Mania4KJudgeDifficulty` | `Tier`, `Judge` |
 | `Mania4KLaneState`, `Mania4KVisibleObject` | `LaneState`, `VisibleObject` (`id` and `holdingObject` are object indexes) |
-| `Mania4KHitObject` streams | `Chart` (a complete chart: no streaming ingest) |
+| `Mania4KChartValidationError` | `ChartError` (a chart or page) and `OsuError` (a file) |
 
-`GameplaySession.init` throws `ChartError` for a chart the protocol forbids. Times are milliseconds as `Double`;
-the caller applies the audio offset once and passes chart time. Rules and the differences from the Swift
-engine are in [`crates/gameplay/README.md`](../crates/gameplay/README.md).
+`GameplaySession.init` throws `ChartError` for a chart the protocol forbids, and `append` for a page. Times are
+milliseconds as `Double`; the caller applies the audio offset once and passes chart time. A streamed session
+judges only as far as the coverage; `decidedThroughMs()` below the last watermark means the stream fell behind.
+Rules, streams and the differences from the Swift engine are in [`crates/gameplay/README.md`](../crates/gameplay/README.md).

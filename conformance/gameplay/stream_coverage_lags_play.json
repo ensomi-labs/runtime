@@ -1,0 +1,32 @@
+{
+  "description": "Pages of whole objects arrive behind play. The advance to 2000 judges only through the coverage 1200; the press at 2010 waits for the page that covers it, which first misses the note at 1500 at the time its window closed. The press at 2450 waits for the last page and then hits the note at 2500.",
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"page": {"objects": [{"lane": 0, "start_ms": 1000}], "coverage_ms": 1200, "end_of_stream": false}},
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1010}},
+    {"advance": 2000},
+    {"decided_through_ms": 1200},
+    {"input": {"lane": 1, "phase": "press", "time_ms": 2010}},
+    {"page": {"objects": [{"lane": 1, "start_ms": 1500}], "coverage_ms": 2400, "end_of_stream": false}},
+    {"decided_through_ms": 2010},
+    {"input": {"lane": 2, "phase": "press", "time_ms": 2450}},
+    {"decided_through_ms": 2400},
+    {"page": {"objects": [{"lane": 2, "start_ms": 2500}], "coverage_ms": 2500, "end_of_stream": true}},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 0, "lane": 0, "part": "head", "tier": "bigP", "offset_ms": 10, "time_ms": 1010, "step": 1},
+      {"object": 1, "lane": 1, "part": "head", "tier": "m", "offset_ms": null, "time_ms": 1700, "step": 5},
+      {"object": 2, "lane": 2, "part": "head", "tier": "p1", "offset_ms": -50, "time_ms": 2450, "step": 9}
+    ],
+    "score": {
+      "tier_counts": {"bigP": 1, "p1": 1, "p2": 0, "p3": 0, "g": 0, "m": 1},
+      "accuracy": 0.6333333333333333,
+      "combo": 1,
+      "max_combo": 1,
+      "suggested_audio_offset_ms": 20
+    },
+    "late_inputs": 0
+  }
+}

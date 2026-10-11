@@ -1,0 +1,4 @@
+{
+  "description": "CircleSize 7: a 7K chart.",
+  "expected": {"error": {"kind": "unsupported_key_count", "keys": 7}}
+}

@@ -1,3 +1,4 @@
+use crate::{Judge, Ruleset, Session};
 use std::fmt;
 
 /// One note, as in EnsomiProtocol's `ChartObject`: audio time in whole milliseconds.
@@ -19,6 +20,24 @@ pub struct Chart {
     pub objects: Vec<ChartObject>,
 }
 
+/// What a token stream delivers: a hold arrives as a start and, possibly in a later page, an end.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TokenKind {
+    Tap,
+    HoldStart,
+    HoldEnd,
+}
+
+/// One token of the macOS app's object stream (`Mania4KHitObject`): audio time in milliseconds.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ChartToken {
+    pub lane: u32,
+    pub time_ms: f64,
+    pub kind: TokenKind,
+}
+
+/// Why a chart, or a page of a chart stream, is rejected. `object` is the index the object has, or would
+/// have, in chart order.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ChartError {
     InvalidLane {
@@ -39,6 +58,23 @@ pub enum ChartError {
     SameLaneOverlap {
         object: u32,
     },
+    /// A token time is negative or not finite.
+    InvalidTime {
+        object: u32,
+    },
+    /// An object starts, or a hold ends, at or before a coverage the stream already declared, or after
+    /// the end of the stream.
+    BeforeCoverage {
+        object: u32,
+    },
+    /// A hold end token in a lane without a hold waiting for its end.
+    HoldEndWithoutStart {
+        lane: u32,
+    },
+    /// The stream ended before this hold's end arrived.
+    UnclosedHold {
+        object: u32,
+    },
 }
 
 impl fmt::Display for ChartError {
@@ -46,7 +82,7 @@ impl fmt::Display for ChartError {
         match self {
             Self::InvalidLane { object } => write!(f, "object {object}: lane is not 0 to 3"),
             Self::InvalidHold { object } => {
-                write!(f, "object {object}: hold ends at or before its start")
+                write!(f, "object {object}: hold ends before its start")
             }
             Self::OutsideDuration { object } => {
                 write!(f, "object {object}: time is beyond the chart duration")
@@ -58,6 +94,19 @@ impl fmt::Display for ChartError {
                 f,
                 "object {object}: overlaps the previous object of its lane"
             ),
+            Self::InvalidTime { object } => {
+                write!(f, "object {object}: time is negative or not finite")
+            }
+            Self::BeforeCoverage { object } => write!(
+                f,
+                "object {object}: arrived after the stream declared its time complete"
+            ),
+            Self::HoldEndWithoutStart { lane } => {
+                write!(f, "lane {lane}: hold end without a hold start")
+            }
+            Self::UnclosedHold { object } => {
+                write!(f, "object {object}: the stream ended before the hold's end")
+            }
         }
     }
 }
@@ -68,31 +117,6 @@ impl Chart {
     /// Checks what the protocol promises of a chart. A hold may end exactly where the next note of its
     /// lane starts.
     pub fn validate(&self) -> Result<(), ChartError> {
-        let mut previous: Option<(u32, u32)> = None;
-        let mut lane_last: [Option<(u32, u32)>; 4] = [None; 4];
-        for (index, object) in self.objects.iter().enumerate() {
-            let id = index as u32;
-            let Some(last) = lane_last.get_mut(object.lane as usize) else {
-                return Err(ChartError::InvalidLane { object: id });
-            };
-            let end = object.end_ms.unwrap_or(object.start_ms);
-            if object.end_ms.is_some_and(|end| end < object.start_ms) {
-                return Err(ChartError::InvalidHold { object: id });
-            }
-            if end > self.duration_ms {
-                return Err(ChartError::OutsideDuration { object: id });
-            }
-            if previous.is_some_and(|key| key > (object.start_ms, object.lane)) {
-                return Err(ChartError::NotSorted { object: id });
-            }
-            if last.is_some_and(|(start, last_end)| {
-                object.start_ms <= start || object.start_ms < last_end
-            }) {
-                return Err(ChartError::SameLaneOverlap { object: id });
-            }
-            previous = Some((object.start_ms, object.lane));
-            *last = Some((object.start_ms, end));
-        }
-        Ok(())
+        Session::new(self, Ruleset { judge: Judge::C }).map(drop)
     }
 }

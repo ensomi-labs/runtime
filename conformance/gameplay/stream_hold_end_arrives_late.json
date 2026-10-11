@@ -1,0 +1,31 @@
+{
+  "description": "Token form: two holds start at 1000 and their ends come in later pages. The release in lane 1 at 1600 is decided as soon as the coverage 1950 shows its end lies beyond 1600 + 1.5 g: a miss. The release in lane 0 at 1800 waits for its end at 2000 and is a tail g. Swift misses any release of a hold whose end has not arrived.",
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"page": {"tokens": [{"lane": 0, "time_ms": 1000, "kind": "hold_start"}, {"lane": 1, "time_ms": 1000, "kind": "hold_start"}], "coverage_ms": 1500, "end_of_stream": false}},
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1000}},
+    {"input": {"lane": 1, "phase": "press", "time_ms": 1010}},
+    {"input": {"lane": 1, "phase": "release", "time_ms": 1600}},
+    {"decided_through_ms": 1500},
+    {"page": {"tokens": [], "coverage_ms": 1950, "end_of_stream": false}},
+    {"input": {"lane": 0, "phase": "release", "time_ms": 1800}},
+    {"decided_through_ms": 1800},
+    {"page": {"tokens": [{"lane": 0, "time_ms": 2000, "kind": "hold_end"}], "coverage_ms": 2600, "end_of_stream": false}},
+    {"page": {"tokens": [{"lane": 1, "time_ms": 3000, "kind": "hold_end"}], "coverage_ms": 3000, "end_of_stream": true}},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 1, "lane": 1, "part": "tail", "tier": "m", "offset_ms": null, "time_ms": 1600, "step": 5},
+      {"object": 0, "lane": 0, "part": "tail", "tier": "g", "offset_ms": 0, "time_ms": 1800, "step": 8}
+    ],
+    "score": {
+      "tier_counts": {"bigP": 0, "p1": 0, "p2": 0, "p3": 0, "g": 1, "m": 1},
+      "accuracy": 0.2,
+      "combo": 1,
+      "max_combo": 1,
+      "suggested_audio_offset_ms": 0
+    },
+    "late_inputs": 0
+  }
+}

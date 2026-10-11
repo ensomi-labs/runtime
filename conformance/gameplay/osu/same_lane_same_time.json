@@ -1,0 +1,4 @@
+{
+  "description": "x 64 and x 100 are both lane 0, at the same time.",
+  "expected": {"error": {"kind": "invalid_chart", "chart_error": "same_lane_overlap", "object": 1}}
+}

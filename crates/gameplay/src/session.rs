@@ -1,5 +1,9 @@
-use crate::{Chart, ChartError, Ruleset, TAIL_LENIENCE, Tier, TierCounts, Windows};
+use crate::{
+    Chart, ChartError, ChartObject, ChartToken, Ruleset, TAIL_LENIENCE, Tier, TierCounts,
+    TokenKind, Windows,
+};
 use std::cmp::Ordering;
+use std::collections::VecDeque;
 
 pub const LANES: usize = 4;
 
@@ -67,7 +71,7 @@ pub struct LaneState {
 pub enum VisibleState {
     Waiting,
     Holding,
-    /// A hold without a known end. A session never reports it; the note layout accepts it.
+    /// A streamed hold whose end has not arrived, not pressed yet.
     OpenEnded,
     MissedButVisible,
     Resolved,
@@ -95,6 +99,8 @@ enum State {
 struct Object {
     lane: usize,
     start: f64,
+    hold: bool,
+    /// `None` for a tap, and for a streamed hold whose end has not arrived.
     end: Option<f64>,
     state: State,
 }
@@ -139,6 +145,11 @@ impl Expiry {
 /// Time only moves through [`Session::input`] and [`Session::advance`], and both first resolve every
 /// miss that is due, in time order, each at its own chart time. The events and the final score are
 /// therefore a function of the inputs alone.
+///
+/// A streamed chart ([`Session::streaming`]) arrives in pages, each with a coverage. The session decides
+/// nothing the delivered objects cannot settle: it judges up to the coverage and keeps later inputs until
+/// a page covers them, so the outcome is the one of the complete chart, whatever the page and advance
+/// schedule. [`Session::decided_through_ms`] tells the caller how far it got.
 pub struct Session {
     windows: Windows,
     objects: Vec<Object>,
@@ -150,6 +161,12 @@ pub struct Session {
     /// The session clock: the largest watermark or input time seen. Chart time can be negative: the audio
     /// offset puts the start of the audio before 0.
     now: f64,
+    /// Every object starting at or before this has been delivered, and for a token stream every hold end
+    /// at or before it. Infinite once the stream has ended.
+    coverage: f64,
+    /// Inputs delivered that the coverage does not settle yet, in order, each stamped with the time it is
+    /// handled at.
+    pending: VecDeque<InputEvent>,
     late_inputs: u32,
     next_event_id: u64,
     counts: TierCounts,
@@ -160,30 +177,33 @@ pub struct Session {
 }
 
 impl Session {
+    /// A session for a complete chart. Rejects what the protocol forbids of it.
     pub fn new(chart: &Chart, ruleset: Ruleset) -> Result<Self, ChartError> {
-        chart.validate()?;
-        let mut lanes: [Vec<usize>; LANES] = Default::default();
-        let objects = chart
-            .objects
-            .iter()
-            .enumerate()
-            .map(|(index, object)| {
-                lanes[object.lane as usize].push(index);
-                Object {
-                    lane: object.lane as usize,
-                    start: f64::from(object.start_ms),
-                    end: object.end_ms.map(f64::from),
-                    state: State::Waiting,
-                }
-            })
-            .collect();
-        Ok(Self {
+        let mut session = Self::streaming(ruleset);
+        for (index, object) in chart.objects.iter().enumerate() {
+            session.push_object(object)?;
+            if object.end_ms.unwrap_or(object.start_ms) > chart.duration_ms {
+                return Err(ChartError::OutsideDuration {
+                    object: index as u32,
+                });
+            }
+        }
+        session.coverage = f64::INFINITY;
+        Ok(session)
+    }
+
+    /// A session for a chart that arrives in pages, through [`Session::append`] or
+    /// [`Session::append_tokens`]. Until the first page it covers nothing.
+    pub fn streaming(ruleset: Ruleset) -> Self {
+        Self {
             windows: ruleset.windows(),
-            objects,
-            lanes,
+            objects: Vec::new(),
+            lanes: Default::default(),
             cursor: [0; LANES],
             pressed: [false; LANES],
             now: f64::NEG_INFINITY,
+            coverage: f64::NEG_INFINITY,
+            pending: VecDeque::new(),
             late_inputs: 0,
             next_event_id: 0,
             counts: TierCounts::default(),
@@ -191,7 +211,56 @@ impl Session {
             max_combo: 0,
             offset_sum: 0.0,
             offset_count: 0,
-        })
+        }
+    }
+
+    /// Adds a page of whole objects, as EnsomiProtocol's `ChartPage` carries them: in chart order, each
+    /// starting after the coverage of the previous page, a hold with its final end. `coverage_ms`: every
+    /// object starting at or before it has now been delivered. `end_of_stream`: every object has.
+    /// Returns the events the new coverage decides.
+    pub fn append(
+        &mut self,
+        objects: &[ChartObject],
+        coverage_ms: f64,
+        end_of_stream: bool,
+    ) -> Result<Vec<JudgementEvent>, ChartError> {
+        for object in objects {
+            self.push_object(object)?;
+        }
+        self.cover(coverage_ms, end_of_stream)
+    }
+
+    /// Adds a page of tokens, as the macOS app's object streams deliver them: taps and hold starts in chart
+    /// order, each after the previous coverage; a hold's end may come in a later page, but before any
+    /// later note of its lane. `coverage_ms`: every token at or before it has now been delivered.
+    /// `end_of_stream`: every token has. Returns the events the new coverage decides.
+    pub fn append_tokens(
+        &mut self,
+        tokens: &[ChartToken],
+        coverage_ms: f64,
+        end_of_stream: bool,
+    ) -> Result<Vec<JudgementEvent>, ChartError> {
+        for token in tokens {
+            match token.kind {
+                TokenKind::Tap => self.push(token.lane, token.time_ms, false, None)?,
+                TokenKind::HoldStart => self.push(token.lane, token.time_ms, true, None)?,
+                TokenKind::HoldEnd => self.close(token.lane, token.time_ms)?,
+            }
+        }
+        self.cover(coverage_ms, end_of_stream)
+    }
+
+    /// How far the stream is complete: infinite for a complete chart and once a stream has ended.
+    pub fn coverage_ms(&self) -> f64 {
+        self.coverage
+    }
+
+    /// Chart time up to which the session has judged: the clock, held back to the coverage and to the
+    /// first input that waits for more of the stream. When it is below the last watermark passed to
+    /// [`Session::advance`], the stream has fallen behind play; the caller waits for pages or stops.
+    pub fn decided_through_ms(&self) -> f64 {
+        self.coverage
+            .min(self.pending.front().map_or(self.now, |input| input.time_ms))
     }
 
     /// The caller declares that every input stamped at or before `watermark_ms` has been delivered.
@@ -199,32 +268,24 @@ impl Session {
     pub fn advance(&mut self, watermark_ms: f64) -> Vec<JudgementEvent> {
         self.now = self.now.max(watermark_ms);
         let mut events = Vec::new();
-        self.resolve_due(&mut events);
+        self.settle(&mut events);
         events
     }
 
     /// Handles a key transition. One stamped before the session clock was delivered late and is
     /// handled at the clock instead; see [`Session::late_inputs`]. Lanes outside 0 to 3 are ignored.
+    /// In a stream, an input waits until the coverage settles it (see [`Session::decided_through_ms`]).
     pub fn input(&mut self, input: InputEvent) -> Vec<JudgementEvent> {
         if input.time_ms < self.now {
             self.late_inputs += 1;
         }
         self.now = self.now.max(input.time_ms);
+        self.pending.push_back(InputEvent {
+            time_ms: self.now,
+            ..input
+        });
         let mut events = Vec::new();
-        self.resolve_due(&mut events);
-        let lane = input.lane as usize;
-        if lane < LANES {
-            match input.phase {
-                Phase::Press => {
-                    self.pressed[lane] = true;
-                    self.press(lane, &mut events);
-                }
-                Phase::Release => {
-                    self.pressed[lane] = false;
-                    self.release(lane, &mut events);
-                }
-            }
-        }
+        self.settle(&mut events);
         events
     }
 
@@ -272,7 +333,13 @@ impl Session {
             .iter()
             .enumerate()
             .filter_map(|(index, object)| {
-                let object_end = object.end.unwrap_or(object.start);
+                let object_end = object
+                    .end
+                    .unwrap_or(if object.hold && !object.is_resolved() {
+                        upper_ms
+                    } else {
+                        object.start
+                    });
                 let visible = object.start <= upper_ms && object_end >= lower_ms;
                 let keep_resolved = object.is_resolved()
                     && self.now - object_end <= 300.0
@@ -283,6 +350,9 @@ impl Session {
                     start_time_ms: object.start,
                     end_time_ms: object.end,
                     state: match object.state {
+                        State::Waiting if object.hold && object.end.is_none() => {
+                            VisibleState::OpenEnded
+                        }
                         State::Waiting => VisibleState::Waiting,
                         State::Holding { .. } => VisibleState::Holding,
                         State::Resolved(Tier::M) => VisibleState::MissedButVisible,
@@ -293,9 +363,163 @@ impl Session {
             .collect()
     }
 
-    /// Whether every object has an outcome.
+    /// Whether the stream has ended and every object has an outcome.
     pub fn is_resolved(&self) -> bool {
-        self.objects.iter().all(Object::is_resolved)
+        self.coverage == f64::INFINITY && self.objects.iter().all(Object::is_resolved)
+    }
+
+    fn push_object(&mut self, object: &ChartObject) -> Result<(), ChartError> {
+        self.push(
+            object.lane,
+            f64::from(object.start_ms),
+            object.end_ms.is_some(),
+            object.end_ms.map(f64::from),
+        )
+    }
+
+    /// Adds an object after checking its place in the chart. A hold's `end` is `None` until its end token.
+    fn push(
+        &mut self,
+        lane: u32,
+        start: f64,
+        hold: bool,
+        end: Option<f64>,
+    ) -> Result<(), ChartError> {
+        let object = self.objects.len() as u32;
+        let Some(lane_objects) = self.lanes.get(lane as usize) else {
+            return Err(ChartError::InvalidLane { object });
+        };
+        if !(0.0..f64::INFINITY).contains(&start) {
+            return Err(ChartError::InvalidTime { object });
+        }
+        if end.is_some_and(|end| end < start) {
+            return Err(ChartError::InvalidHold { object });
+        }
+        if start <= self.coverage {
+            return Err(ChartError::BeforeCoverage { object });
+        }
+        if self
+            .objects
+            .last()
+            .is_some_and(|last| (last.start, last.lane as u32) > (start, lane))
+        {
+            return Err(ChartError::NotSorted { object });
+        }
+        if lane_objects.last().is_some_and(|&last| {
+            let last = &self.objects[last];
+            let last_end = if last.hold {
+                last.end
+            } else {
+                Some(last.start)
+            };
+            start <= last.start || last_end.is_none_or(|end| start < end)
+        }) {
+            return Err(ChartError::SameLaneOverlap { object });
+        }
+        self.lanes[lane as usize].push(self.objects.len());
+        self.objects.push(Object {
+            lane: lane as usize,
+            start,
+            hold,
+            end,
+            state: State::Waiting,
+        });
+        Ok(())
+    }
+
+    /// Sets the end of the lane's hold that is waiting for it.
+    fn close(&mut self, lane: u32, end: f64) -> Result<(), ChartError> {
+        let Some(index) = self.open_hold(lane as usize) else {
+            return Err(ChartError::HoldEndWithoutStart { lane });
+        };
+        let object = index as u32;
+        if !(0.0..f64::INFINITY).contains(&end) {
+            return Err(ChartError::InvalidTime { object });
+        }
+        if end < self.objects[index].start {
+            return Err(ChartError::InvalidHold { object });
+        }
+        if end <= self.coverage {
+            return Err(ChartError::BeforeCoverage { object });
+        }
+        self.objects[index].end = Some(end);
+        Ok(())
+    }
+
+    /// The last object of a lane, if it is a hold without its end.
+    fn open_hold(&self, lane: usize) -> Option<usize> {
+        let &last = self.lanes.get(lane)?.last()?;
+        let object = &self.objects[last];
+        (object.hold && object.end.is_none()).then_some(last)
+    }
+
+    fn cover(
+        &mut self,
+        coverage_ms: f64,
+        end_of_stream: bool,
+    ) -> Result<Vec<JudgementEvent>, ChartError> {
+        if end_of_stream {
+            if let Some(index) = (0..LANES).find_map(|lane| self.open_hold(lane)) {
+                return Err(ChartError::UnclosedHold {
+                    object: index as u32,
+                });
+            }
+            self.coverage = f64::INFINITY;
+        } else {
+            self.coverage = self.coverage.max(coverage_ms);
+        }
+        let mut events = Vec::new();
+        self.settle(&mut events);
+        Ok(events)
+    }
+
+    /// Resolves what is due up to [`Session::decided_through_ms`] and handles the waiting inputs the
+    /// coverage settles, in time order.
+    fn settle(&mut self, events: &mut Vec<JudgementEvent>) {
+        loop {
+            self.resolve_due(self.decided_through_ms(), events);
+            let Some(&input) = self.pending.front() else {
+                return;
+            };
+            if !self.is_settled(&input) {
+                return;
+            }
+            self.pending.pop_front();
+            let lane = input.lane as usize;
+            if lane < LANES {
+                match input.phase {
+                    Phase::Press => {
+                        self.pressed[lane] = true;
+                        self.press(lane, input.time_ms, events);
+                    }
+                    Phase::Release => {
+                        self.pressed[lane] = false;
+                        self.release(lane, input.time_ms, events);
+                    }
+                }
+            }
+        }
+    }
+
+    /// Whether the delivered objects decide an input, once everything due before it is resolved. A press
+    /// with no waiting note in its lane could hit one that starts up to `g` later; a release of a hold
+    /// whose end has not arrived is too early only if that end is known to lie beyond the tail window.
+    fn is_settled(&self, input: &InputEvent) -> bool {
+        let time = input.time_ms;
+        if time > self.coverage {
+            return false;
+        }
+        let lane = input.lane as usize;
+        if lane >= LANES {
+            return true;
+        }
+        match input.phase {
+            Phase::Press => self.waiting(lane).is_some() || time + self.windows.g <= self.coverage,
+            Phase::Release => self.holding(lane).is_none_or(|(index, ..)| {
+                self.objects[index].end.is_some()
+                    || time + self.windows.g * TAIL_LENIENCE <= self.coverage
+            }),
+        }
     }
 
     /// The miss due soonest in a lane. Only the first unresolved object of a lane can have one: the
@@ -308,9 +532,9 @@ impl Session {
         let object = unresolved.next()?;
         let first = &self.objects[object];
         let window = match first.state {
-            State::Holding { .. } => {
-                first.end.unwrap_or(first.start) + self.windows.g * TAIL_LENIENCE
-            }
+            State::Holding { .. } => first
+                .end
+                .map_or(f64::INFINITY, |end| end + self.windows.g * TAIL_LENIENCE),
             _ => first.start + self.windows.g,
         };
         Some(
@@ -329,10 +553,10 @@ impl Session {
         )
     }
 
-    fn resolve_due(&mut self, events: &mut Vec<JudgementEvent>) {
+    fn resolve_due(&mut self, now: f64, events: &mut Vec<JudgementEvent>) {
         while let Some(expiry) = (0..LANES)
             .filter_map(|lane| self.expiry(lane))
-            .filter(|expiry| expiry.is_due(self.now))
+            .filter(|expiry| expiry.is_due(now))
             .min_by(Expiry::order)
         {
             let part = match self.objects[expiry.object].state {
@@ -343,20 +567,17 @@ impl Session {
         }
     }
 
-    fn press(&mut self, lane: usize, events: &mut Vec<JudgementEvent>) {
-        let Some(&index) = self.lanes[lane][self.cursor[lane]..]
-            .iter()
-            .find(|&&i| matches!(self.objects[i].state, State::Waiting))
-        else {
+    fn press(&mut self, lane: usize, now: f64, events: &mut Vec<JudgementEvent>) {
+        let Some(index) = self.waiting(lane) else {
             return;
         };
-        let error_ms = self.now - self.objects[index].start;
+        let error_ms = now - self.objects[index].start;
         if error_ms < -self.windows.g {
             return;
         }
         let tier = self.windows.classify(error_ms, 1.0);
-        if self.objects[index].end.is_none() {
-            events.push(self.resolve(index, tier, Part::Head, Some(error_ms), self.now));
+        if !self.objects[index].hold {
+            events.push(self.resolve(index, tier, Part::Head, Some(error_ms), now));
         } else {
             self.objects[index].state = State::Holding {
                 head_tier: tier,
@@ -365,23 +586,32 @@ impl Session {
         }
     }
 
-    fn release(&mut self, lane: usize, events: &mut Vec<JudgementEvent>) {
+    /// A release the coverage settles: an unknown end lies beyond the tail window.
+    fn release(&mut self, lane: usize, now: f64, events: &mut Vec<JudgementEvent>) {
         let Some((index, head_tier, head_offset_ms)) = self.holding(lane) else {
             return;
         };
-        let end = self.objects[index].end.unwrap_or(self.objects[index].start);
-        if self.now < end - self.windows.g * TAIL_LENIENCE {
-            events.push(self.resolve(index, Tier::M, Part::Tail, None, self.now));
+        let end = self.objects[index].end.unwrap_or(f64::INFINITY);
+        if now < end - self.windows.g * TAIL_LENIENCE {
+            events.push(self.resolve(index, Tier::M, Part::Tail, None, now));
             return;
         }
-        let tail_tier = self.windows.classify(self.now - end, TAIL_LENIENCE);
+        let tail_tier = self.windows.classify(now - end, TAIL_LENIENCE);
         events.push(self.resolve(
             index,
             head_tier.max(tail_tier),
             Part::Tail,
             Some(head_offset_ms),
-            self.now,
+            now,
         ));
+    }
+
+    /// The first note of a lane waiting for its press.
+    fn waiting(&self, lane: usize) -> Option<usize> {
+        self.lanes[lane][self.cursor[lane]..]
+            .iter()
+            .copied()
+            .find(|&i| matches!(self.objects[i].state, State::Waiting))
     }
 
     /// The first hold being held in a lane, with its head tier and press error.

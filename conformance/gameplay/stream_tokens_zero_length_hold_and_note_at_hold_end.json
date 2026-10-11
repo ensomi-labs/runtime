@@ -1,0 +1,30 @@
+{
+  "description": "Token form as the .osu stream of the macOS app delivers it: a zero-length hold (start and end at 1000), and a hold in lane 1 whose end at 1500 arrives in the same page as a note starting there. The release at 1490 waits for that end.",
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"page": {"tokens": [{"lane": 0, "time_ms": 1000, "kind": "hold_start"}, {"lane": 0, "time_ms": 1000, "kind": "hold_end"}, {"lane": 1, "time_ms": 1000, "kind": "hold_start"}], "coverage_ms": 1400, "end_of_stream": false}},
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1000}},
+    {"input": {"lane": 0, "phase": "release", "time_ms": 1000}},
+    {"input": {"lane": 1, "phase": "press", "time_ms": 1000}},
+    {"input": {"lane": 1, "phase": "release", "time_ms": 1490}},
+    {"decided_through_ms": 1400},
+    {"page": {"tokens": [{"lane": 1, "time_ms": 1500, "kind": "hold_end"}, {"lane": 1, "time_ms": 1500, "kind": "tap"}], "coverage_ms": 1500, "end_of_stream": true}},
+    {"input": {"lane": 1, "phase": "press", "time_ms": 1500}},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 0, "lane": 0, "part": "tail", "tier": "bigP", "offset_ms": 0, "time_ms": 1000, "step": 2},
+      {"object": 1, "lane": 1, "part": "tail", "tier": "bigP", "offset_ms": 0, "time_ms": 1490, "step": 6},
+      {"object": 2, "lane": 1, "part": "head", "tier": "bigP", "offset_ms": 0, "time_ms": 1500, "step": 7}
+    ],
+    "score": {
+      "tier_counts": {"bigP": 3, "p1": 0, "p2": 0, "p3": 0, "g": 0, "m": 0},
+      "accuracy": 1,
+      "combo": 3,
+      "max_combo": 3,
+      "suggested_audio_offset_ms": 0
+    },
+    "late_inputs": 0
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "description": "Lone CR line ends, spaces around the key separator, a key count within 0.0001 of 4, and fractional times, rounded to the nearest millisecond (half away from zero). No artist.",
+  "expected": {
+    "chart": {
+      "duration_ms": 2001,
+      "objects": [
+        {"lane": 0, "start_ms": 1000},
+        {"lane": 1, "start_ms": 1001, "end_ms": 2000},
+        {"lane": 2, "start_ms": 2001}
+      ]
+    },
+    "title": "Only Title",
+    "artist": null
+  }
+}

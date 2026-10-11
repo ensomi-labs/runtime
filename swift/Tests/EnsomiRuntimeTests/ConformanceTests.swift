@@ -5,10 +5,31 @@ import XCTest
 /// Runs every conformance/gameplay fixture through the Swift API and compares the output.
 final class ConformanceTests: XCTestCase {
     func testEveryFixtureReproducesItsExpectedOutput() throws {
-        let fixtures = try fixtureFiles()
+        let fixtures = try fixtureFiles("conformance/gameplay", pathExtension: "json")
         XCTAssertFalse(fixtures.isEmpty)
         for url in fixtures {
             try run(url)
+        }
+    }
+
+    func testEveryOsuFileParsesAsExpected() throws {
+        let files = try fixtureFiles("conformance/gameplay/osu", pathExtension: "osu")
+        XCTAssertFalse(files.isEmpty)
+        for url in files {
+            try parse(url)
+        }
+    }
+
+    func testStreamingIsReachable() throws {
+        let session = GameplaySession.streaming(ruleset: Ruleset(judge: .c))
+        XCTAssertTrue(try session.appendTokens(
+            tokens: [ChartToken(lane: 0, timeMs: 1_000, kind: .holdStart)], coverageMs: 1_100, endOfStream: false
+        ).isEmpty)
+        XCTAssertEqual(session.visibleObjects(lowerMs: 500, upperMs: 1_500).first?.state, .openEnded)
+        XCTAssertTrue(session.advance(watermarkMs: 2_000).isEmpty)
+        XCTAssertEqual(session.decidedThroughMs(), 1_100)
+        XCTAssertThrowsError(try session.appendTokens(tokens: [], coverageMs: 1_100, endOfStream: true)) { error in
+            XCTAssertEqual(error as? ChartError, .UnclosedHold(object: 0))
         }
     }
 
@@ -47,15 +68,19 @@ final class ConformanceTests: XCTestCase {
 
     // MARK: Fixtures
 
-    private func fixtureFiles() throws -> [URL] {
+    private func fixtureFiles(_ path: String, pathExtension: String) throws -> [URL] {
         // .../swift/Tests/EnsomiRuntimeTests/ConformanceTests.swift -> repository root
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent()
             .deletingLastPathComponent().deletingLastPathComponent()
-        let directory = root.appendingPathComponent("conformance/gameplay")
+        let directory = root.appendingPathComponent(path)
         return try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
-            .filter { $0.pathExtension == "json" }
+            .filter { $0.pathExtension == pathExtension }
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
+    }
+
+    private func object(_ object: ObjectFixture) -> ChartObject {
+        ChartObject(lane: object.lane, startMs: object.startMs, endMs: object.endMs)
     }
 
     private func run(_ url: URL) throws {
@@ -64,26 +89,52 @@ final class ConformanceTests: XCTestCase {
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         let fixture = try decoder.decode(Fixture.self, from: Data(contentsOf: url))
 
-        let chart = Chart(
-            durationMs: fixture.chart.durationMs,
-            objects: fixture.chart.objects.map { ChartObject(lane: $0.lane, startMs: $0.startMs, endMs: $0.endMs) }
-        )
         let judge: Judge = ["A": .a, "B": .b, "C": .c, "D": .d, "E": .e][fixture.ruleset.judge]!
-        let session = try GameplaySession(chart: chart, ruleset: Ruleset(judge: judge))
+        let session: GameplaySession
+        if let chart = fixture.chart {
+            session = try GameplaySession(
+                chart: Chart(durationMs: chart.durationMs, objects: chart.objects.map(object)),
+                ruleset: Ruleset(judge: judge)
+            )
+        } else {
+            session = GameplaySession.streaming(ruleset: Ruleset(judge: judge))
+        }
 
-        var events: [JudgementEvent] = []
-        for step in fixture.steps {
+        let kinds: [String: TokenKind] = ["tap": .tap, "hold_start": .holdStart, "hold_end": .holdEnd]
+        var events: [(event: JudgementEvent, step: Int)] = []
+        for (index, step) in fixture.steps.enumerated() {
+            var produced: [JudgementEvent] = []
             if let input = step.input {
                 let phase: Phase = input.phase == "press" ? .press : .release
-                events += session.input(input: InputEvent(lane: input.lane, phase: phase, timeMs: input.timeMs))
+                produced = session.input(input: InputEvent(lane: input.lane, phase: phase, timeMs: input.timeMs))
             } else if let watermark = step.advance {
-                events += session.advance(watermarkMs: watermark)
+                produced = session.advance(watermarkMs: watermark)
+            } else if let page = step.page {
+                if let tokens = page.tokens {
+                    produced = try session.appendTokens(
+                        tokens: tokens.map { ChartToken(lane: $0.lane, timeMs: $0.timeMs, kind: kinds[$0.kind]!) },
+                        coverageMs: page.coverageMs,
+                        endOfStream: page.endOfStream
+                    )
+                } else {
+                    produced = try session.append(
+                        objects: (page.objects ?? []).map(object),
+                        coverageMs: page.coverageMs,
+                        endOfStream: page.endOfStream
+                    )
+                }
+            } else if let decidedThrough = step.decidedThroughMs {
+                XCTAssertEqual(session.decidedThroughMs(), decidedThrough, "\(name): step \(index) decided through")
             }
+            events += produced.map { ($0, index) }
         }
 
         XCTAssertEqual(events.count, fixture.expected.events.count, "\(name): event count")
-        for (index, (actual, expected)) in zip(events, fixture.expected.events).enumerated() {
+        for (index, ((actual, step), expected)) in zip(events, fixture.expected.events).enumerated() {
             let label = "\(name): event \(index)"
+            if let expectedStep = expected.step {
+                XCTAssertEqual(step, expectedStep, label)
+            }
             XCTAssertEqual(actual.object, expected.object, label)
             XCTAssertEqual(actual.lane, expected.lane, label)
             XCTAssertEqual(actual.part == .head ? "head" : "tail", expected.part, label)
@@ -114,6 +165,45 @@ final class ConformanceTests: XCTestCase {
             XCTAssertEqual(actualOffset, expectedOffset, accuracy: 1e-9, "\(name): suggested offset")
         }
         XCTAssertEqual(session.lateInputs(), fixture.expected.lateInputs, "\(name): late inputs")
+        XCTAssertTrue(session.isResolved(), "\(name): resolved")
+    }
+
+    private func parse(_ url: URL) throws {
+        let name = url.lastPathComponent
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let expected = try decoder.decode(
+            OsuFixture.self, from: Data(contentsOf: url.deletingPathExtension().appendingPathExtension("json"))
+        ).expected
+        do {
+            let beatmap = try parseOsu(text: String(contentsOf: url, encoding: .utf8))
+            guard let chart = expected.chart else {
+                return XCTFail("\(name): parsed, expected \(String(describing: expected.error))")
+            }
+            XCTAssertEqual(beatmap.chart, Chart(durationMs: chart.durationMs, objects: chart.objects.map(object)), name)
+            XCTAssertEqual(beatmap.title, expected.title, name)
+            XCTAssertEqual(beatmap.artist, expected.artist, name)
+        } catch let error as OsuError {
+            guard let expectedError = expected.error else {
+                return XCTFail("\(name): \(error)")
+            }
+            let chartErrors: [String: (UInt32) -> ChartError] = [
+                "same_lane_overlap": ChartError.SameLaneOverlap(object:),
+                "not_sorted": ChartError.NotSorted(object:),
+            ]
+            switch (error, expectedError.kind) {
+            case (.UnsupportedMode, "unsupported_mode"):
+                break
+            case (.UnsupportedKeyCount(let keys), "unsupported_key_count"):
+                XCTAssertEqual(keys, expectedError.keys, name)
+            case (.UnsupportedHitObject(let line), "unsupported_hit_object"):
+                XCTAssertEqual(line, expectedError.line, name)
+            case (.InvalidChart(let chartError), "invalid_chart"):
+                XCTAssertEqual(chartError, chartErrors[expectedError.chartError ?? ""]?(expectedError.object ?? 0), name)
+            default:
+                XCTFail("\(name): \(error)")
+            }
+        }
     }
 
     private func tierName(_ tier: Tier) -> String {
@@ -129,7 +219,7 @@ final class ConformanceTests: XCTestCase {
 }
 
 private struct Fixture: Decodable {
-    var chart: ChartFixture
+    var chart: ChartFixture?
     var ruleset: RulesetFixture
     var steps: [StepFixture]
     var expected: ExpectedFixture
@@ -153,6 +243,21 @@ private struct RulesetFixture: Decodable {
 private struct StepFixture: Decodable {
     var input: InputFixture?
     var advance: Double?
+    var page: PageFixture?
+    var decidedThroughMs: Double?
+}
+
+private struct PageFixture: Decodable {
+    var objects: [ObjectFixture]?
+    var tokens: [TokenFixture]?
+    var coverageMs: Double
+    var endOfStream: Bool
+}
+
+private struct TokenFixture: Decodable {
+    var lane: UInt32
+    var timeMs: Double
+    var kind: String
 }
 
 private struct InputFixture: Decodable {
@@ -174,6 +279,7 @@ private struct EventFixture: Decodable {
     var tier: String
     var offsetMs: Double?
     var timeMs: Double
+    var step: Int?
 }
 
 private struct ScoreFixture: Decodable {
@@ -191,4 +297,23 @@ private struct TierCountsFixture: Decodable {
     var p3: UInt32
     var g: UInt32
     var m: UInt32
+}
+
+private struct OsuFixture: Decodable {
+    var expected: OsuExpected
+}
+
+private struct OsuExpected: Decodable {
+    var chart: ChartFixture?
+    var title: String?
+    var artist: String?
+    var error: OsuErrorFixture?
+}
+
+private struct OsuErrorFixture: Decodable {
+    var kind: String
+    var keys: Int64?
+    var line: String?
+    var chartError: String?
+    var object: UInt32?
 }

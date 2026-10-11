@@ -1,4 +1,5 @@
-//! UniFFI bindings of the runtime core: the gameplay session, feedback state and note layout.
+//! UniFFI bindings of the runtime core: the gameplay session, feedback state, note layout and the
+//! `.osu` loader.
 //!
 //! The data types are the core's own, declared here again for the binding generator
 //! (`uniffi::remote`), so a change to a core type that is not mirrored fails to compile. The two stateful
@@ -6,9 +7,10 @@
 
 use ensomi_gameplay as gameplay;
 use ensomi_gameplay::{
-    Chart, ChartError, ChartObject, Geometry, InputEvent, Judge, Judgement, JudgementEvent,
-    JudgementEventBatch, JudgementPresentation, LaneBrightness, LaneInputTransition, LaneState,
-    Part, Phase, Ruleset, Score, Tier, TierCounts, VisibleObject, VisibleState,
+    Chart, ChartError, ChartObject, ChartToken, Geometry, InputEvent, Judge, Judgement,
+    JudgementEvent, JudgementEventBatch, JudgementPresentation, LaneBrightness,
+    LaneInputTransition, LaneState, OsuBeatmap, OsuError, Part, Phase, Ruleset, Score, Tier,
+    TierCounts, TokenKind, VisibleObject, VisibleState,
 };
 use std::sync::{Arc, Mutex};
 
@@ -27,6 +29,20 @@ pub struct Chart {
     pub objects: Vec<ChartObject>,
 }
 
+#[uniffi::remote(Enum)]
+pub enum TokenKind {
+    Tap,
+    HoldStart,
+    HoldEnd,
+}
+
+#[uniffi::remote(Record)]
+pub struct ChartToken {
+    pub lane: u32,
+    pub time_ms: f64,
+    pub kind: TokenKind,
+}
+
 #[uniffi::remote(Error)]
 pub enum ChartError {
     InvalidLane { object: u32 },
@@ -34,6 +50,25 @@ pub enum ChartError {
     OutsideDuration { object: u32 },
     NotSorted { object: u32 },
     SameLaneOverlap { object: u32 },
+    InvalidTime { object: u32 },
+    BeforeCoverage { object: u32 },
+    HoldEndWithoutStart { lane: u32 },
+    UnclosedHold { object: u32 },
+}
+
+#[uniffi::remote(Record)]
+pub struct OsuBeatmap {
+    pub chart: Chart,
+    pub title: Option<String>,
+    pub artist: Option<String>,
+}
+
+#[uniffi::remote(Error)]
+pub enum OsuError {
+    UnsupportedMode,
+    UnsupportedKeyCount { keys: i64 },
+    UnsupportedHitObject { line: String },
+    InvalidChart { error: ChartError },
 }
 
 #[uniffi::remote(Enum)]
@@ -184,7 +219,7 @@ pub enum Geometry {
     },
 }
 
-/// Judgement of one chart under one ruleset; see `ensomi_gameplay::Session`.
+/// Judgement of one chart, complete or streamed, under one ruleset; see `ensomi_gameplay::Session`.
 #[derive(uniffi::Object)]
 pub struct GameplaySession(Mutex<gameplay::Session>);
 
@@ -195,6 +230,43 @@ impl GameplaySession {
         Ok(Arc::new(Self(Mutex::new(gameplay::Session::new(
             &chart, ruleset,
         )?))))
+    }
+
+    #[uniffi::constructor]
+    pub fn streaming(ruleset: Ruleset) -> Arc<Self> {
+        Arc::new(Self(Mutex::new(gameplay::Session::streaming(ruleset))))
+    }
+
+    pub fn append(
+        &self,
+        objects: Vec<ChartObject>,
+        coverage_ms: f64,
+        end_of_stream: bool,
+    ) -> Result<Vec<JudgementEvent>, ChartError> {
+        self.0
+            .lock()
+            .unwrap()
+            .append(&objects, coverage_ms, end_of_stream)
+    }
+
+    pub fn append_tokens(
+        &self,
+        tokens: Vec<ChartToken>,
+        coverage_ms: f64,
+        end_of_stream: bool,
+    ) -> Result<Vec<JudgementEvent>, ChartError> {
+        self.0
+            .lock()
+            .unwrap()
+            .append_tokens(&tokens, coverage_ms, end_of_stream)
+    }
+
+    pub fn coverage_ms(&self) -> f64 {
+        self.0.lock().unwrap().coverage_ms()
+    }
+
+    pub fn decided_through_ms(&self) -> f64 {
+        self.0.lock().unwrap().decided_through_ms()
     }
 
     pub fn input(&self, input: InputEvent) -> Vec<JudgementEvent> {
@@ -270,6 +342,12 @@ impl GameplayFeedback {
     pub fn latest_lane_input_transition(&self, lane: u32) -> Option<LaneInputTransition> {
         self.0.lock().unwrap().latest_lane_input_transition(lane)
     }
+}
+
+/// Reads an osu!mania 4K beatmap; see `ensomi_gameplay::parse_osu`.
+#[uniffi::export]
+pub fn parse_osu(text: String) -> Result<OsuBeatmap, OsuError> {
+    gameplay::parse_osu(&text)
 }
 
 /// What the player is shown for a tier.

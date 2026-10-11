@@ -1,0 +1,4 @@
+{
+  "description": "A note in lane 0 starts inside the lane's hold.",
+  "expected": {"error": {"kind": "invalid_chart", "chart_error": "same_lane_overlap", "object": 1}}
+}

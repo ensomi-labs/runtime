@@ -1,0 +1,27 @@
+{
+  "description": "The coverage stays at 1000 while play advances to 5000, so the note at 1000 in lane 1, whose window closes at 1200, is not judged until the last page ends the stream. The last page repeats the previous coverage, as the protocol allows.",
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"page": {"objects": [{"lane": 0, "start_ms": 1000}, {"lane": 1, "start_ms": 1000}], "coverage_ms": 1000, "end_of_stream": false}},
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1000}},
+    {"advance": 5000},
+    {"decided_through_ms": 1000},
+    {"page": {"objects": [], "coverage_ms": 1000, "end_of_stream": true}},
+    {"decided_through_ms": 5000},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 0, "lane": 0, "part": "head", "tier": "bigP", "offset_ms": 0, "time_ms": 1000, "step": 1},
+      {"object": 1, "lane": 1, "part": "head", "tier": "m", "offset_ms": null, "time_ms": 1200, "step": 4}
+    ],
+    "score": {
+      "tier_counts": {"bigP": 1, "p1": 0, "p2": 0, "p3": 0, "g": 0, "m": 1},
+      "accuracy": 0.5,
+      "combo": 0,
+      "max_combo": 1,
+      "suggested_audio_offset_ms": 0
+    },
+    "late_inputs": 0
+  }
+}

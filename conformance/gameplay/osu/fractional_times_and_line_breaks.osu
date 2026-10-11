@@ -1,0 +1,12 @@
+osu file format v14
+
+[General]Mode : 3
+
+[Metadata]
+Title: Only Title
+
+[Difficulty]CircleSize: 4.00001
+
+[HitObjects]
+64,192,1000.4,1,0,0:0:0:0:192,192,1000.5,128,0,1999.5:0:0:0:0:
+320,192,2000.6,1,0

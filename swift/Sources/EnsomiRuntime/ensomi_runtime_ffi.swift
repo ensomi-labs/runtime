@@ -451,6 +451,22 @@ fileprivate struct FfiConverterUInt64: FfiConverterPrimitive {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterInt64: FfiConverterPrimitive {
+    typealias FfiType = Int64
+    typealias SwiftType = Int64
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Int64 {
+        return try lift(readInt(&buf))
+    }
+
+    public static func write(_ value: Int64, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterDouble: FfiConverterPrimitive {
     typealias FfiType = Double
     typealias SwiftType = Double
@@ -735,11 +751,19 @@ public func FfiConverterTypeGameplayFeedback_lower(_ value: GameplayFeedback) ->
 
 
 /**
- * Judgement of one chart under one ruleset; see `ensomi_gameplay::Session`.
+ * Judgement of one chart, complete or streamed, under one ruleset; see `ensomi_gameplay::Session`.
  */
 public protocol GameplaySessionProtocol: AnyObject, Sendable {
     
     func advance(watermarkMs: Double)  -> [JudgementEvent]
+    
+    func append(objects: [ChartObject], coverageMs: Double, endOfStream: Bool) throws  -> [JudgementEvent]
+    
+    func appendTokens(tokens: [ChartToken], coverageMs: Double, endOfStream: Bool) throws  -> [JudgementEvent]
+    
+    func coverageMs()  -> Double
+    
+    func decidedThroughMs()  -> Double
     
     func input(input: InputEvent)  -> [JudgementEvent]
     
@@ -755,7 +779,7 @@ public protocol GameplaySessionProtocol: AnyObject, Sendable {
     
 }
 /**
- * Judgement of one chart under one ruleset; see `ensomi_gameplay::Session`.
+ * Judgement of one chart, complete or streamed, under one ruleset; see `ensomi_gameplay::Session`.
  */
 open class GameplaySession: GameplaySessionProtocol, @unchecked Sendable {
     fileprivate let handle: UInt64
@@ -817,6 +841,14 @@ public convenience init(chart: Chart, ruleset: Ruleset)throws  {
     }
 
     
+public static func streaming(ruleset: Ruleset) -> GameplaySession  {
+    return try!  FfiConverterTypeGameplaySession_lift(try! rustCall() {
+    uniffi_ensomi_runtime_ffi_fn_constructor_gameplaysession_streaming(
+        FfiConverterTypeRuleset_lower(ruleset),$0
+    )
+})
+}
+    
 
     
 open func advance(watermarkMs: Double) -> [JudgementEvent]  {
@@ -824,6 +856,44 @@ open func advance(watermarkMs: Double) -> [JudgementEvent]  {
     uniffi_ensomi_runtime_ffi_fn_method_gameplaysession_advance(
             self.uniffiCloneHandle(),
         FfiConverterDouble.lower(watermarkMs),$0
+    )
+})
+}
+    
+open func append(objects: [ChartObject], coverageMs: Double, endOfStream: Bool)throws  -> [JudgementEvent]  {
+    return try  FfiConverterSequenceTypeJudgementEvent.lift(try rustCallWithError(FfiConverterTypeChartError_lift) {
+    uniffi_ensomi_runtime_ffi_fn_method_gameplaysession_append(
+            self.uniffiCloneHandle(),
+        FfiConverterSequenceTypeChartObject.lower(objects),
+        FfiConverterDouble.lower(coverageMs),
+        FfiConverterBool.lower(endOfStream),$0
+    )
+})
+}
+    
+open func appendTokens(tokens: [ChartToken], coverageMs: Double, endOfStream: Bool)throws  -> [JudgementEvent]  {
+    return try  FfiConverterSequenceTypeJudgementEvent.lift(try rustCallWithError(FfiConverterTypeChartError_lift) {
+    uniffi_ensomi_runtime_ffi_fn_method_gameplaysession_append_tokens(
+            self.uniffiCloneHandle(),
+        FfiConverterSequenceTypeChartToken.lower(tokens),
+        FfiConverterDouble.lower(coverageMs),
+        FfiConverterBool.lower(endOfStream),$0
+    )
+})
+}
+    
+open func coverageMs() -> Double  {
+    return try!  FfiConverterDouble.lift(try! rustCall() {
+    uniffi_ensomi_runtime_ffi_fn_method_gameplaysession_coverage_ms(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+open func decidedThroughMs() -> Double  {
+    return try!  FfiConverterDouble.lift(try! rustCall() {
+    uniffi_ensomi_runtime_ffi_fn_method_gameplaysession_decided_through_ms(
+            self.uniffiCloneHandle(),$0
     )
 })
 }
@@ -1036,6 +1106,64 @@ public func FfiConverterTypeChartObject_lift(_ buf: RustBuffer) throws -> ChartO
 #endif
 public func FfiConverterTypeChartObject_lower(_ value: ChartObject) -> RustBuffer {
     return FfiConverterTypeChartObject.lower(value)
+}
+
+
+public struct ChartToken: Equatable, Hashable {
+    public var lane: UInt32
+    public var timeMs: Double
+    public var kind: TokenKind
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(lane: UInt32, timeMs: Double, kind: TokenKind) {
+        self.lane = lane
+        self.timeMs = timeMs
+        self.kind = kind
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension ChartToken: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeChartToken: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ChartToken {
+        return
+            try ChartToken(
+                lane: FfiConverterUInt32.read(from: &buf), 
+                timeMs: FfiConverterDouble.read(from: &buf), 
+                kind: FfiConverterTypeTokenKind.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ChartToken, into buf: inout [UInt8]) {
+        FfiConverterUInt32.write(value.lane, into: &buf)
+        FfiConverterDouble.write(value.timeMs, into: &buf)
+        FfiConverterTypeTokenKind.write(value.kind, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeChartToken_lift(_ buf: RustBuffer) throws -> ChartToken {
+    return try FfiConverterTypeChartToken.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeChartToken_lower(_ value: ChartToken) -> RustBuffer {
+    return FfiConverterTypeChartToken.lower(value)
 }
 
 
@@ -1469,6 +1597,64 @@ public func FfiConverterTypeLaneState_lower(_ value: LaneState) -> RustBuffer {
 }
 
 
+public struct OsuBeatmap: Equatable, Hashable {
+    public var chart: Chart
+    public var title: String?
+    public var artist: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(chart: Chart, title: String?, artist: String?) {
+        self.chart = chart
+        self.title = title
+        self.artist = artist
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension OsuBeatmap: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeOsuBeatmap: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OsuBeatmap {
+        return
+            try OsuBeatmap(
+                chart: FfiConverterTypeChart.read(from: &buf), 
+                title: FfiConverterOptionString.read(from: &buf), 
+                artist: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: OsuBeatmap, into buf: inout [UInt8]) {
+        FfiConverterTypeChart.write(value.chart, into: &buf)
+        FfiConverterOptionString.write(value.title, into: &buf)
+        FfiConverterOptionString.write(value.artist, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOsuBeatmap_lift(_ buf: RustBuffer) throws -> OsuBeatmap {
+    return try FfiConverterTypeOsuBeatmap.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOsuBeatmap_lower(_ value: OsuBeatmap) -> RustBuffer {
+    return FfiConverterTypeOsuBeatmap.lower(value)
+}
+
+
 public struct Ruleset: Equatable, Hashable {
     public var judge: Judge
 
@@ -1735,6 +1921,14 @@ public enum ChartError: Swift.Error, Equatable, Hashable, Foundation.LocalizedEr
     )
     case SameLaneOverlap(object: UInt32
     )
+    case InvalidTime(object: UInt32
+    )
+    case BeforeCoverage(object: UInt32
+    )
+    case HoldEndWithoutStart(lane: UInt32
+    )
+    case UnclosedHold(object: UInt32
+    )
 
     
 
@@ -1779,6 +1973,18 @@ public struct FfiConverterTypeChartError: FfiConverterRustBuffer {
         case 5: return .SameLaneOverlap(
             object: try FfiConverterUInt32.read(from: &buf)
             )
+        case 6: return .InvalidTime(
+            object: try FfiConverterUInt32.read(from: &buf)
+            )
+        case 7: return .BeforeCoverage(
+            object: try FfiConverterUInt32.read(from: &buf)
+            )
+        case 8: return .HoldEndWithoutStart(
+            lane: try FfiConverterUInt32.read(from: &buf)
+            )
+        case 9: return .UnclosedHold(
+            object: try FfiConverterUInt32.read(from: &buf)
+            )
 
          default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -1813,6 +2019,26 @@ public struct FfiConverterTypeChartError: FfiConverterRustBuffer {
         
         case let .SameLaneOverlap(object):
             writeInt(&buf, Int32(5))
+            FfiConverterUInt32.write(object, into: &buf)
+            
+        
+        case let .InvalidTime(object):
+            writeInt(&buf, Int32(6))
+            FfiConverterUInt32.write(object, into: &buf)
+            
+        
+        case let .BeforeCoverage(object):
+            writeInt(&buf, Int32(7))
+            FfiConverterUInt32.write(object, into: &buf)
+            
+        
+        case let .HoldEndWithoutStart(lane):
+            writeInt(&buf, Int32(8))
+            FfiConverterUInt32.write(lane, into: &buf)
+            
+        
+        case let .UnclosedHold(object):
+            writeInt(&buf, Int32(9))
             FfiConverterUInt32.write(object, into: &buf)
             
         }
@@ -2072,6 +2298,106 @@ public func FfiConverterTypeJudgement_lower(_ value: Judgement) -> RustBuffer {
 }
 
 
+
+public enum OsuError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+
+    
+    
+    case UnsupportedMode
+    case UnsupportedKeyCount(keys: Int64
+    )
+    case UnsupportedHitObject(line: String
+    )
+    case InvalidChart(error: ChartError
+    )
+
+    
+
+    
+
+    
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+    
+}
+
+#if compiler(>=6)
+extension OsuError: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeOsuError: FfiConverterRustBuffer {
+    typealias SwiftType = OsuError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OsuError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .UnsupportedMode
+        case 2: return .UnsupportedKeyCount(
+            keys: try FfiConverterInt64.read(from: &buf)
+            )
+        case 3: return .UnsupportedHitObject(
+            line: try FfiConverterString.read(from: &buf)
+            )
+        case 4: return .InvalidChart(
+            error: try FfiConverterTypeChartError.read(from: &buf)
+            )
+
+         default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: OsuError, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        
+        case .UnsupportedMode:
+            writeInt(&buf, Int32(1))
+        
+        
+        case let .UnsupportedKeyCount(keys):
+            writeInt(&buf, Int32(2))
+            FfiConverterInt64.write(keys, into: &buf)
+            
+        
+        case let .UnsupportedHitObject(line):
+            writeInt(&buf, Int32(3))
+            FfiConverterString.write(line, into: &buf)
+            
+        
+        case let .InvalidChart(error):
+            writeInt(&buf, Int32(4))
+            FfiConverterTypeChartError.write(error, into: &buf)
+            
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOsuError_lift(_ buf: RustBuffer) throws -> OsuError {
+    return try FfiConverterTypeOsuError.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOsuError_lower(_ value: OsuError) -> RustBuffer {
+    return FfiConverterTypeOsuError.lower(value)
+}
+
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
@@ -2304,6 +2630,80 @@ public func FfiConverterTypeTier_lower(_ value: Tier) -> RustBuffer {
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
+public enum TokenKind: Equatable, Hashable {
+    
+    case tap
+    case holdStart
+    case holdEnd
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension TokenKind: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeTokenKind: FfiConverterRustBuffer {
+    typealias SwiftType = TokenKind
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TokenKind {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .tap
+        
+        case 2: return .holdStart
+        
+        case 3: return .holdEnd
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: TokenKind, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .tap:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .holdStart:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .holdEnd:
+            writeInt(&buf, Int32(3))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTokenKind_lift(_ buf: RustBuffer) throws -> TokenKind {
+    return try FfiConverterTypeTokenKind.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTokenKind_lower(_ value: TokenKind) -> RustBuffer {
+    return FfiConverterTypeTokenKind.lower(value)
+}
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
 public enum VisibleState: Equatable, Hashable {
     
     case waiting
@@ -2440,6 +2840,30 @@ fileprivate struct FfiConverterOptionDouble: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
+    typealias SwiftType = String?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterString.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterString.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeJudgementPresentation: FfiConverterRustBuffer {
     typealias SwiftType = JudgementPresentation?
 
@@ -2505,6 +2929,31 @@ fileprivate struct FfiConverterSequenceTypeChartObject: FfiConverterRustBuffer {
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterTypeChartObject.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeChartToken: FfiConverterRustBuffer {
+    typealias SwiftType = [ChartToken]
+
+    public static func write(_ value: [ChartToken], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeChartToken.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [ChartToken] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [ChartToken]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeChartToken.read(from: &buf))
         }
         return seq
     }
@@ -2633,6 +3082,16 @@ public func noteYPosition(objectTimeMs: Double, renderTimeMs: Double, scrollTime
 })
 }
 /**
+ * Reads an osu!mania 4K beatmap; see `ensomi_gameplay::parse_osu`.
+ */
+public func parseOsu(text: String)throws  -> OsuBeatmap  {
+    return try  FfiConverterTypeOsuBeatmap_lift(try rustCallWithError(FfiConverterTypeOsuError_lift) {
+    uniffi_ensomi_runtime_ffi_fn_func_parse_osu(
+        FfiConverterString.lower(text),$0
+    )
+})
+}
+/**
  * What the player is shown for a tier.
  */
 public func tierJudgement(tier: Tier) -> Judgement  {
@@ -2664,6 +3123,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ensomi_runtime_ffi_checksum_func_note_y_position() != 7172) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_ensomi_runtime_ffi_checksum_func_parse_osu() != 25651) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_ensomi_runtime_ffi_checksum_func_tier_judgement() != 59231) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -2691,6 +3153,18 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ensomi_runtime_ffi_checksum_method_gameplaysession_advance() != 32156) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_gameplaysession_append() != 63386) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_gameplaysession_append_tokens() != 56031) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_gameplaysession_coverage_ms() != 986) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_gameplaysession_decided_through_ms() != 36240) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_ensomi_runtime_ffi_checksum_method_gameplaysession_input() != 42099) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -2713,6 +3187,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_constructor_gameplaysession_new() != 62789) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_constructor_gameplaysession_streaming() != 50311) {
         return InitializationResult.apiChecksumMismatch
     }
 
