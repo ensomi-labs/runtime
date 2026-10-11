@@ -2,9 +2,9 @@
 
 ## State
 
-Branch `core/v0`. Stage 1 is committed (c0e8b40). Stage 2 code is written and passes on hesitation-snow;
-the full four-song Wasm replay was still running when this was written. Stage 3 script is written and
-untested.
+Branch `core/v0`. Stage 1 is committed (c0e8b40). Stage 2 passes on all four songs
+(`conformance/generate/wasm-parity.json`, committed). Stage 3: `js/checks/same-as-ts.mjs` is written; its first run
+was started as mac job `same-as-ts` (see `ens ps`) and writes `conformance/generate/same-as-ts.json`.
 
 | Piece | Where | State |
 | --- | --- | --- |
@@ -12,15 +12,14 @@ untested.
 | Native driver and replay binary | `crates/generate-ort` | stage 1 passes on all four songs: `conformance/generate/native-parity.json` |
 | Wasm binding | `crates/generate-wasm`, `scripts/wasm-build.sh` | builds; wasm-bindgen-cli 0.2.129 is installed on the mac |
 | JS API (`loadModels`, `generateChart`, `decodeAudio`, `localFilesSource`, `models.capabilities`) | `js/src` | written; used by the Wasm replay |
-| Stage 2 check | `js/checks/replay.mjs` -> `conformance/generate/wasm-parity.json` | hesitation-snow passes; run all four |
-| Stage 3 check | `js/checks/same-as-ts.mjs` -> `conformance/generate/same-as-ts.json` | not run yet |
+| Stage 2 check | `js/checks/replay.mjs` -> `conformance/generate/wasm-parity.json` | all four songs pass (BeatThis 1.06e-4 to 1.17e-4 on ORT-web, inside the 2e-4 allowance) |
+| Stage 3 check | `js/checks/same-as-ts.mjs` -> `conformance/generate/same-as-ts.json` | first run started, result not read |
 
 ## Next steps
 
-1. Look at `conformance/generate/wasm-parity.json` (written by the mac job `wasm-all`, mirrored here). If all
-   four songs pass, commit it with `js/`, `crates/generate-wasm`, the HANDOFF and Cargo.lock.
-2. Run stage 3 on the mac (exact command in `conformance/generate/README.md`; use `ens run ensomi-runtime --name same-as-ts --
-   'cd ../ensomi-web/packages/runtime && node --import tsx ../../../ensomi-runtime/js/checks/same-as-ts.mjs ...'`).
+1. Read `conformance/generate/same-as-ts.json` from the mac job `same-as-ts` (`ens tail`/`ens ps`; rerun with the command
+   in `conformance/generate/README.md` if it failed to start). Commit the report when it is final.
+2. Stage 3 runs the TypeScript runtime from `ensomi-web` (read-only) with `cd ../ensomi-web/packages/runtime && node --import tsx ../../../ensomi-runtime/js/checks/same-as-ts.mjs ...`.
    It runs both runtimes in one Node process on one onnxruntime-web instance for the four songs, seeds 0, 1, 2, plus one
    case with `long_notes`, a star section and two pattern sections (jumpstream, chordjack) on hesitation-snow.
    It compares chart objects, `.osu` and receipt text; only the runtime name and `seconds`/`wall_seconds` are normalised.

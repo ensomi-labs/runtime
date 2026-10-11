@@ -1,0 +1,1705 @@
+{
+  "ort": "1.23.2",
+  "provider": "wasm",
+  "threads": 1,
+  "graph_tolerance": {
+    "default": 0.0001,
+    "beatthis": 0.0002
+  },
+  "timing_tolerance_ms": 0.000001,
+  "scope": "recorded graph inputs, PCM frontends, full Wasm decode with carried state and replayed random draws, exact exports, own PRNG",
+  "songs": {
+    "hesitation-snow": {
+      "stage1": {
+        "passed": true,
+        "networks": {
+          "beatthis": {
+            "calls": 6,
+            "seconds": 16.516603667000002,
+            "max_abs": 0.00007724761962890625,
+            "outputs": {
+              "beat_logits": {
+                "max_abs": 0.00007724761962890625,
+                "rms": 0.000008624787705197782,
+                "index": 1388,
+                "nonfinite_equal": true,
+                "reference": 4.240664482116699,
+                "actual": 4.240741729736328,
+                "same_length": true,
+                "scope": "",
+                "step": 1
+              },
+              "downbeat_logits": {
+                "max_abs": 0.0000591278076171875,
+                "rms": 0.000008637768184032785,
+                "index": 1367,
+                "nonfinite_equal": true,
+                "reference": 4.047799110412598,
+                "actual": 4.047858238220215,
+                "same_length": true,
+                "scope": "",
+                "step": 3
+              }
+            }
+          },
+          "rows_encoder": {
+            "calls": 1,
+            "seconds": 0.07087316699999792,
+            "max_abs": 0.00002765655517578125,
+            "outputs": {
+              "pos": {
+                "max_abs": 0.00000762939453125,
+                "rms": 5.697851923548119e-7,
+                "index": 1755,
+                "nonfinite_equal": true,
+                "reference": 19.42436981201172,
+                "actual": 19.42437744140625,
+                "same_length": true,
+                "scope": "",
+                "step": 0
+              },
+              "context": {
+                "max_abs": 0.00002765655517578125,
+                "rms": 0.0000014038623722782538,
+                "index": 47502,
+                "nonfinite_equal": true,
+                "reference": -1.9637930393218994,
+                "actual": -1.9638206958770752,
+                "same_length": true,
+                "scope": "",
+                "step": 0
+              },
+              "query": {
+                "max_abs": 0.000022590160369873047,
+                "rms": 0.000002063952720113052,
+                "index": 23793,
+                "nonfinite_equal": true,
+                "reference": 0.5751996040344238,
+                "actual": 0.5752221941947937,
+                "same_length": true,
+                "scope": "",
+                "step": 0
+              },
+              "key": {
+                "max_abs": 0.000021696090698242188,
+                "rms": 0.0000020978524975194305,
+                "index": 23793,
+                "nonfinite_equal": true,
+                "reference": 2.0027871131896973,
+                "actual": 2.0028088092803955,
+                "same_length": true,
+                "scope": "",
+                "step": 0
+              }
+            }
+          },
+          "rows_step": {
+            "calls": 374,
+            "seconds": 0.050799547000049676,
+            "max_abs": 0.00002288818359375,
+            "outputs": {
+              "hidden_out": {
+                "max_abs": 0.0000023543834686279297,
+                "rms": 2.4635782376644235e-7,
+                "index": 59,
+                "nonfinite_equal": true,
+                "reference": 0.25496169924736023,
+                "actual": 0.25496405363082886,
+                "same_length": true,
+                "scope": "",
+                "step": 369
+              },
+              "hb": {
+                "max_abs": 0.0000023543834686279297,
+                "rms": 2.4635782376644235e-7,
+                "index": 59,
+                "nonfinite_equal": true,
+                "reference": 0.25496169924736023,
+                "actual": 0.25496405363082886,
+                "same_length": true,
+                "scope": "",
+                "step": 369
+              },
+              "logits": {
+                "max_abs": 0.0000152587890625,
+                "rms": 0.000002912461841437614,
+                "index": 54,
+                "nonfinite_equal": true,
+                "reference": -59.98155212402344,
+                "actual": -59.9815673828125,
+                "same_length": true,
+                "scope": "",
+                "step": 0
+              },
+              "scores": {
+                "max_abs": 0.000003814697265625,
+                "rms": 4.4156870212889084e-7,
+                "index": 207,
+                "nonfinite_equal": true,
+                "reference": 17.2939510345459,
+                "actual": 17.293947219848633,
+                "same_length": true,
+                "scope": "",
+                "step": 140
+              },
+              "gate": {
+                "max_abs": 3.5762786865234375e-7,
+                "rms": 1.8881746973803918e-7,
+                "index": 4,
+                "nonfinite_equal": true,
+                "reference": 0.7112654447555542,
+                "actual": 0.7112658023834229,
+                "same_length": true,
+                "scope": "",
+                "step": 27
+              },
+              "logp": {
+                "max_abs": 0.00002288818359375,
+                "rms": 0.0000031757834845389327,
+                "index": 538,
+                "nonfinite_equal": true,
+                "reference": -66.14356994628906,
+                "actual": -66.14359283447266,
+                "same_length": true,
+                "scope": "",
+                "step": 0
+              },
+              "attention": {
+                "max_abs": 0.000002682209014892578,
+                "rms": 1.9457109703944424e-7,
+                "index": 259,
+                "nonfinite_equal": true,
+                "reference": 0.5178384184837341,
+                "actual": 0.517841100692749,
+                "same_length": true,
+                "scope": "",
+                "step": 301
+              }
+            }
+          },
+          "r2_predict": {
+            "calls": 898,
+            "seconds": 0.04488471299993393,
+            "max_abs": 0.00001239776611328125,
+            "outputs": {
+              "hands": {
+                "max_abs": 0.0000030994415283203125,
+                "rms": 5.754480196122047e-7,
+                "index": 126,
+                "nonfinite_equal": true,
+                "reference": 3.667271852493286,
+                "actual": 3.6672749519348145,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 567
+              },
+              "action_logits": {
+                "max_abs": 0.00001239776611328125,
+                "rms": 0.00000473768327935428,
+                "index": 592,
+                "nonfinite_equal": true,
+                "reference": -12.19143295288086,
+                "actual": -12.191445350646973,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 652
+              }
+            }
+          },
+          "r2_commit": {
+            "calls": 897,
+            "seconds": 0.9887589579999837,
+            "max_abs": 0.00000667572021484375,
+            "outputs": {
+              "next_last": {
+                "max_abs": 0.00000667572021484375,
+                "rms": 0.0000010719195126258304,
+                "index": 175,
+                "nonfinite_equal": true,
+                "reference": -5.987792491912842,
+                "actual": -5.987799167633057,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 849
+              },
+              "next_rows": {
+                "max_abs": 0,
+                "rms": 0,
+                "index": -1,
+                "nonfinite_equal": true,
+                "reference": null,
+                "actual": null,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 0
+              },
+              "next_buffer_0": {
+                "max_abs": 0.0000016689300537109375,
+                "rms": 2.3204235619006866e-7,
+                "index": 340,
+                "nonfinite_equal": true,
+                "reference": -2.2073967456817627,
+                "actual": -2.207395076751709,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 383
+              },
+              "next_buffer_1": {
+                "max_abs": 0.0000030994415283203125,
+                "rms": 2.103091764510408e-7,
+                "index": 972,
+                "nonfinite_equal": true,
+                "reference": 2.4862616062164307,
+                "actual": 2.4862585067749023,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 60
+              },
+              "next_buffer_2": {
+                "max_abs": 0.0000026226043701171875,
+                "rms": 1.7094645868638208e-7,
+                "index": 1908,
+                "nonfinite_equal": true,
+                "reference": 2.217562675476074,
+                "actual": 2.2175652980804443,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 346
+              },
+              "next_buffer_3": {
+                "max_abs": 0.0000032186508178710938,
+                "rms": 1.562860960626775e-7,
+                "index": 3956,
+                "nonfinite_equal": true,
+                "reference": 1.2328641414642334,
+                "actual": 1.2328673601150513,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 346
+              },
+              "next_buffer_4": {
+                "max_abs": 0.0000032782554626464844,
+                "rms": 1.227370125136113e-7,
+                "index": 8038,
+                "nonfinite_equal": true,
+                "reference": 0.3796553313732147,
+                "actual": 0.37965860962867737,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 734
+              },
+              "next_buffer_5": {
+                "max_abs": 0.000003337860107421875,
+                "rms": 8.854948389339924e-8,
+                "index": 16354,
+                "nonfinite_equal": true,
+                "reference": 2.3765530586242676,
+                "actual": 2.37654972076416,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 358
+              },
+              "next_buffer_6": {
+                "max_abs": 0.000003337860107421875,
+                "rms": 6.14755471684862e-8,
+                "index": 32716,
+                "nonfinite_equal": true,
+                "reference": 1.768631100654602,
+                "actual": 1.7686344385147095,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 20
+              },
+              "next_buffer_7": {
+                "max_abs": 0.0000034570693969726562,
+                "rms": 5.0336501443991926e-8,
+                "index": 65428,
+                "nonfinite_equal": true,
+                "reference": -1.4202674627304077,
+                "actual": -1.4202709197998047,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 879
+              }
+            }
+          },
+          "r2_release": {
+            "calls": 2,
+            "seconds": 0.0010169159999968542,
+            "max_abs": 0.000011444091796875,
+            "outputs": {
+              "release_scores": {
+                "max_abs": 0.000011444091796875,
+                "rms": 0.0000043157494806879245,
+                "index": 23,
+                "nonfinite_equal": true,
+                "reference": 27.856197357177734,
+                "actual": 27.85620880126953,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 0
+              }
+            }
+          }
+        }
+      },
+      "stage2": {
+        "passed": true,
+        "max_offset_error_ms": 2.049158638328663e-7,
+        "segments": [
+          [
+            977.7706285557144,
+            444.44444444444446,
+            4
+          ]
+        ]
+      },
+      "stage3": {
+        "passed": true,
+        "heads": 897,
+        "recorded_heads": 897
+      },
+      "stage4": {
+        "passed": true,
+        "prior_max_error": 0,
+        "draws_consumed": 2172,
+        "draws_recorded": 2172,
+        "passes": [
+          {
+            "multiplier": 1.0115911606943524,
+            "achieved": 1.3455830579580628,
+            "fallback_count": 0,
+            "wall_seconds": 1.3583548750000045
+          }
+        ]
+      },
+      "replay_seconds": {
+        "pcm": 2.8393420829999996,
+        "spectrogram": 0.24467983299999832,
+        "beatthis": 16.508897458000003,
+        "mel": 0.7396651669999992,
+        "grid": 0.1976823749999967,
+        "rows": 0.3935995830000029,
+        "prior": 0.000850083999997878,
+        "arrangement": 1.358496208000004,
+        "export": 0.0015955830000020797,
+        "total": 22.326242917
+      },
+      "phases": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "stage5": {
+        "passed": true,
+        "hitobjects_identical": true,
+        "objects": 1214,
+        "timing_points": 1,
+        "timing_max_abs_ms": 0,
+        "rest_identical": true,
+        "osu_identical_except_generator": true,
+        "first_text_difference": null,
+        "osz_bytes": 5893
+      },
+      "prng": {
+        "passed": true,
+        "algorithm": "mulberry32-u53-v1",
+        "seed": 0,
+        "objects": 1059,
+        "heads": 767,
+        "fallbacks": 0,
+        "seconds": {
+          "pcm": 1.2966313749999971,
+          "spectrogram": 0.22269279200000164,
+          "beatthis": 20.032374375,
+          "mel": 0.6464862080000021,
+          "grid": 0.1843794579999958,
+          "rows": 0.6278535000000047,
+          "prior": 0.0005265829999989365,
+          "arrangement": 1.2020465840000034,
+          "export": 0.0007409999999945285,
+          "total": 24.223794542000004
+        },
+        "wall_seconds": 24.23342041700001
+      }
+    },
+    "saigetsu": {
+      "stage1": {
+        "passed": true,
+        "networks": {
+          "beatthis": {
+            "calls": 5,
+            "seconds": 14.897826499999995,
+            "max_abs": 0.00011157989501953125,
+            "outputs": {
+              "beat_logits": {
+                "max_abs": 0.00010776519775390625,
+                "rms": 0.000007234170661576413,
+                "index": 759,
+                "nonfinite_equal": true,
+                "reference": 5.266148567199707,
+                "actual": 5.266040802001953,
+                "same_length": true,
+                "scope": "",
+                "step": 3
+              },
+              "downbeat_logits": {
+                "max_abs": 0.00011157989501953125,
+                "rms": 0.000006549412063684286,
+                "index": 759,
+                "nonfinite_equal": true,
+                "reference": 7.953116416931152,
+                "actual": 7.953004837036133,
+                "same_length": true,
+                "scope": "",
+                "step": 3
+              }
+            }
+          },
+          "rows_encoder": {
+            "calls": 1,
+            "seconds": 0.052869375000009315,
+            "max_abs": 0.000018477439880371094,
+            "outputs": {
+              "pos": {
+                "max_abs": 0.00000858306884765625,
+                "rms": 6.514431569932576e-7,
+                "index": 99812,
+                "nonfinite_equal": true,
+                "reference": 15.304193496704102,
+                "actual": 15.304184913635254,
+                "same_length": true,
+                "scope": "",
+                "step": 0
+              },
+              "context": {
+                "max_abs": 0.000012636184692382812,
+                "rms": 0.0000014332052902644007,
+                "index": 27150,
+                "nonfinite_equal": true,
+                "reference": 0.5843970775604248,
+                "actual": 0.5844097137451172,
+                "same_length": true,
+                "scope": "",
+                "step": 0
+              },
+              "query": {
+                "max_abs": 0.000018477439880371094,
+                "rms": 0.0000020823112961586178,
+                "index": 13624,
+                "nonfinite_equal": true,
+                "reference": 0.8819056153297424,
+                "actual": 0.8818871378898621,
+                "same_length": true,
+                "scope": "",
+                "step": 0
+              },
+              "key": {
+                "max_abs": 0.000016808509826660156,
+                "rms": 0.0000021060911937452392,
+                "index": 13624,
+                "nonfinite_equal": true,
+                "reference": 0.9857980012893677,
+                "actual": 0.985781192779541,
+                "same_length": true,
+                "scope": "",
+                "step": 0
+              }
+            }
+          },
+          "rows_step": {
+            "calls": 228,
+            "seconds": 0.025501007999948345,
+            "max_abs": 0.000019073486328125,
+            "outputs": {
+              "hidden_out": {
+                "max_abs": 0.000002078711986541748,
+                "rms": 2.170953042806079e-7,
+                "index": 9,
+                "nonfinite_equal": true,
+                "reference": -0.1121145710349083,
+                "actual": -0.11211664974689484,
+                "same_length": true,
+                "scope": "",
+                "step": 117
+              },
+              "hb": {
+                "max_abs": 0.000002078711986541748,
+                "rms": 2.170953042806079e-7,
+                "index": 9,
+                "nonfinite_equal": true,
+                "reference": -0.1121145710349083,
+                "actual": -0.11211664974689484,
+                "same_length": true,
+                "scope": "",
+                "step": 117
+              },
+              "logits": {
+                "max_abs": 0.0000152587890625,
+                "rms": 0.0000023262818486632364,
+                "index": 1540,
+                "nonfinite_equal": true,
+                "reference": -42.20451354980469,
+                "actual": -42.20452880859375,
+                "same_length": true,
+                "scope": "",
+                "step": 29
+              },
+              "scores": {
+                "max_abs": 0.000003814697265625,
+                "rms": 4.5361432938837475e-7,
+                "index": 199,
+                "nonfinite_equal": true,
+                "reference": 16.672460556030273,
+                "actual": 16.67246437072754,
+                "same_length": true,
+                "scope": "",
+                "step": 62
+              },
+              "gate": {
+                "max_abs": 2.384185791015625e-7,
+                "rms": 1.1097994197807574e-7,
+                "index": 4,
+                "nonfinite_equal": true,
+                "reference": 0.918230414390564,
+                "actual": 0.9182306528091431,
+                "same_length": true,
+                "scope": "",
+                "step": 48
+              },
+              "logp": {
+                "max_abs": 0.000019073486328125,
+                "rms": 0.000004240493224381268,
+                "index": 1540,
+                "nonfinite_equal": true,
+                "reference": -57.15723419189453,
+                "actual": -57.15725326538086,
+                "same_length": true,
+                "scope": "",
+                "step": 29
+              },
+              "attention": {
+                "max_abs": 0.000001996755599975586,
+                "rms": 1.3403791180900376e-7,
+                "index": 259,
+                "nonfinite_equal": true,
+                "reference": 0.46856945753097534,
+                "actual": 0.4685714542865753,
+                "same_length": true,
+                "scope": "",
+                "step": 211
+              }
+            }
+          },
+          "r2_predict": {
+            "calls": 1572,
+            "seconds": 0.08281099599995648,
+            "max_abs": 0.00001239776611328125,
+            "outputs": {
+              "hands": {
+                "max_abs": 0.000003337860107421875,
+                "rms": 5.920839778160411e-7,
+                "index": 126,
+                "nonfinite_equal": true,
+                "reference": 4.199793815612793,
+                "actual": 4.1997971534729,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 53
+              },
+              "action_logits": {
+                "max_abs": 0.00001239776611328125,
+                "rms": 0.00000536131636703112,
+                "index": 289,
+                "nonfinite_equal": true,
+                "reference": -14.82310676574707,
+                "actual": -14.823119163513184,
+                "same_length": true,
+                "scope": "r2_pass_2",
+                "step": 1258
+              }
+            }
+          },
+          "r2_commit": {
+            "calls": 1570,
+            "seconds": 1.9476127309997813,
+            "max_abs": 0.000007152557373046875,
+            "outputs": {
+              "next_last": {
+                "max_abs": 0.000007152557373046875,
+                "rms": 0.0000013235825564942932,
+                "index": 175,
+                "nonfinite_equal": true,
+                "reference": -4.160820007324219,
+                "actual": -4.160812854766846,
+                "same_length": true,
+                "scope": "r2_pass_2",
+                "step": 837
+              },
+              "next_rows": {
+                "max_abs": 0,
+                "rms": 0,
+                "index": -1,
+                "nonfinite_equal": true,
+                "reference": null,
+                "actual": null,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 0
+              },
+              "next_buffer_0": {
+                "max_abs": 0.000001430511474609375,
+                "rms": 1.6663896718390112e-7,
+                "index": 505,
+                "nonfinite_equal": true,
+                "reference": -2.442413568496704,
+                "actual": -2.4424121379852295,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 22
+              },
+              "next_buffer_1": {
+                "max_abs": 0.0000030994415283203125,
+                "rms": 1.9689661720681615e-7,
+                "index": 991,
+                "nonfinite_equal": true,
+                "reference": -1.2071479558944702,
+                "actual": -1.2071510553359985,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 18
+              },
+              "next_buffer_2": {
+                "max_abs": 0.00000286102294921875,
+                "rms": 1.850868526415017e-7,
+                "index": 1842,
+                "nonfinite_equal": true,
+                "reference": 1.1026949882507324,
+                "actual": 1.1026921272277832,
+                "same_length": true,
+                "scope": "r2_pass_2",
+                "step": 1387
+              },
+              "next_buffer_3": {
+                "max_abs": 0.00000286102294921875,
+                "rms": 1.3909930746251477e-7,
+                "index": 4044,
+                "nonfinite_equal": true,
+                "reference": -0.7615097165107727,
+                "actual": -0.7615068554878235,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 443
+              },
+              "next_buffer_4": {
+                "max_abs": 0.0000030994415283203125,
+                "rms": 1.200942489136141e-7,
+                "index": 7984,
+                "nonfinite_equal": true,
+                "reference": -1.7646546363830566,
+                "actual": -1.7646515369415283,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 34
+              },
+              "next_buffer_5": {
+                "max_abs": 0.0000030994415283203125,
+                "rms": 7.597104378223306e-8,
+                "index": 16347,
+                "nonfinite_equal": true,
+                "reference": 1.3502854108810425,
+                "actual": 1.3502823114395142,
+                "same_length": true,
+                "scope": "r2_pass_2",
+                "step": 1219
+              },
+              "next_buffer_6": {
+                "max_abs": 0.0000034570693969726562,
+                "rms": 5.942774244475939e-8,
+                "index": 32703,
+                "nonfinite_equal": true,
+                "reference": -0.9455925822257996,
+                "actual": -0.9455960392951965,
+                "same_length": true,
+                "scope": "r2_pass_2",
+                "step": 1561
+              },
+              "next_buffer_7": {
+                "max_abs": 0.0000034570693969726562,
+                "rms": 4.6343196925237676e-8,
+                "index": 65522,
+                "nonfinite_equal": true,
+                "reference": 1.2805699110031128,
+                "actual": 1.2805733680725098,
+                "same_length": true,
+                "scope": "r2_pass_2",
+                "step": 1491
+              }
+            }
+          },
+          "r2_release": {
+            "calls": 8,
+            "seconds": 0.002019417000003159,
+            "max_abs": 0.0000133514404296875,
+            "outputs": {
+              "release_scores": {
+                "max_abs": 0.0000133514404296875,
+                "rms": 0.000005130156228864196,
+                "index": 18,
+                "nonfinite_equal": true,
+                "reference": 18.528562545776367,
+                "actual": 18.528575897216797,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 3
+              }
+            }
+          }
+        }
+      },
+      "stage2": {
+        "passed": true,
+        "max_offset_error_ms": 3.279341171946726e-7,
+        "segments": [
+          [
+            768.7660999979288,
+            588.2352941176471,
+            4
+          ]
+        ]
+      },
+      "stage3": {
+        "passed": true,
+        "heads": 785,
+        "recorded_heads": 785
+      },
+      "stage4": {
+        "passed": true,
+        "prior_max_error": 0,
+        "draws_consumed": 3380,
+        "draws_recorded": 3380,
+        "passes": [
+          {
+            "multiplier": 0.9365579816442061,
+            "achieved": 1.4391102764195374,
+            "fallback_count": 0,
+            "wall_seconds": 1.1335831670000043
+          },
+          {
+            "multiplier": 0.9773466733743711,
+            "achieved": 1.5459112333555236,
+            "fallback_count": 0,
+            "wall_seconds": 1.1135859999999957
+          }
+        ]
+      },
+      "replay_seconds": {
+        "pcm": 0.9429907499999972,
+        "spectrogram": 0.18136708299999008,
+        "beatthis": 17.280453166000008,
+        "mel": 0.5148838749999995,
+        "grid": 0.0800865829999966,
+        "rows": 0.24587612500000977,
+        "prior": 0.0005062089999992167,
+        "arrangement": 2.2472193750000007,
+        "export": 0.0006171250000043074,
+        "total": 21.502144833
+      },
+      "phases": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "stage5": {
+        "passed": true,
+        "hitobjects_identical": true,
+        "objects": 1215,
+        "timing_points": 1,
+        "timing_max_abs_ms": 0,
+        "rest_identical": true,
+        "osu_identical_except_generator": true,
+        "first_text_difference": null,
+        "osz_bytes": 6229
+      },
+      "prng": {
+        "passed": true,
+        "algorithm": "mulberry32-u53-v1",
+        "seed": 0,
+        "objects": 1295,
+        "heads": 805,
+        "fallbacks": 0,
+        "seconds": {
+          "pcm": 0.9056581250000018,
+          "spectrogram": 0.1694185839999991,
+          "beatthis": 14.540228624999989,
+          "mel": 0.4987286249999888,
+          "grid": 0.07669245800000499,
+          "rows": 0.3802083330000023,
+          "prior": 0.00046762500000477303,
+          "arrangement": 2.295369915999996,
+          "export": 0.0006812079999945126,
+          "total": 18.873805791000006
+        },
+        "wall_seconds": 18.881136500000007
+      }
+    },
+    "catch-the-moment": {
+      "stage1": {
+        "passed": true,
+        "networks": {
+          "beatthis": {
+            "calls": 5,
+            "seconds": 16.257155458000007,
+            "max_abs": 0.00010585784912109375,
+            "outputs": {
+              "beat_logits": {
+                "max_abs": 0.000091552734375,
+                "rms": 0.0000072870176930316405,
+                "index": 1259,
+                "nonfinite_equal": true,
+                "reference": 4.065703392028809,
+                "actual": 4.065611839294434,
+                "same_length": true,
+                "scope": "",
+                "step": 0
+              },
+              "downbeat_logits": {
+                "max_abs": 0.00010585784912109375,
+                "rms": 0.000006760661420809377,
+                "index": 1472,
+                "nonfinite_equal": true,
+                "reference": -5.306756496429443,
+                "actual": -5.306650638580322,
+                "same_length": true,
+                "scope": "",
+                "step": 2
+              }
+            }
+          },
+          "rows_encoder": {
+            "calls": 1,
+            "seconds": 0.0488238330000022,
+            "max_abs": 0.00001811981201171875,
+            "outputs": {
+              "pos": {
+                "max_abs": 0.00000762939453125,
+                "rms": 5.650451803002815e-7,
+                "index": 306763,
+                "nonfinite_equal": true,
+                "reference": 19.171287536621094,
+                "actual": 19.171295166015625,
+                "same_length": true,
+                "scope": "",
+                "step": 0
+              },
+              "context": {
+                "max_abs": 0.000012934207916259766,
+                "rms": 0.0000012051695145284387,
+                "index": 25315,
+                "nonfinite_equal": true,
+                "reference": 0.6545218825340271,
+                "actual": 0.6545089483261108,
+                "same_length": true,
+                "scope": "",
+                "step": 0
+              },
+              "query": {
+                "max_abs": 0.00001811981201171875,
+                "rms": 0.0000016081209354924903,
+                "index": 12344,
+                "nonfinite_equal": true,
+                "reference": 1.4474290609359741,
+                "actual": 1.4474109411239624,
+                "same_length": true,
+                "scope": "",
+                "step": 0
+              },
+              "key": {
+                "max_abs": 0.00001633167266845703,
+                "rms": 0.0000016823122609995692,
+                "index": 12314,
+                "nonfinite_equal": true,
+                "reference": 1.3396179676055908,
+                "actual": 1.3396342992782593,
+                "same_length": true,
+                "scope": "",
+                "step": 0
+              }
+            }
+          },
+          "rows_step": {
+            "calls": 200,
+            "seconds": 0.02212529799999901,
+            "max_abs": 0.0000152587890625,
+            "outputs": {
+              "hidden_out": {
+                "max_abs": 0.000001914799213409424,
+                "rms": 2.030144553008481e-7,
+                "index": 251,
+                "nonfinite_equal": true,
+                "reference": -0.11285867542028427,
+                "actual": -0.11285676062107086,
+                "same_length": true,
+                "scope": "",
+                "step": 21
+              },
+              "hb": {
+                "max_abs": 0.000001914799213409424,
+                "rms": 2.030144553008481e-7,
+                "index": 251,
+                "nonfinite_equal": true,
+                "reference": -0.11285867542028427,
+                "actual": -0.11285676062107086,
+                "same_length": true,
+                "scope": "",
+                "step": 21
+              },
+              "logits": {
+                "max_abs": 0.0000152587890625,
+                "rms": 0.000002893912806868579,
+                "index": 677,
+                "nonfinite_equal": true,
+                "reference": -56.01068115234375,
+                "actual": -56.01069641113281,
+                "same_length": true,
+                "scope": "",
+                "step": 186
+              },
+              "scores": {
+                "max_abs": 0.00000286102294921875,
+                "rms": 4.0599362384414643e-7,
+                "index": 198,
+                "nonfinite_equal": true,
+                "reference": 12.175283432006836,
+                "actual": 12.175280570983887,
+                "same_length": true,
+                "scope": "",
+                "step": 44
+              },
+              "gate": {
+                "max_abs": 4.172325134277344e-7,
+                "rms": 2.3730199009826292e-7,
+                "index": 4,
+                "nonfinite_equal": true,
+                "reference": 0.8203485012054443,
+                "actual": 0.8203489184379578,
+                "same_length": true,
+                "scope": "",
+                "step": 17
+              },
+              "logp": {
+                "max_abs": 0.0000152587890625,
+                "rms": 0.0000026598170498308142,
+                "index": 1922,
+                "nonfinite_equal": true,
+                "reference": -48.036380767822266,
+                "actual": -48.03639602661133,
+                "same_length": true,
+                "scope": "",
+                "step": 0
+              },
+              "attention": {
+                "max_abs": 0.00000286102294921875,
+                "rms": 2.0968360329955905e-7,
+                "index": 259,
+                "nonfinite_equal": true,
+                "reference": 0.5750477910041809,
+                "actual": 0.5750506520271301,
+                "same_length": true,
+                "scope": "",
+                "step": 56
+              }
+            }
+          },
+          "r2_predict": {
+            "calls": 1548,
+            "seconds": 0.07063422599979097,
+            "max_abs": 0.0000133514404296875,
+            "outputs": {
+              "hands": {
+                "max_abs": 0.0000030994415283203125,
+                "rms": 6.20857834135958e-7,
+                "index": 126,
+                "nonfinite_equal": true,
+                "reference": 3.9587159156799316,
+                "actual": 3.9587128162384033,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 761
+              },
+              "action_logits": {
+                "max_abs": 0.0000133514404296875,
+                "rms": 0.0000034203596582377235,
+                "index": 384,
+                "nonfinite_equal": true,
+                "reference": -16.89899444580078,
+                "actual": -16.89898109436035,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 530
+              }
+            }
+          },
+          "r2_commit": {
+            "calls": 1546,
+            "seconds": 1.691861577000205,
+            "max_abs": 0.000006198883056640625,
+            "outputs": {
+              "next_last": {
+                "max_abs": 0.000006198883056640625,
+                "rms": 9.905339113872564e-7,
+                "index": 99,
+                "nonfinite_equal": true,
+                "reference": -6.739010334014893,
+                "actual": -6.739004135131836,
+                "same_length": true,
+                "scope": "r2_pass_2",
+                "step": 1231
+              },
+              "next_rows": {
+                "max_abs": 0,
+                "rms": 0,
+                "index": -1,
+                "nonfinite_equal": true,
+                "reference": null,
+                "actual": null,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 0
+              },
+              "next_buffer_0": {
+                "max_abs": 0.0000016689300537109375,
+                "rms": 1.7081833733298842e-7,
+                "index": 483,
+                "nonfinite_equal": true,
+                "reference": -3.1981358528137207,
+                "actual": -3.198134183883667,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 223
+              },
+              "next_buffer_1": {
+                "max_abs": 0.0000025033950805664062,
+                "rms": 1.9480871047156893e-7,
+                "index": 902,
+                "nonfinite_equal": true,
+                "reference": 1.740741491317749,
+                "actual": 1.7407389879226685,
+                "same_length": true,
+                "scope": "r2_pass_2",
+                "step": 1081
+              },
+              "next_buffer_2": {
+                "max_abs": 0.00000286102294921875,
+                "rms": 1.8534888618052311e-7,
+                "index": 1972,
+                "nonfinite_equal": true,
+                "reference": -3.2165122032165527,
+                "actual": -3.2165093421936035,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 54
+              },
+              "next_buffer_3": {
+                "max_abs": 0.00000286102294921875,
+                "rms": 1.2918486819573296e-7,
+                "index": 3962,
+                "nonfinite_equal": true,
+                "reference": 2.4023799896240234,
+                "actual": 2.4023828506469727,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 29
+              },
+              "next_buffer_4": {
+                "max_abs": 0.0000030994415283203125,
+                "rms": 1.0755205119686152e-7,
+                "index": 7948,
+                "nonfinite_equal": true,
+                "reference": 3.0279064178466797,
+                "actual": 3.0279033184051514,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 484
+              },
+              "next_buffer_5": {
+                "max_abs": 0.0000035762786865234375,
+                "rms": 7.835837612211644e-8,
+                "index": 16204,
+                "nonfinite_equal": true,
+                "reference": 2.0553395748138428,
+                "actual": 2.0553359985351562,
+                "same_length": true,
+                "scope": "r2_pass_2",
+                "step": 886
+              },
+              "next_buffer_6": {
+                "max_abs": 0.000003635883331298828,
+                "rms": 5.97154787656097e-8,
+                "index": 32543,
+                "nonfinite_equal": true,
+                "reference": 0.7999234199523926,
+                "actual": 0.7999197840690613,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 56
+              },
+              "next_buffer_7": {
+                "max_abs": 0.0000036954879760742188,
+                "rms": 5.015545948115323e-8,
+                "index": 65366,
+                "nonfinite_equal": true,
+                "reference": -1.7955743074417114,
+                "actual": -1.7955780029296875,
+                "same_length": true,
+                "scope": "r2_pass_2",
+                "step": 1186
+              }
+            }
+          },
+          "r2_release": {
+            "calls": 35,
+            "seconds": 0.011384873000031803,
+            "max_abs": 0.000091552734375,
+            "outputs": {
+              "release_scores": {
+                "max_abs": 0.000091552734375,
+                "rms": 0.000022440602440089228,
+                "index": 854,
+                "nonfinite_equal": true,
+                "reference": -87.24970245361328,
+                "actual": -87.2496109008789,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 18
+              }
+            }
+          }
+        }
+      },
+      "stage2": {
+        "passed": true,
+        "max_offset_error_ms": 0.00000935203570406884,
+        "segments": [
+          [
+            1659.2850628721228,
+            631.3408705352041,
+            4
+          ],
+          [
+            29449.019437683895,
+            631.4968588082996,
+            4
+          ],
+          [
+            105656.8441781856,
+            483.8709677419355,
+            4
+          ]
+        ]
+      },
+      "stage3": {
+        "passed": true,
+        "heads": 773,
+        "recorded_heads": 773
+      },
+      "stage4": {
+        "passed": true,
+        "prior_max_error": 0,
+        "draws_consumed": 3331,
+        "draws_recorded": 3331,
+        "passes": [
+          {
+            "multiplier": 0.9864209795304626,
+            "achieved": 1.437874697048943,
+            "fallback_count": 0,
+            "wall_seconds": 1.1800978750000068
+          },
+          {
+            "multiplier": 1.0305045271308024,
+            "achieved": 1.5244714389179483,
+            "fallback_count": 0,
+            "wall_seconds": 1.2222850409999955
+          }
+        ]
+      },
+      "replay_seconds": {
+        "pcm": 0.8031048329999904,
+        "spectrogram": 0.14951579200002016,
+        "beatthis": 14.948658917000023,
+        "mel": 0.4918930419999815,
+        "grid": 0.11773395799999707,
+        "rows": 0.25343945900001563,
+        "prior": 0.0005242910000088159,
+        "arrangement": 2.402437124999997,
+        "export": 0.0006027089999988675,
+        "total": 19.174287791999987
+      },
+      "phases": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "stage5": {
+        "passed": true,
+        "hitobjects_identical": true,
+        "objects": 1192,
+        "timing_points": 3,
+        "timing_max_abs_ms": 1.1690531209751498e-8,
+        "rest_identical": true,
+        "osu_identical_except_generator": false,
+        "first_text_difference": {
+          "line": 15,
+          "actual": "1659,631.3408705352041,4,2,0,100,1,0",
+          "reference": "1659,631.3408705468946,4,2,0,100,1,0"
+        },
+        "osz_bytes": 7186
+      },
+      "prng": {
+        "passed": true,
+        "algorithm": "mulberry32-u53-v1",
+        "seed": 0,
+        "objects": 911,
+        "heads": 631,
+        "fallbacks": 0,
+        "seconds": {
+          "pcm": 0.862478792000009,
+          "spectrogram": 0.1554790829999838,
+          "beatthis": 14.496459292000013,
+          "mel": 0.4642020419999899,
+          "grid": 0.10257749999998486,
+          "rows": 0.33929850000000444,
+          "prior": 0.0003819579999835696,
+          "arrangement": 1.9748740420000104,
+          "export": 0.00047062499998719434,
+          "total": 18.40385383400001
+        },
+        "wall_seconds": 18.410780874999997
+      }
+    },
+    "adventure": {
+      "stage1": {
+        "passed": true,
+        "networks": {
+          "beatthis": {
+            "calls": 7,
+            "seconds": 20.486462708000037,
+            "max_abs": 0.00011730194091796875,
+            "outputs": {
+              "beat_logits": {
+                "max_abs": 0.00011730194091796875,
+                "rms": 0.000007599959956727094,
+                "index": 852,
+                "nonfinite_equal": true,
+                "reference": 7.226903915405273,
+                "actual": 7.2267866134643555,
+                "same_length": true,
+                "scope": "",
+                "step": 4
+              },
+              "downbeat_logits": {
+                "max_abs": 0.00008296966552734375,
+                "rms": 0.0000065638689595053395,
+                "index": 781,
+                "nonfinite_equal": true,
+                "reference": 8.462101936340332,
+                "actual": 8.462018966674805,
+                "same_length": true,
+                "scope": "",
+                "step": 2
+              }
+            }
+          },
+          "rows_encoder": {
+            "calls": 1,
+            "seconds": 0.08537145800000871,
+            "max_abs": 0.000022411346435546875,
+            "outputs": {
+              "pos": {
+                "max_abs": 0.00000858306884765625,
+                "rms": 6.066157627052408e-7,
+                "index": 2414,
+                "nonfinite_equal": true,
+                "reference": 14.768309593200684,
+                "actual": 14.768301010131836,
+                "same_length": true,
+                "scope": "",
+                "step": 0
+              },
+              "context": {
+                "max_abs": 0.000019669532775878906,
+                "rms": 0.0000018680941261111822,
+                "index": 54437,
+                "nonfinite_equal": true,
+                "reference": -0.4066482186317444,
+                "actual": -0.40666788816452026,
+                "same_length": true,
+                "scope": "",
+                "step": 0
+              },
+              "query": {
+                "max_abs": 0.0000209808349609375,
+                "rms": 0.0000027841392254134593,
+                "index": 20987,
+                "nonfinite_equal": true,
+                "reference": 1.6112700700759888,
+                "actual": 1.6112490892410278,
+                "same_length": true,
+                "scope": "",
+                "step": 0
+              },
+              "key": {
+                "max_abs": 0.000022411346435546875,
+                "rms": 0.0000028163451397142508,
+                "index": 27227,
+                "nonfinite_equal": true,
+                "reference": 2.896097183227539,
+                "actual": 2.8961195945739746,
+                "same_length": true,
+                "scope": "",
+                "step": 0
+              }
+            }
+          },
+          "rows_step": {
+            "calls": 427,
+            "seconds": 0.046443040999642055,
+            "max_abs": 0.0000152587890625,
+            "outputs": {
+              "hidden_out": {
+                "max_abs": 0.0000019073486328125,
+                "rms": 2.1109842044763157e-7,
+                "index": 187,
+                "nonfinite_equal": true,
+                "reference": -0.12200027704238892,
+                "actual": -0.1219983696937561,
+                "same_length": true,
+                "scope": "",
+                "step": 112
+              },
+              "hb": {
+                "max_abs": 0.0000019073486328125,
+                "rms": 2.1109842044763157e-7,
+                "index": 187,
+                "nonfinite_equal": true,
+                "reference": -0.12200027704238892,
+                "actual": -0.1219983696937561,
+                "same_length": true,
+                "scope": "",
+                "step": 112
+              },
+              "logits": {
+                "max_abs": 0.0000152587890625,
+                "rms": 0.000005284815374071473,
+                "index": 262,
+                "nonfinite_equal": true,
+                "reference": -36.16305160522461,
+                "actual": -36.16306686401367,
+                "same_length": true,
+                "scope": "",
+                "step": 424
+              },
+              "scores": {
+                "max_abs": 0.00000286102294921875,
+                "rms": 3.1762332796711766e-7,
+                "index": 195,
+                "nonfinite_equal": true,
+                "reference": 13.391674995422363,
+                "actual": 13.391677856445312,
+                "same_length": true,
+                "scope": "",
+                "step": 42
+              },
+              "gate": {
+                "max_abs": 5.364418029785156e-7,
+                "rms": 2.902537440302807e-7,
+                "index": 4,
+                "nonfinite_equal": true,
+                "reference": 0.5261337161064148,
+                "actual": 0.5261342525482178,
+                "same_length": true,
+                "scope": "",
+                "step": 113
+              },
+              "logp": {
+                "max_abs": 0.0000152587890625,
+                "rms": 0.0000028560827350736307,
+                "index": 3147,
+                "nonfinite_equal": true,
+                "reference": -44.73985290527344,
+                "actual": -44.7398681640625,
+                "same_length": true,
+                "scope": "",
+                "step": 49
+              },
+              "attention": {
+                "max_abs": 0.000002771615982055664,
+                "rms": 2.2086187190517497e-7,
+                "index": 259,
+                "nonfinite_equal": true,
+                "reference": 0.4901408553123474,
+                "actual": 0.49014362692832947,
+                "same_length": true,
+                "scope": "",
+                "step": 191
+              }
+            }
+          },
+          "r2_predict": {
+            "calls": 1704,
+            "seconds": 0.07713466199950199,
+            "max_abs": 0.0000152587890625,
+            "outputs": {
+              "hands": {
+                "max_abs": 0.000003337860107421875,
+                "rms": 5.564009702586096e-7,
+                "index": 126,
+                "nonfinite_equal": true,
+                "reference": 3.8562047481536865,
+                "actual": 3.856208086013794,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 413
+              },
+              "action_logits": {
+                "max_abs": 0.0000152587890625,
+                "rms": 0.000005928340174565139,
+                "index": 159,
+                "nonfinite_equal": true,
+                "reference": -17.087251663208008,
+                "actual": -17.08726692199707,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 383
+              }
+            }
+          },
+          "r2_commit": {
+            "calls": 1703,
+            "seconds": 1.8615477919988876,
+            "max_abs": 0.0000069141387939453125,
+            "outputs": {
+              "next_last": {
+                "max_abs": 0.0000069141387939453125,
+                "rms": 9.54406746818809e-7,
+                "index": 227,
+                "nonfinite_equal": true,
+                "reference": -2.7290375232696533,
+                "actual": -2.7290306091308594,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 292
+              },
+              "next_rows": {
+                "max_abs": 0,
+                "rms": 0,
+                "index": -1,
+                "nonfinite_equal": true,
+                "reference": null,
+                "actual": null,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 0
+              },
+              "next_buffer_0": {
+                "max_abs": 0.000001430511474609375,
+                "rms": 2.463579269130878e-7,
+                "index": 303,
+                "nonfinite_equal": true,
+                "reference": -2.772548198699951,
+                "actual": -2.772549629211426,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 773
+              },
+              "next_buffer_1": {
+                "max_abs": 0.0000029802322387695312,
+                "rms": 1.9448726543426953e-7,
+                "index": 911,
+                "nonfinite_equal": true,
+                "reference": -1.3624407052993774,
+                "actual": -1.3624436855316162,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 456
+              },
+              "next_buffer_2": {
+                "max_abs": 0.00000286102294921875,
+                "rms": 1.922171907250353e-7,
+                "index": 1872,
+                "nonfinite_equal": true,
+                "reference": -2.3248651027679443,
+                "actual": -2.324862241744995,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 660
+              },
+              "next_buffer_3": {
+                "max_abs": 0.0000035762786865234375,
+                "rms": 1.5321141218220287e-7,
+                "index": 3864,
+                "nonfinite_equal": true,
+                "reference": -2.2337284088134766,
+                "actual": -2.23372483253479,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 209
+              },
+              "next_buffer_4": {
+                "max_abs": 0.000003337860107421875,
+                "rms": 1.1964445101029622e-7,
+                "index": 8176,
+                "nonfinite_equal": true,
+                "reference": 1.2697631120681763,
+                "actual": 1.2697664499282837,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 734
+              },
+              "next_buffer_5": {
+                "max_abs": 0.000003159046173095703,
+                "rms": 7.793300719237933e-8,
+                "index": 16335,
+                "nonfinite_equal": true,
+                "reference": -0.3779022991657257,
+                "actual": -0.3779054582118988,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 1519
+              },
+              "next_buffer_6": {
+                "max_abs": 0.000003814697265625,
+                "rms": 6.913350743420841e-8,
+                "index": 32603,
+                "nonfinite_equal": true,
+                "reference": -1.0741212368011475,
+                "actual": -1.074125051498413,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 150
+              },
+              "next_buffer_7": {
+                "max_abs": 0.000003814697265625,
+                "rms": 5.02610344116935e-8,
+                "index": 65495,
+                "nonfinite_equal": true,
+                "reference": 1.5825872421264648,
+                "actual": 1.5825834274291992,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 203
+              }
+            }
+          },
+          "r2_release": {
+            "calls": 15,
+            "seconds": 0.0037575840000936295,
+            "max_abs": 0.00002288818359375,
+            "outputs": {
+              "release_scores": {
+                "max_abs": 0.00002288818359375,
+                "rms": 0.000011277015795705763,
+                "index": 5,
+                "nonfinite_equal": true,
+                "reference": 57.827972412109375,
+                "actual": 57.82799530029297,
+                "same_length": true,
+                "scope": "r2_pass_1",
+                "step": 7
+              }
+            }
+          }
+        }
+      },
+      "stage2": {
+        "passed": true,
+        "max_offset_error_ms": 7.483213835257629e-7,
+        "segments": [
+          [
+            -23.535935908706513,
+            468.75,
+            4
+          ]
+        ]
+      },
+      "stage3": {
+        "passed": true,
+        "heads": 1703,
+        "recorded_heads": 1703
+      },
+      "stage4": {
+        "passed": true,
+        "prior_max_error": 0,
+        "draws_consumed": 3850,
+        "draws_recorded": 3850,
+        "passes": [
+          {
+            "multiplier": 1.0227338165214293,
+            "achieved": 1.502286623823186,
+            "fallback_count": 0,
+            "wall_seconds": 2.40009495899998
+          }
+        ]
+      },
+      "replay_seconds": {
+        "pcm": 3.012359999999986,
+        "spectrogram": 0.24655833299999358,
+        "beatthis": 19.831453125,
+        "mel": 0.7451040829999838,
+        "grid": 0.2345684590000019,
+        "rows": 0.44281704199998057,
+        "prior": 0.0008146659999911207,
+        "arrangement": 2.4001347079999977,
+        "export": 0.0010040419999859296,
+        "total": 26.941502083
+      },
+      "phases": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "stage5": {
+        "passed": true,
+        "hitobjects_identical": true,
+        "objects": 2557,
+        "timing_points": 1,
+        "timing_max_abs_ms": 0,
+        "rest_identical": true,
+        "osu_identical_except_generator": true,
+        "first_text_difference": null,
+        "osz_bytes": 11240
+      },
+      "prng": {
+        "passed": true,
+        "algorithm": "mulberry32-u53-v1",
+        "seed": 0,
+        "objects": 2210,
+        "heads": 1399,
+        "fallbacks": 0,
+        "seconds": {
+          "pcm": 3.0214405830000177,
+          "spectrogram": 0.24618612500000744,
+          "beatthis": 19.707980500000005,
+          "mel": 0.7440834580000083,
+          "grid": 0.23651841700001386,
+          "rows": 0.7017267080000019,
+          "prior": 0.0006787499999918509,
+          "arrangement": 4.039039250000002,
+          "export": 0.0008614589999779127,
+          "total": 28.718983791000035
+        },
+        "wall_seconds": 28.738106458000026
+      }
+    }
+  },
+  "passed": true,
+  "load_seconds": 0.5012745
+}
