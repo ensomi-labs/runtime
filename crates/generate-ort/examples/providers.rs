@@ -1,5 +1,5 @@
 //! Measures ONNX Runtime configurations on the four release songs: per song, the time to open the model,
-//! the total and per-stage generation time, physical footprint (after opening the model, peak before the
+//! the total and per-stage generation time, physical footprint (after opening the model, at each phase, peak before the
 //! first generation, which holds the recording, and peak overall), and whether the chart equals the CPU
 //! chart for the same PCM and seed. Each configuration and song runs in its own process, so peak memory is its own;
 //! each process generates twice, to show the cost of the first run.
@@ -10,10 +10,11 @@
 //!
 //! Usage: providers --model-dir <ensomi-r2> --reference <runtime-ref> --assets <resampler tables>
 //!        --out <report.json> [--charts <dir>] [--configs cpu,coreml,...] [song...]
-//! `--charts` receives each song's CPU `.osu` and its request.
+//! `--charts` receives each song's CPU `.osu` and its request. A run adds its configurations to an existing
+//! report and compares with the CPU charts already in `--charts`.
 use ensomi_generate::{generate, Audio, Models, Options, Request, Samples};
 use ensomi_generate_ort::recording::Recording;
-use ensomi_generate_ort::{drive, package, phase_name, Config, Sessions, Timings};
+use ensomi_generate_ort::{drive_observed, package, phase_name, Config, Sessions, Timings};
 use serde_json::{json, Map, Value};
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -21,15 +22,16 @@ use std::rc::Rc;
 use std::time::Instant;
 
 const SONGS: [&str; 4] = ["hesitation-snow", "saigetsu", "catch-the-moment", "adventure"];
-const CONFIGS: [&str; 4] = ["cpu", "cpu-threads", "coreml", "coreml-beatthis"];
+const CONFIGS: [&str; 5] = ["cpu", "cpu-threads", "cpu-lean", "coreml-beatthis", "coreml"];
 
 fn config(name: &str, models: &Models) -> Config {
     let all: Vec<String> = models.graphs.iter().map(|g| g.name.clone()).collect();
     let beatthis = vec!["beatthis".to_string()];
-    let coreml = |graphs: Vec<String>, units: &str, format: &str| Config { coreml_graphs: graphs, coreml_units: units.to_string(), coreml_format: format.to_string(), threads: 1 };
+    let coreml = |graphs: Vec<String>, units: &str, format: &str| Config { coreml_graphs: graphs, coreml_units: units.to_string(), coreml_format: format.to_string(), ..Config::default() };
     match name {
         "cpu" => Config::default(),
         "cpu-threads" => Config { threads: 0, ..Config::default() },
+        "cpu-lean" => Config { reuse_memory: false, ..Config::default() },
         "coreml" => coreml(all, "ALL", "MLProgram"),
         "coreml-beatthis" => coreml(beatthis, "ALL", "MLProgram"),
         "coreml-beatthis-gpu" => coreml(beatthis, "CPUAndGPU", "MLProgram"),
@@ -110,9 +112,18 @@ fn child(paths: &Paths, name: &str, song: &str) -> Value {
         let options = Options { random: None, setting: None, audio_name: None, trace: None, clock: Rc::new(move || clock_start.elapsed().as_secs_f64() * 1000.0) };
         let started = Instant::now();
         let mut generator = generate(models.clone(), audio, request, options);
-        let (result, timings) = drive(&mut generator, &mut sessions).unwrap();
+        // The footprint as each phase starts and at the end, in MiB.
+        let mut footprints = Map::new();
+        let (result, timings) = drive_observed(&mut generator, &mut sessions, |phase| {
+            if let Some(phase) = phase {
+                footprints.insert(phase_name(phase as usize).to_string(), json!(footprint().0 >> 20));
+            }
+            Ok(())
+        })
+        .unwrap();
+        footprints.insert("done".to_string(), json!(footprint().0 >> 20));
         let receipt: Value = serde_json::from_str(&result.receipt.receipt_json).unwrap();
-        runs.push(json!({"wall_seconds": started.elapsed().as_secs_f64(), "stages": receipt["seconds"], "timings": timings_json(&timings)}));
+        runs.push(json!({"wall_seconds": started.elapsed().as_secs_f64(), "stages": receipt["seconds"], "timings": timings_json(&timings), "footprint_mib_at_phase": footprints}));
         objects = result.chart.objects.len();
         osu = result.osu;
     }
@@ -153,12 +164,18 @@ fn main() {
         return;
     }
     let out = out.expect("--out");
-    let mut report = Map::new();
+    // Runs add to an existing report, and compare with the CPU charts already in `--charts`.
+    let mut report: Map<String, Value> = std::fs::read(&out).ok().and_then(|bytes| serde_json::from_slice(&bytes).ok()).unwrap_or_default();
     report.insert("ort".into(), json!("onnxruntime 1.23.2 (ort 2.0.0-rc.11)"));
     report.insert("input".into(), json!("recorded audio PCM, channels averaged in float64 and rounded to float32, at the recorded rate; no frontend streams"));
     report.insert("request".into(), json!("star, seed, title and artist of the release example receipt; no controls"));
     let mut cpu_osu: Map<String, Value> = Map::new();
-    let mut results = Map::new();
+    for song in &songs {
+        if let Some(osu) = charts.as_ref().and_then(|dir| std::fs::read_to_string(dir.join(format!("{song}.osu"))).ok()) {
+            cpu_osu.insert(song.clone(), json!(osu));
+        }
+    }
+    let mut results = report.get("configs").and_then(Value::as_object).cloned().unwrap_or_default();
     for name in &configs {
         let mut rows = Map::new();
         for song in &songs {

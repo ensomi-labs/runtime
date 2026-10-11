@@ -1,0 +1,2797 @@
+{
+  "ort": "onnxruntime 1.23.2 (ort 2.0.0-rc.11)",
+  "input": "recorded audio PCM, channels averaged in float64 and rounded to float32, at the recorded rate; no frontend streams",
+  "request": "star, seed, title and artist of the release example receipt; no controls",
+  "configs": {
+    "cpu": {
+      "hesitation-snow": {
+        "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: true }",
+        "load_seconds": 0.232173709,
+        "runs": [
+          {
+            "wall_seconds": 6.126553583,
+            "stages": {
+              "pcm": 1.2103966659999998,
+              "spectrogram": 0.12599466699999995,
+              "beatthis": 3.817828542,
+              "mel": 0.31961662499999877,
+              "grid": 0.15713737500000025,
+              "rows": 0.11485341700000026,
+              "prior": 0.00008045799999945303,
+              "arrangement": 0.3713301249999995,
+              "export": 0.0003231249999998909,
+              "total": 6.124606915999999
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.00189375,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 1.21739825,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.6029924149999999,
+                  "graph_seconds": 3.817585334
+                },
+                "rows": {
+                  "core_seconds": 0.042468464,
+                  "graph_seconds": 0.07236212
+                },
+                "arrangement": {
+                  "core_seconds": 0.020882353999999975,
+                  "graph_seconds": 0.35044438799999944
+                },
+                "export": {
+                  "core_seconds": 0.000352541,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 6,
+                  "seconds": 3.817585334
+                },
+                "r2_commit": {
+                  "calls": 767,
+                  "seconds": 0.32225249999999994
+                },
+                "r2_predict": {
+                  "calls": 768,
+                  "seconds": 0.027277263000000055
+                },
+                "r2_release": {
+                  "calls": 11,
+                  "seconds": 0.000914625
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.032529417
+                },
+                "rows_step": {
+                  "calls": 374,
+                  "seconds": 0.03983270300000002
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 230,
+              "timing": 321,
+              "rows": 1954,
+              "arrangement": 1976,
+              "export": 1979,
+              "done": 1979
+            }
+          },
+          {
+            "wall_seconds": 5.983157333,
+            "stages": {
+              "pcm": 1.218256958,
+              "spectrogram": 0.12428687499999978,
+              "beatthis": 3.667897333,
+              "mel": 0.318931458,
+              "grid": 0.15606887499999994,
+              "rows": 0.11274537500000043,
+              "prior": 0.00008325000000058935,
+              "arrangement": 0.3751221659999992,
+              "export": 0.0003113329999996495,
+              "total": 5.980955290999999
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.002159,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 1.2254758749999999,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.59954675,
+                  "graph_seconds": 3.6676367930000002
+                },
+                "rows": {
+                  "core_seconds": 0.04161029500000001,
+                  "graph_seconds": 0.071112907
+                },
+                "arrangement": {
+                  "core_seconds": 0.02155154299999998,
+                  "graph_seconds": 0.3535689180000005
+                },
+                "export": {
+                  "core_seconds": 0.000339084,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 6,
+                  "seconds": 3.6676367930000002
+                },
+                "r2_commit": {
+                  "calls": 767,
+                  "seconds": 0.3251024240000001
+                },
+                "r2_predict": {
+                  "calls": 768,
+                  "seconds": 0.02758811799999998
+                },
+                "r2_release": {
+                  "calls": 11,
+                  "seconds": 0.0008783759999999999
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.031339875
+                },
+                "rows_step": {
+                  "calls": 374,
+                  "seconds": 0.03977303200000003
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 2010,
+              "timing": 2072,
+              "rows": 2084,
+              "arrangement": 2084,
+              "export": 2084,
+              "done": 2084
+            }
+          }
+        ],
+        "objects": 1059,
+        "footprint_after_load_bytes": 206652208,
+        "peak_footprint_before_generation_bytes": 595395664,
+        "peak_footprint_bytes": 2185775456,
+        "sample_rate": 48000.0,
+        "request": {
+          "star": 2.5,
+          "title": "Hesitation Snow -version 2024- (Cut Ver.)",
+          "artist": "fripSide"
+        },
+        "seed": 0,
+        "same_hit_objects_as_cpu": true,
+        "same_osu_as_cpu": true
+      },
+      "saigetsu": {
+        "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: true }",
+        "load_seconds": 0.200968375,
+        "runs": [
+          {
+            "wall_seconds": 5.254533208,
+            "stages": {
+              "pcm": 0.8903606249999999,
+              "spectrogram": 0.10078062499999998,
+              "beatthis": 3.0891939170000007,
+              "mel": 0.258451540999999,
+              "grid": 0.06712266699999964,
+              "rows": 0.07614612500000022,
+              "prior": 0.00007304199999907723,
+              "arrangement": 0.7651463750000012,
+              "export": 0.00037133300000095914,
+              "total": 5.253042334
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.001443042,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 0.895720125,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.42660971000000003,
+                  "graph_seconds": 3.0889379989999997
+                },
+                "rows": {
+                  "core_seconds": 0.026878925,
+                  "graph_seconds": 0.04925275599999998
+                },
+                "arrangement": {
+                  "core_seconds": 0.04288544699999966,
+                  "graph_seconds": 0.7221526149999975
+                },
+                "export": {
+                  "core_seconds": 0.000401959,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 5,
+                  "seconds": 3.0889379989999997
+                },
+                "r2_commit": {
+                  "calls": 1610,
+                  "seconds": 0.6646366899999996
+                },
+                "r2_predict": {
+                  "calls": 1612,
+                  "seconds": 0.05616479900000001
+                },
+                "r2_release": {
+                  "calls": 19,
+                  "seconds": 0.0013511259999999998
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.024640708
+                },
+                "rows_step": {
+                  "calls": 228,
+                  "seconds": 0.024612048000000015
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 252,
+              "timing": 310,
+              "rows": 1955,
+              "arrangement": 1974,
+              "export": 1977,
+              "done": 1977
+            }
+          },
+          {
+            "wall_seconds": 5.15334275,
+            "stages": {
+              "pcm": 0.8942783750000001,
+              "spectrogram": 0.1003811669999999,
+              "beatthis": 2.9931606250000002,
+              "mel": 0.2536656659999999,
+              "grid": 0.06594229200000064,
+              "rows": 0.07380650000000151,
+              "prior": 0.00007370799999989686,
+              "arrangement": 0.764904958,
+              "export": 0.00037895799999932935,
+              "total": 5.151867542
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.001430834,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 0.8995295,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.420168751,
+                  "graph_seconds": 2.9929796260000003
+                },
+                "rows": {
+                  "core_seconds": 0.025640717000000004,
+                  "graph_seconds": 0.04815103799999996
+                },
+                "arrangement": {
+                  "core_seconds": 0.04343259499999953,
+                  "graph_seconds": 0.7213712750000006
+                },
+                "export": {
+                  "core_seconds": 0.000407625,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 5,
+                  "seconds": 2.9929796260000003
+                },
+                "r2_commit": {
+                  "calls": 1610,
+                  "seconds": 0.6643698250000025
+                },
+                "r2_predict": {
+                  "calls": 1612,
+                  "seconds": 0.05571323899999999
+                },
+                "r2_release": {
+                  "calls": 19,
+                  "seconds": 0.001288211
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.023882958
+                },
+                "rows_step": {
+                  "calls": 228,
+                  "seconds": 0.024268080000000018
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 1977,
+              "timing": 2022,
+              "rows": 2025,
+              "arrangement": 2032,
+              "export": 2032,
+              "done": 2032
+            }
+          }
+        ],
+        "objects": 1295,
+        "footprint_after_load_bytes": 205832984,
+        "peak_footprint_before_generation_bytes": 545752096,
+        "peak_footprint_bytes": 2131233024,
+        "sample_rate": 44100.0,
+        "request": {
+          "star": 3.5,
+          "title": "SaiGetsu (Cut Ver.)",
+          "artist": "Otokaze"
+        },
+        "seed": 0,
+        "same_hit_objects_as_cpu": true,
+        "same_osu_as_cpu": true
+      },
+      "catch-the-moment": {
+        "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: true }",
+        "load_seconds": 0.199359292,
+        "runs": [
+          {
+            "wall_seconds": 5.024976166,
+            "stages": {
+              "pcm": 0.808417584,
+              "spectrogram": 0.09065491700000007,
+              "beatthis": 3.1166053750000002,
+              "mel": 0.23409829200000104,
+              "grid": 0.09501095899999927,
+              "rows": 0.06718345899999986,
+              "prior": 0.00007716600000003381,
+              "arrangement": 0.606393833,
+              "export": 0.0002929589999994278,
+              "total": 5.023611583
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.001316041,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 0.81326075,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.41996075,
+                  "graph_seconds": 3.1164085819999996
+                },
+                "rows": {
+                  "core_seconds": 0.023144910999999994,
+                  "graph_seconds": 0.04402412899999999
+                },
+                "arrangement": {
+                  "core_seconds": 0.03478919799999995,
+                  "graph_seconds": 0.5715421420000001
+                },
+                "export": {
+                  "core_seconds": 0.000325791,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 5,
+                  "seconds": 3.1164085819999996
+                },
+                "r2_commit": {
+                  "calls": 1262,
+                  "seconds": 0.523240134
+                },
+                "r2_predict": {
+                  "calls": 1264,
+                  "seconds": 0.04391359200000005
+                },
+                "r2_release": {
+                  "calls": 65,
+                  "seconds": 0.004388416
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.022628917
+                },
+                "rows_step": {
+                  "calls": 200,
+                  "seconds": 0.021395211999999997
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 247,
+              "timing": 299,
+              "rows": 1944,
+              "arrangement": 1953,
+              "export": 1956,
+              "done": 1956
+            }
+          },
+          {
+            "wall_seconds": 4.901845417,
+            "stages": {
+              "pcm": 0.8139204999999999,
+              "spectrogram": 0.09083799999999996,
+              "beatthis": 2.998914042,
+              "mel": 0.23261870899999984,
+              "grid": 0.09332387500000004,
+              "rows": 0.06463095799999882,
+              "prior": 0.00007458399999995891,
+              "arrangement": 0.6007609589999993,
+              "export": 0.0002890830000005735,
+              "total": 4.900507
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.001291875,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 0.819031792,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.416947457,
+                  "graph_seconds": 2.998746126
+                },
+                "rows": {
+                  "core_seconds": 0.022152259999999997,
+                  "graph_seconds": 0.042466172
+                },
+                "arrangement": {
+                  "core_seconds": 0.034966564000000026,
+                  "graph_seconds": 0.5657326899999986
+                },
+                "export": {
+                  "core_seconds": 0.000319708,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 5,
+                  "seconds": 2.998746126
+                },
+                "r2_commit": {
+                  "calls": 1262,
+                  "seconds": 0.5178931989999996
+                },
+                "r2_predict": {
+                  "calls": 1264,
+                  "seconds": 0.043500913000000106
+                },
+                "r2_release": {
+                  "calls": 65,
+                  "seconds": 0.004338578000000001
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.021189083
+                },
+                "rows_step": {
+                  "calls": 200,
+                  "seconds": 0.021277088999999992
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 1956,
+              "timing": 1997,
+              "rows": 2012,
+              "arrangement": 2012,
+              "export": 2015,
+              "done": 2015
+            }
+          }
+        ],
+        "objects": 911,
+        "footprint_after_load_bytes": 206291736,
+        "peak_footprint_before_generation_bytes": 524289056,
+        "peak_footprint_bytes": 2113046808,
+        "sample_rate": 44100.0,
+        "request": {
+          "star": 3.5,
+          "title": "Catch the Moment",
+          "artist": "LiSA"
+        },
+        "seed": 0,
+        "same_hit_objects_as_cpu": true,
+        "same_osu_as_cpu": true
+      },
+      "adventure": {
+        "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: true }",
+        "load_seconds": 0.204772041,
+        "runs": [
+          {
+            "wall_seconds": 9.573857584,
+            "stages": {
+              "pcm": 3.006578584,
+              "spectrogram": 0.14910945799999992,
+              "beatthis": 4.302930999999999,
+              "mel": 0.38694166700000004,
+              "grid": 0.20468116600000122,
+              "rows": 0.13553791700000056,
+              "prior": 0.00008641700000043784,
+              "arrangement": 1.3656680410000008,
+              "export": 0.0005735409999997501,
+              "total": 9.569310084
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.004497083,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 3.023745875,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.741010876,
+                  "graph_seconds": 4.302652417
+                },
+                "rows": {
+                  "core_seconds": 0.049132535000000026,
+                  "graph_seconds": 0.086380013
+                },
+                "arrangement": {
+                  "core_seconds": 0.07657619400000013,
+                  "graph_seconds": 1.2888576220000016
+                },
+                "export": {
+                  "core_seconds": 0.000606042,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 7,
+                  "seconds": 4.302652417
+                },
+                "r2_commit": {
+                  "calls": 2812,
+                  "seconds": 1.1699052669999974
+                },
+                "r2_predict": {
+                  "calls": 2814,
+                  "seconds": 0.0979292290000004
+                },
+                "r2_release": {
+                  "calls": 357,
+                  "seconds": 0.02102312600000002
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.040680542
+                },
+                "rows_step": {
+                  "calls": 427,
+                  "seconds": 0.045699470999999985
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 375,
+              "timing": 559,
+              "rows": 2195,
+              "arrangement": 2226,
+              "export": 2229,
+              "done": 2229
+            }
+          },
+          {
+            "wall_seconds": 9.458211125,
+            "stages": {
+              "pcm": 3.015388583,
+              "spectrogram": 0.15003141700000014,
+              "beatthis": 4.187603916,
+              "mel": 0.39443395899999995,
+              "grid": 0.20273050000000056,
+              "rows": 0.1309999999999991,
+              "prior": 0.00008608299999923474,
+              "arrangement": 1.359409417,
+              "export": 0.000575291000001016,
+              "total": 9.452890625
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.005271584,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 3.026983291,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.747499749,
+                  "graph_seconds": 4.187298666
+                },
+                "rows": {
+                  "core_seconds": 0.04767133599999998,
+                  "graph_seconds": 0.08330215399999999
+                },
+                "arrangement": {
+                  "core_seconds": 0.07600781399999984,
+                  "graph_seconds": 1.283168247999997
+                },
+                "export": {
+                  "core_seconds": 0.000607125,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 7,
+                  "seconds": 4.187298666
+                },
+                "r2_commit": {
+                  "calls": 2812,
+                  "seconds": 1.1651799790000024
+                },
+                "r2_predict": {
+                  "calls": 2814,
+                  "seconds": 0.09731798300000022
+                },
+                "r2_release": {
+                  "calls": 357,
+                  "seconds": 0.020670286000000024
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.038402209
+                },
+                "rows_step": {
+                  "calls": 427,
+                  "seconds": 0.044899945000000045
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 2304,
+              "timing": 2306,
+              "rows": 2353,
+              "arrangement": 2353,
+              "export": 2354,
+              "done": 2354
+            }
+          }
+        ],
+        "objects": 2225,
+        "footprint_after_load_bytes": 206013208,
+        "peak_footprint_before_generation_bytes": 1071629728,
+        "peak_footprint_bytes": 2469153264,
+        "sample_rate": 96000.0,
+        "request": {
+          "star": 4.5,
+          "title": "Adventure",
+          "artist": "YOASOBI"
+        },
+        "seed": 0,
+        "same_hit_objects_as_cpu": true,
+        "same_osu_as_cpu": true
+      }
+    },
+    "cpu-threads": {
+      "hesitation-snow": {
+        "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 0, reuse_memory: true }",
+        "load_seconds": 0.20655825,
+        "runs": [
+          {
+            "wall_seconds": 5.038652584,
+            "stages": {
+              "pcm": 1.220178875,
+              "spectrogram": 0.12395112499999981,
+              "beatthis": 2.5800644160000004,
+              "mel": 0.3537514170000004,
+              "grid": 0.15852208299999984,
+              "rows": 0.10522979099999975,
+              "prior": 0.00008912499999951251,
+              "arrangement": 0.48741874999999985,
+              "export": 0.00033174999999937427,
+              "total": 5.036666250000001
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.0019395,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 1.227253208,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.636459999,
+                  "graph_seconds": 2.5798281259999998
+                },
+                "rows": {
+                  "core_seconds": 0.04714754000000001,
+                  "graph_seconds": 0.05805740099999996
+                },
+                "arrangement": {
+                  "core_seconds": 0.02285840500000005,
+                  "graph_seconds": 0.464553305000001
+                },
+                "export": {
+                  "core_seconds": 0.000362042,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 6,
+                  "seconds": 2.5798281259999998
+                },
+                "r2_commit": {
+                  "calls": 767,
+                  "seconds": 0.4257848460000009
+                },
+                "r2_predict": {
+                  "calls": 768,
+                  "seconds": 0.03762195800000005
+                },
+                "r2_release": {
+                  "calls": 11,
+                  "seconds": 0.0011465009999999999
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.014938583
+                },
+                "rows_step": {
+                  "calls": 374,
+                  "seconds": 0.043118817999999996
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 231,
+              "timing": 322,
+              "rows": 2003,
+              "arrangement": 2034,
+              "export": 2036,
+              "done": 2036
+            }
+          },
+          {
+            "wall_seconds": 5.073886667,
+            "stages": {
+              "pcm": 1.218450125,
+              "spectrogram": 0.12434629099999983,
+              "beatthis": 2.554603041,
+              "mel": 0.3666133330000007,
+              "grid": 0.16986575000000084,
+              "rows": 0.10510804199999985,
+              "prior": 0.00008633299999928568,
+              "arrangement": 0.5239554580000003,
+              "export": 0.0003196250000009968,
+              "total": 5.071682708
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.002155917,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 1.226747167,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.661056957,
+                  "graph_seconds": 2.554370376
+                },
+                "rows": {
+                  "core_seconds": 0.04543703999999996,
+                  "graph_seconds": 0.05964583200000002
+                },
+                "arrangement": {
+                  "core_seconds": 0.023966317000000133,
+                  "graph_seconds": 0.49996890599999927
+                },
+                "export": {
+                  "core_seconds": 0.00035125,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 6,
+                  "seconds": 2.554370376
+                },
+                "r2_commit": {
+                  "calls": 767,
+                  "seconds": 0.45632323099999933
+                },
+                "r2_predict": {
+                  "calls": 768,
+                  "seconds": 0.04239188299999996
+                },
+                "r2_release": {
+                  "calls": 11,
+                  "seconds": 0.001253792
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.0134345
+                },
+                "rows_step": {
+                  "calls": 374,
+                  "seconds": 0.04621133200000002
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 2066,
+              "timing": 2127,
+              "rows": 2139,
+              "arrangement": 2139,
+              "export": 2139,
+              "done": 2139
+            }
+          }
+        ],
+        "objects": 1059,
+        "footprint_after_load_bytes": 206979864,
+        "peak_footprint_before_generation_bytes": 595559504,
+        "peak_footprint_bytes": 2243529128,
+        "sample_rate": 48000.0,
+        "request": {
+          "star": 2.5,
+          "title": "Hesitation Snow -version 2024- (Cut Ver.)",
+          "artist": "fripSide"
+        },
+        "seed": 0,
+        "same_hit_objects_as_cpu": true,
+        "same_osu_as_cpu": true
+      },
+      "saigetsu": {
+        "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 0, reuse_memory: true }",
+        "load_seconds": 0.221287083,
+        "runs": [
+          {
+            "wall_seconds": 4.839962625,
+            "stages": {
+              "pcm": 0.906333083,
+              "spectrogram": 0.1143343749999999,
+              "beatthis": 2.1909896669999998,
+              "mel": 0.30652183300000024,
+              "grid": 0.0726530829999997,
+              "rows": 0.06687312500000053,
+              "prior": 0.00008108300000048985,
+              "arrangement": 1.1745929999999998,
+              "export": 0.0004132500000005166,
+              "total": 4.838418375
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.001492417,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 0.911917,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.493691,
+                  "graph_seconds": 2.190807
+                },
+                "rows": {
+                  "core_seconds": 0.028484627999999998,
+                  "graph_seconds": 0.038373122999999995
+                },
+                "arrangement": {
+                  "core_seconds": 0.055242781999999956,
+                  "graph_seconds": 1.1191762730000023
+                },
+                "export": {
+                  "core_seconds": 0.000445542,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 5,
+                  "seconds": 2.190807
+                },
+                "r2_commit": {
+                  "calls": 1610,
+                  "seconds": 1.0187755450000013
+                },
+                "r2_predict": {
+                  "calls": 1612,
+                  "seconds": 0.09829305799999996
+                },
+                "r2_release": {
+                  "calls": 19,
+                  "seconds": 0.00210767
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.010282
+                },
+                "rows_step": {
+                  "calls": 228,
+                  "seconds": 0.028091123000000013
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 254,
+              "timing": 311,
+              "rows": 1996,
+              "arrangement": 2020,
+              "export": 2023,
+              "done": 2023
+            }
+          },
+          {
+            "wall_seconds": 6.615486583,
+            "stages": {
+              "pcm": 1.107531375,
+              "spectrogram": 0.15155758300000002,
+              "beatthis": 3.420109333000001,
+              "mel": 0.36021016599999983,
+              "grid": 0.08606674999999996,
+              "rows": 0.0874639159999997,
+              "prior": 0.00009679199999936827,
+              "arrangement": 1.3943630409999996,
+              "export": 0.0004960419999997612,
+              "total": 6.613819250000001
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.001607208,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 1.113394542,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.59817175,
+                  "graph_seconds": 3.419768667
+                },
+                "rows": {
+                  "core_seconds": 0.03355666300000001,
+                  "graph_seconds": 0.053887618999999956
+                },
+                "arrangement": {
+                  "core_seconds": 0.06356775100000019,
+                  "graph_seconds": 1.330482013999997
+                },
+                "export": {
+                  "core_seconds": 0.000533875,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 5,
+                  "seconds": 3.419768667
+                },
+                "r2_commit": {
+                  "calls": 1610,
+                  "seconds": 1.2116210499999998
+                },
+                "r2_predict": {
+                  "calls": 1612,
+                  "seconds": 0.11659012899999993
+                },
+                "r2_release": {
+                  "calls": 19,
+                  "seconds": 0.002270835
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.012732375
+                },
+                "rows_step": {
+                  "calls": 228,
+                  "seconds": 0.04115524399999998
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 2023,
+              "timing": 2068,
+              "rows": 2068,
+              "arrangement": 2068,
+              "export": 2068,
+              "done": 2068
+            }
+          }
+        ],
+        "objects": 1295,
+        "footprint_after_load_bytes": 207684424,
+        "peak_footprint_before_generation_bytes": 547144736,
+        "peak_footprint_bytes": 2169194872,
+        "sample_rate": 44100.0,
+        "request": {
+          "star": 3.5,
+          "title": "SaiGetsu (Cut Ver.)",
+          "artist": "Otokaze"
+        },
+        "seed": 0,
+        "same_hit_objects_as_cpu": true,
+        "same_osu_as_cpu": true
+      },
+      "catch-the-moment": {
+        "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 0, reuse_memory: true }",
+        "load_seconds": 0.29644725,
+        "runs": [
+          {
+            "wall_seconds": 6.739038417,
+            "stages": {
+              "pcm": 1.1362703340000002,
+              "spectrogram": 0.14400141699999994,
+              "beatthis": 3.6314165000000003,
+              "mel": 0.4181092920000001,
+              "grid": 0.16948508300000048,
+              "rows": 0.09925183299999935,
+              "prior": 0.00009825000000000728,
+              "arrangement": 1.1316347080000004,
+              "export": 0.00041258400000060647,
+              "total": 6.737156833
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.001812792,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 1.142676917,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.732093543,
+                  "graph_seconds": 3.630915875
+                },
+                "rows": {
+                  "core_seconds": 0.03814433800000001,
+                  "graph_seconds": 0.06107538400000002
+                },
+                "arrangement": {
+                  "core_seconds": 0.046506924999999935,
+                  "graph_seconds": 1.0850100779999996
+                },
+                "export": {
+                  "core_seconds": 0.000458208,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 5,
+                  "seconds": 3.630915875
+                },
+                "r2_commit": {
+                  "calls": 1262,
+                  "seconds": 0.9818441929999997
+                },
+                "r2_predict": {
+                  "calls": 1264,
+                  "seconds": 0.09680858799999989
+                },
+                "r2_release": {
+                  "calls": 65,
+                  "seconds": 0.0063572970000000005
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.012887792
+                },
+                "rows_step": {
+                  "calls": 200,
+                  "seconds": 0.04818759200000002
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 248,
+              "timing": 300,
+              "rows": 1982,
+              "arrangement": 1992,
+              "export": 1996,
+              "done": 1996
+            }
+          },
+          {
+            "wall_seconds": 6.8508975,
+            "stages": {
+              "pcm": 1.1042223340000001,
+              "spectrogram": 0.11384254099999998,
+              "beatthis": 3.8013927919999997,
+              "mel": 0.3831212080000005,
+              "grid": 0.133406833,
+              "rows": 0.0839491250000001,
+              "prior": 0.00010674999999991997,
+              "arrangement": 1.221661792,
+              "export": 0.0003752080000003843,
+              "total": 6.849030790999999
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.001803542,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 1.1111067079999999,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.630715332,
+                  "graph_seconds": 3.8010456660000003
+                },
+                "rows": {
+                  "core_seconds": 0.03300621,
+                  "graph_seconds": 0.05092174499999997
+                },
+                "arrangement": {
+                  "core_seconds": 0.05629496199999988,
+                  "graph_seconds": 1.1651685629999993
+                },
+                "export": {
+                  "core_seconds": 0.000418958,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 5,
+                  "seconds": 3.8010456660000003
+                },
+                "r2_commit": {
+                  "calls": 1262,
+                  "seconds": 1.0525920769999995
+                },
+                "r2_predict": {
+                  "calls": 1264,
+                  "seconds": 0.10419336100000008
+                },
+                "r2_release": {
+                  "calls": 65,
+                  "seconds": 0.008383124999999998
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.011595209
+                },
+                "rows_step": {
+                  "calls": 200,
+                  "seconds": 0.03932653599999998
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 1996,
+              "timing": 2036,
+              "rows": 2039,
+              "arrangement": 2039,
+              "export": 2039,
+              "done": 2039
+            }
+          }
+        ],
+        "objects": 911,
+        "footprint_after_load_bytes": 206701360,
+        "peak_footprint_before_generation_bytes": 525321272,
+        "peak_footprint_bytes": 2138687792,
+        "sample_rate": 44100.0,
+        "request": {
+          "star": 3.5,
+          "title": "Catch the Moment",
+          "artist": "LiSA"
+        },
+        "seed": 0,
+        "same_hit_objects_as_cpu": true,
+        "same_osu_as_cpu": true
+      },
+      "adventure": {
+        "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 0, reuse_memory: true }",
+        "load_seconds": 0.279115708,
+        "runs": [
+          {
+            "wall_seconds": 18.18424125,
+            "stages": {
+              "pcm": 5.048119750000001,
+              "spectrogram": 0.16126775000000088,
+              "beatthis": 5.172650958,
+              "mel": 1.3555691250000017,
+              "grid": 0.761052208000001,
+              "rows": 0.3486701249999987,
+              "prior": 0.00023641700000007405,
+              "arrangement": 5.304488166000001,
+              "export": 0.0015845420000041486,
+              "total": 18.177511542000005
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.00661025,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 5.071922834,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 2.278452709,
+                  "graph_seconds": 5.172084167
+                },
+                "rows": {
+                  "core_seconds": 0.1357807389999999,
+                  "graph_seconds": 0.21280792099999998
+                },
+                "arrangement": {
+                  "core_seconds": 0.20437893200000087,
+                  "graph_seconds": 5.09915617100001
+                },
+                "export": {
+                  "core_seconds": 0.001662917,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 7,
+                  "seconds": 5.172084167
+                },
+                "r2_commit": {
+                  "calls": 2812,
+                  "seconds": 4.622994420000002
+                },
+                "r2_predict": {
+                  "calls": 2814,
+                  "seconds": 0.40549274899999993
+                },
+                "r2_release": {
+                  "calls": 357,
+                  "seconds": 0.07066900199999997
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.032399958
+                },
+                "rows_step": {
+                  "calls": 427,
+                  "seconds": 0.18040796299999992
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 377,
+              "timing": 561,
+              "rows": 2238,
+              "arrangement": 2274,
+              "export": 2278,
+              "done": 2278
+            }
+          },
+          {
+            "wall_seconds": 22.186998917,
+            "stages": {
+              "pcm": 4.617507000000001,
+              "spectrogram": 0.21782124999999997,
+              "beatthis": 10.729773458,
+              "mel": 1.1115572500000017,
+              "grid": 0.5019519589999981,
+              "rows": 0.1905119999999988,
+              "prior": 0.00014962500000547153,
+              "arrangement": 4.77086275,
+              "export": 0.0007612090000002354,
+              "total": 22.174665958
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.012268291,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 4.6512030840000005,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 1.832221334,
+                  "graph_seconds": 10.728877626
+                },
+                "rows": {
+                  "core_seconds": 0.08091251100000005,
+                  "graph_seconds": 0.10955496
+                },
+                "arrangement": {
+                  "core_seconds": 0.13914545800000028,
+                  "graph_seconds": 4.63117383999999
+                },
+                "export": {
+                  "core_seconds": 0.000803625,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 7,
+                  "seconds": 10.728877626
+                },
+                "r2_commit": {
+                  "calls": 2812,
+                  "seconds": 4.260918483999984
+                },
+                "r2_predict": {
+                  "calls": 2814,
+                  "seconds": 0.32928659899999874
+                },
+                "r2_release": {
+                  "calls": 357,
+                  "seconds": 0.04096875699999998
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.022404417
+                },
+                "rows_step": {
+                  "calls": 427,
+                  "seconds": 0.08715054299999998
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 2351,
+              "timing": 2351,
+              "rows": 2172,
+              "arrangement": 2191,
+              "export": 2191,
+              "done": 2191
+            }
+          }
+        ],
+        "objects": 2225,
+        "footprint_after_load_bytes": 209584944,
+        "peak_footprint_before_generation_bytes": 1075217872,
+        "peak_footprint_bytes": 2497776184,
+        "sample_rate": 96000.0,
+        "request": {
+          "star": 4.5,
+          "title": "Adventure",
+          "artist": "YOASOBI"
+        },
+        "seed": 0,
+        "same_hit_objects_as_cpu": true,
+        "same_osu_as_cpu": true
+      }
+    },
+    "cpu-lean": {
+      "hesitation-snow": {
+        "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: false }",
+        "load_seconds": 0.240645167,
+        "runs": [
+          {
+            "wall_seconds": 7.426061875,
+            "stages": {
+              "pcm": 1.303380167,
+              "spectrogram": 0.13059704199999989,
+              "beatthis": 4.841294167,
+              "mel": 0.41670499999999994,
+              "grid": 0.1869713330000004,
+              "rows": 0.1346552500000007,
+              "prior": 0.000092874999999367,
+              "arrangement": 0.4013974579999995,
+              "export": 0.00038545799999974406,
+              "total": 7.423739417
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.002266416,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 1.311595,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.7346128749999999,
+                  "graph_seconds": 4.840953331
+                },
+                "rows": {
+                  "core_seconds": 0.05160420399999997,
+                  "graph_seconds": 0.0830226170000001
+                },
+                "arrangement": {
+                  "core_seconds": 0.0255056680000001,
+                  "graph_seconds": 0.37587959200000054
+                },
+                "export": {
+                  "core_seconds": 0.0004225,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 6,
+                  "seconds": 4.840953331
+                },
+                "r2_commit": {
+                  "calls": 767,
+                  "seconds": 0.3457194210000002
+                },
+                "r2_predict": {
+                  "calls": 768,
+                  "seconds": 0.029187377999999986
+                },
+                "r2_release": {
+                  "calls": 11,
+                  "seconds": 0.0009727930000000001
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.040571208
+                },
+                "rows_step": {
+                  "calls": 374,
+                  "seconds": 0.042451408999999996
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 227,
+              "timing": 318,
+              "rows": 1341,
+              "arrangement": 1357,
+              "export": 1359,
+              "done": 1359
+            }
+          },
+          {
+            "wall_seconds": 11.323490334,
+            "stages": {
+              "pcm": 1.3219477499999999,
+              "spectrogram": 0.1317663339999999,
+              "beatthis": 6.5676383750000005,
+              "mel": 0.9357109170000003,
+              "grid": 0.5701439999999984,
+              "rows": 0.4020967500000006,
+              "prior": 0.00020712500000263389,
+              "arrangement": 1.3851190829999995,
+              "export": 0.0008492499999993015,
+              "total": 11.321120208
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.002265875,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 1.327522625,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 1.6381088350000002,
+                  "graph_seconds": 6.567151209
+                },
+                "rows": {
+                  "core_seconds": 0.121698251,
+                  "graph_seconds": 0.2802652020000002
+                },
+                "arrangement": {
+                  "core_seconds": 0.06237268400000009,
+                  "graph_seconds": 1.322539074999999
+                },
+                "export": {
+                  "core_seconds": 0.00091925,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 6,
+                  "seconds": 6.567151209
+                },
+                "r2_commit": {
+                  "calls": 767,
+                  "seconds": 1.213767501
+                },
+                "r2_predict": {
+                  "calls": 768,
+                  "seconds": 0.10610794900000015
+                },
+                "r2_release": {
+                  "calls": 11,
+                  "seconds": 0.002663625
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.097663708
+                },
+                "rows_step": {
+                  "calls": 374,
+                  "seconds": 0.18260149399999986
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 1359,
+              "timing": 1359,
+              "rows": 1364,
+              "arrangement": 1364,
+              "export": 1364,
+              "done": 1364
+            }
+          }
+        ],
+        "objects": 1059,
+        "footprint_after_load_bytes": 205046576,
+        "peak_footprint_before_generation_bytes": 593331256,
+        "peak_footprint_bytes": 1430669016,
+        "sample_rate": 48000.0,
+        "request": {
+          "star": 2.5,
+          "title": "Hesitation Snow -version 2024- (Cut Ver.)",
+          "artist": "fripSide"
+        },
+        "seed": 0,
+        "same_hit_objects_as_cpu": true,
+        "same_osu_as_cpu": true
+      },
+      "saigetsu": {
+        "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: false }",
+        "load_seconds": 0.575602625,
+        "runs": [
+          {
+            "wall_seconds": 14.2334075,
+            "stages": {
+              "pcm": 1.4388897090000001,
+              "spectrogram": 0.31262929200000006,
+              "beatthis": 10.095652709,
+              "mel": 0.6992320419999997,
+              "grid": 0.13682120899999972,
+              "rows": 0.15445545800000218,
+              "prior": 0.00014166699999987033,
+              "arrangement": 1.3783372090000012,
+              "export": 0.0006508329999996931,
+              "total": 14.230184459
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.003143041,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 1.452219458,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 1.149213959,
+                  "graph_seconds": 10.095120124000001
+                },
+                "rows": {
+                  "core_seconds": 0.054625164999999955,
+                  "graph_seconds": 0.0997932510000001
+                },
+                "arrangement": {
+                  "core_seconds": 0.085538329,
+                  "graph_seconds": 1.2925025289999983
+                },
+                "export": {
+                  "core_seconds": 0.000704,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 5,
+                  "seconds": 10.095120124000001
+                },
+                "r2_commit": {
+                  "calls": 1610,
+                  "seconds": 1.1856449480000002
+                },
+                "r2_predict": {
+                  "calls": 1612,
+                  "seconds": 0.10451174800000024
+                },
+                "r2_release": {
+                  "calls": 19,
+                  "seconds": 0.0023458330000000003
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.048467916
+                },
+                "rows_step": {
+                  "calls": 228,
+                  "seconds": 0.051325335000000034
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 251,
+              "timing": 308,
+              "rows": 1328,
+              "arrangement": 1347,
+              "export": 1350,
+              "done": 1350
+            }
+          },
+          {
+            "wall_seconds": 15.882695667,
+            "stages": {
+              "pcm": 1.450891875,
+              "spectrogram": 0.3145279589999998,
+              "beatthis": 10.784821915999999,
+              "mel": 0.45048016700000154,
+              "grid": 0.1462980829999997,
+              "rows": 0.20103258300000015,
+              "prior": 0.0001694580000003043,
+              "arrangement": 2.524778375,
+              "export": 0.0009599999999991269,
+              "total": 15.880123334
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.002471,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 1.457012084,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.9118596250000001,
+                  "graph_seconds": 10.784266667
+                },
+                "rows": {
+                  "core_seconds": 0.062678832,
+                  "graph_seconds": 0.138307667
+                },
+                "arrangement": {
+                  "core_seconds": 0.11220265099999971,
+                  "graph_seconds": 2.41209886899999
+                },
+                "export": {
+                  "core_seconds": 0.001028875,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 5,
+                  "seconds": 10.784266667
+                },
+                "r2_commit": {
+                  "calls": 1610,
+                  "seconds": 2.21529817
+                },
+                "r2_predict": {
+                  "calls": 1612,
+                  "seconds": 0.19319961799999996
+                },
+                "r2_release": {
+                  "calls": 19,
+                  "seconds": 0.003601081
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.058055792
+                },
+                "rows_step": {
+                  "calls": 228,
+                  "seconds": 0.08025187499999997
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 1350,
+              "timing": 1350,
+              "rows": 1248,
+              "arrangement": 1248,
+              "export": 1248,
+              "done": 1248
+            }
+          }
+        ],
+        "objects": 1295,
+        "footprint_after_load_bytes": 204391192,
+        "peak_footprint_before_generation_bytes": 544687136,
+        "peak_footprint_bytes": 1425180376,
+        "sample_rate": 44100.0,
+        "request": {
+          "star": 3.5,
+          "title": "SaiGetsu (Cut Ver.)",
+          "artist": "Otokaze"
+        },
+        "seed": 0,
+        "same_hit_objects_as_cpu": true,
+        "same_osu_as_cpu": true
+      },
+      "catch-the-moment": {
+        "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: false }",
+        "load_seconds": 0.461808791,
+        "runs": [
+          {
+            "wall_seconds": 6.304299708,
+            "stages": {
+              "pcm": 1.10633925,
+              "spectrogram": 0.1022327499999999,
+              "beatthis": 3.9037853750000004,
+              "mel": 0.30718104199999924,
+              "grid": 0.12073858299999939,
+              "rows": 0.07862487499999861,
+              "prior": 0.00008891700000003767,
+              "arrangement": 0.6731022499999999,
+              "export": 0.000340874999999869,
+              "total": 6.302043208
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.00220375,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 1.115903166,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.530425,
+                  "graph_seconds": 3.903511333
+                },
+                "rows": {
+                  "core_seconds": 0.028614581000000014,
+                  "graph_seconds": 0.04999541999999996
+                },
+                "arrangement": {
+                  "core_seconds": 0.04339893799999984,
+                  "graph_seconds": 0.6296207610000008
+                },
+                "export": {
+                  "core_seconds": 0.000375625,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 5,
+                  "seconds": 3.903511333
+                },
+                "r2_commit": {
+                  "calls": 1262,
+                  "seconds": 0.57623388
+                },
+                "r2_predict": {
+                  "calls": 1264,
+                  "seconds": 0.04877862700000001
+                },
+                "r2_release": {
+                  "calls": 65,
+                  "seconds": 0.004608254000000001
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.02688425
+                },
+                "rows_step": {
+                  "calls": 200,
+                  "seconds": 0.023111169999999993
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 252,
+              "timing": 304,
+              "rows": 1319,
+              "arrangement": 1331,
+              "export": 1333,
+              "done": 1333
+            }
+          },
+          {
+            "wall_seconds": 6.083895083,
+            "stages": {
+              "pcm": 0.88031175,
+              "spectrogram": 0.094952,
+              "beatthis": 3.9408664169999996,
+              "mel": 0.3045214160000005,
+              "grid": 0.11814750000000003,
+              "rows": 0.0776967910000003,
+              "prior": 0.00008908299999984592,
+              "arrangement": 0.6616320000000006,
+              "export": 0.00033729199999925184,
+              "total": 6.082383
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.001459208,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 0.884105959,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.517896043,
+                  "graph_seconds": 3.940590415
+                },
+                "rows": {
+                  "core_seconds": 0.028471744999999996,
+                  "graph_seconds": 0.04920903700000003
+                },
+                "arrangement": {
+                  "core_seconds": 0.04240926900000004,
+                  "graph_seconds": 0.619141651999999
+                },
+                "export": {
+                  "core_seconds": 0.000372,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 5,
+                  "seconds": 3.940590415
+                },
+                "r2_commit": {
+                  "calls": 1262,
+                  "seconds": 0.5672461680000006
+                },
+                "r2_predict": {
+                  "calls": 1264,
+                  "seconds": 0.04742293900000002
+                },
+                "r2_release": {
+                  "calls": 65,
+                  "seconds": 0.004472545
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.025936375
+                },
+                "rows_step": {
+                  "calls": 200,
+                  "seconds": 0.023272662000000003
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 1333,
+              "timing": 1333,
+              "rows": 1342,
+              "arrangement": 1342,
+              "export": 1342,
+              "done": 1342
+            }
+          }
+        ],
+        "objects": 911,
+        "footprint_after_load_bytes": 225903408,
+        "peak_footprint_before_generation_bytes": 544392224,
+        "peak_footprint_bytes": 1407878896,
+        "sample_rate": 44100.0,
+        "request": {
+          "star": 3.5,
+          "title": "Catch the Moment",
+          "artist": "LiSA"
+        },
+        "seed": 0,
+        "same_hit_objects_as_cpu": true,
+        "same_osu_as_cpu": true
+      },
+      "adventure": {
+        "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: false }",
+        "load_seconds": 0.218977708,
+        "runs": [
+          {
+            "wall_seconds": 11.004942333,
+            "stages": {
+              "pcm": 3.1403630839999996,
+              "spectrogram": 0.16107958400000008,
+              "beatthis": 5.499923792,
+              "mel": 0.4730557919999992,
+              "grid": 0.24423991700000078,
+              "rows": 0.14126075000000127,
+              "prior": 0.00009720799999922747,
+              "arrangement": 1.3195205830000014,
+              "export": 0.00065479200000118,
+              "total": 10.999631625
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.005255,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 3.159756917,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.878790958,
+                  "graph_seconds": 5.499504833
+                },
+                "rows": {
+                  "core_seconds": 0.05466650499999999,
+                  "graph_seconds": 0.08656725599999994
+                },
+                "arrangement": {
+                  "core_seconds": 0.08617485899999923,
+                  "graph_seconds": 1.2330764829999992
+                },
+                "export": {
+                  "core_seconds": 0.000689708,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 7,
+                  "seconds": 5.499504833
+                },
+                "r2_commit": {
+                  "calls": 2812,
+                  "seconds": 1.1177068620000001
+                },
+                "r2_predict": {
+                  "calls": 2814,
+                  "seconds": 0.0957652079999999
+                },
+                "r2_release": {
+                  "calls": 357,
+                  "seconds": 0.019604413000000022
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.045413666
+                },
+                "rows_step": {
+                  "calls": 427,
+                  "seconds": 0.04115359000000003
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 375,
+              "timing": 559,
+              "rows": 1611,
+              "arrangement": 1641,
+              "export": 1643,
+              "done": 1643
+            }
+          },
+          {
+            "wall_seconds": 11.584636875,
+            "stages": {
+              "pcm": 4.030838209000001,
+              "spectrogram": 0.15272245900000006,
+              "beatthis": 5.273769790999999,
+              "mel": 0.46638550000000034,
+              "grid": 0.23753995800000122,
+              "rows": 0.13839012500000172,
+              "prior": 0.0000963339999998425,
+              "arrangement": 1.2662053749999995,
+              "export": 0.0006347079999995913,
+              "total": 11.579538249999999
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.005042792,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 4.043749292,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.8570332079999999,
+                  "graph_seconds": 5.273381166
+                },
+                "rows": {
+                  "core_seconds": 0.053649421999999974,
+                  "graph_seconds": 0.0847166669999999
+                },
+                "arrangement": {
+                  "core_seconds": 0.08427297399999939,
+                  "graph_seconds": 1.1816726379999969
+                },
+                "export": {
+                  "core_seconds": 0.00067025,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 7,
+                  "seconds": 5.273381166
+                },
+                "r2_commit": {
+                  "calls": 2812,
+                  "seconds": 1.0699687599999985
+                },
+                "r2_predict": {
+                  "calls": 2814,
+                  "seconds": 0.09260821400000005
+                },
+                "r2_release": {
+                  "calls": 357,
+                  "seconds": 0.01909566399999999
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.043866875
+                },
+                "rows_step": {
+                  "calls": 427,
+                  "seconds": 0.040849792000000024
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 1643,
+              "timing": 1643,
+              "rows": 1478,
+              "arrangement": 1488,
+              "export": 1488,
+              "done": 1488
+            }
+          }
+        ],
+        "objects": 2225,
+        "footprint_after_load_bytes": 204604184,
+        "peak_footprint_before_generation_bytes": 1071072648,
+        "peak_footprint_bytes": 1723680712,
+        "sample_rate": 96000.0,
+        "request": {
+          "star": 4.5,
+          "title": "Adventure",
+          "artist": "YOASOBI"
+        },
+        "seed": 0,
+        "same_hit_objects_as_cpu": true,
+        "same_osu_as_cpu": true
+      }
+    },
+    "coreml-beatthis": {
+      "hesitation-snow": {
+        "config": "Config { coreml_graphs: [\"beatthis\"], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: true }",
+        "load_seconds": 10.608667625,
+        "runs": [
+          {
+            "wall_seconds": 17.950789291,
+            "stages": {
+              "pcm": 1.2652815,
+              "spectrogram": 0.13050904100000002,
+              "beatthis": 15.482206291,
+              "mel": 0.38724216700000036,
+              "grid": 0.18610941600000297,
+              "rows": 0.12643754199999965,
+              "prior": 0.00013537499999802095,
+              "arrangement": 0.36276541700000237,
+              "export": 0.00038087499999892314,
+              "total": 17.948698292000003
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.002027042,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 1.27287175,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.704886542,
+                  "graph_seconds": 15.481177206
+                },
+                "rows": {
+                  "core_seconds": 0.047656165000000014,
+                  "graph_seconds": 0.078756835
+                },
+                "arrangement": {
+                  "core_seconds": 0.024114417000000107,
+                  "graph_seconds": 0.3386887089999997
+                },
+                "export": {
+                  "core_seconds": 0.000427042,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 6,
+                  "seconds": 15.481177206
+                },
+                "r2_commit": {
+                  "calls": 767,
+                  "seconds": 0.31109828899999975
+                },
+                "r2_predict": {
+                  "calls": 768,
+                  "seconds": 0.026593125999999957
+                },
+                "r2_release": {
+                  "calls": 11,
+                  "seconds": 0.0009972940000000001
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.040499792
+                },
+                "rows_step": {
+                  "calls": 374,
+                  "seconds": 0.03825704299999999
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 178,
+              "timing": 269,
+              "rows": 11689,
+              "arrangement": 11720,
+              "export": 11721,
+              "done": 11721
+            }
+          },
+          {
+            "wall_seconds": 11.627516708,
+            "stages": {
+              "pcm": 1.287014291,
+              "spectrogram": 0.12729491700000017,
+              "beatthis": 9.148348624999999,
+              "mel": 0.3871123750000006,
+              "grid": 0.1828546669999996,
+              "rows": 0.1196880000000001,
+              "prior": 0.00011241700000027776,
+              "arrangement": 0.35700541599999996,
+              "export": 0.000375,
+              "total": 11.623758917
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.003707208,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 1.300923375,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.697724708,
+                  "graph_seconds": 9.14788325
+                },
+                "rows": {
+                  "core_seconds": 0.04594058599999999,
+                  "graph_seconds": 0.0737237259999999
+                },
+                "arrangement": {
+                  "core_seconds": 0.02384095400000012,
+                  "graph_seconds": 0.33317916799999986
+                },
+                "export": {
+                  "core_seconds": 0.000407333,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 6,
+                  "seconds": 9.14788325
+                },
+                "r2_commit": {
+                  "calls": 767,
+                  "seconds": 0.30635548100000004
+                },
+                "r2_predict": {
+                  "calls": 768,
+                  "seconds": 0.02597447799999998
+                },
+                "r2_release": {
+                  "calls": 11,
+                  "seconds": 0.0008492090000000001
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.036385833
+                },
+                "rows_step": {
+                  "calls": 374,
+                  "seconds": 0.037337893
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 11752,
+              "timing": 11785,
+              "rows": 11826,
+              "arrangement": 11826,
+              "export": 11826,
+              "done": 11826
+            }
+          }
+        ],
+        "objects": 1059,
+        "footprint_after_load_bytes": 207881152,
+        "peak_footprint_before_generation_bytes": 597230816,
+        "peak_footprint_bytes": 12401372152,
+        "sample_rate": 48000.0,
+        "request": {
+          "star": 2.5,
+          "title": "Hesitation Snow -version 2024- (Cut Ver.)",
+          "artist": "fripSide"
+        },
+        "seed": 0,
+        "same_hit_objects_as_cpu": true,
+        "same_osu_as_cpu": true
+      },
+      "saigetsu": {
+        "config": "Config { coreml_graphs: [\"beatthis\"], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: true }",
+        "load_seconds": 10.436499791,
+        "runs": [
+          {
+            "wall_seconds": 13.867046333,
+            "stages": {
+              "pcm": 0.920810292,
+              "spectrogram": 0.10548229200000003,
+              "beatthis": 11.530322,
+              "mel": 0.313580833,
+              "grid": 0.08025995799999873,
+              "rows": 0.09023383400000057,
+              "prior": 0.00008487499999864667,
+              "arrangement": 0.81862975,
+              "export": 0.0004225830000013957,
+              "total": 13.865500041999999
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.0014925,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 0.926434291,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.49961891599999997,
+                  "graph_seconds": 11.530024418
+                },
+                "rows": {
+                  "core_seconds": 0.032335128,
+                  "graph_seconds": 0.05788288600000003
+                },
+                "arrangement": {
+                  "core_seconds": 0.05146450000000005,
+                  "graph_seconds": 0.7670381929999988
+                },
+                "export": {
+                  "core_seconds": 0.00045625,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 5,
+                  "seconds": 11.530024418
+                },
+                "r2_commit": {
+                  "calls": 1610,
+                  "seconds": 0.7061063749999998
+                },
+                "r2_predict": {
+                  "calls": 1612,
+                  "seconds": 0.05955598500000001
+                },
+                "r2_release": {
+                  "calls": 19,
+                  "seconds": 0.0013758329999999997
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.031116583
+                },
+                "rows_step": {
+                  "calls": 228,
+                  "seconds": 0.026766303000000005
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 202,
+              "timing": 259,
+              "rows": 11684,
+              "arrangement": 11709,
+              "export": 11683,
+              "done": 11683
+            }
+          },
+          {
+            "wall_seconds": 10.015505542,
+            "stages": {
+              "pcm": 0.944328625,
+              "spectrogram": 0.10168112500000007,
+              "beatthis": 7.652918375000001,
+              "mel": 0.3145941249999996,
+              "grid": 0.07986925000000156,
+              "rows": 0.08749749999999949,
+              "prior": 0.00008975000000100408,
+              "arrangement": 0.8258613749999986,
+              "export": 0.0004023749999996653,
+              "total": 10.013849708000002
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.001607375,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 0.950891209,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.496473206,
+                  "graph_seconds": 7.652588793
+                },
+                "rows": {
+                  "core_seconds": 0.031843248,
+                  "graph_seconds": 0.05563850100000002
+                },
+                "arrangement": {
+                  "core_seconds": 0.05184335499999999,
+                  "graph_seconds": 0.7738962370000017
+                },
+                "export": {
+                  "core_seconds": 0.000433,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 5,
+                  "seconds": 7.652588793
+                },
+                "r2_commit": {
+                  "calls": 1610,
+                  "seconds": 0.7129655540000004
+                },
+                "r2_predict": {
+                  "calls": 1612,
+                  "seconds": 0.059600808000000026
+                },
+                "r2_release": {
+                  "calls": 19,
+                  "seconds": 0.0013298750000000003
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.028970416
+                },
+                "rows_step": {
+                  "calls": 228,
+                  "seconds": 0.026668084999999977
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 11683,
+              "timing": 11727,
+              "rows": 11759,
+              "arrangement": 11759,
+              "export": 11731,
+              "done": 11731
+            }
+          }
+        ],
+        "objects": 1295,
+        "footprint_after_load_bytes": 207815616,
+        "peak_footprint_before_generation_bytes": 548357296,
+        "peak_footprint_bytes": 12331166688,
+        "sample_rate": 44100.0,
+        "request": {
+          "star": 3.5,
+          "title": "SaiGetsu (Cut Ver.)",
+          "artist": "Otokaze"
+        },
+        "seed": 0,
+        "same_hit_objects_as_cpu": true,
+        "same_osu_as_cpu": true
+      },
+      "catch-the-moment": {
+        "config": "Config { coreml_graphs: [\"beatthis\"], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: true }",
+        "load_seconds": 10.389757667,
+        "runs": [
+          {
+            "wall_seconds": 13.572139417,
+            "stages": {
+              "pcm": 0.845430333,
+              "spectrogram": 0.09618133399999988,
+              "beatthis": 11.489562208,
+              "mel": 0.2858525419999987,
+              "grid": 0.11466612499999974,
+              "rows": 0.07984445799999958,
+              "prior": 0.00009600000000136789,
+              "arrangement": 0.6533517499999998,
+              "export": 0.00033937499999956344,
+              "total": 13.570616375000002
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.001466584,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 0.8506745,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.497000999,
+                  "graph_seconds": 11.489260208000001
+                },
+                "rows": {
+                  "core_seconds": 0.028667657999999985,
+                  "graph_seconds": 0.051162905000000015
+                },
+                "arrangement": {
+                  "core_seconds": 0.042635866999999994,
+                  "graph_seconds": 0.6106372019999992
+                },
+                "export": {
+                  "core_seconds": 0.000376958,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 5,
+                  "seconds": 11.489260208000001
+                },
+                "r2_commit": {
+                  "calls": 1262,
+                  "seconds": 0.559390839999999
+                },
+                "r2_predict": {
+                  "calls": 1264,
+                  "seconds": 0.04670498600000001
+                },
+                "r2_release": {
+                  "calls": 65,
+                  "seconds": 0.004541376000000001
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.027811875
+                },
+                "rows_step": {
+                  "calls": 200,
+                  "seconds": 0.023351030000000002
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 194,
+              "timing": 246,
+              "rows": 11671,
+              "arrangement": 11695,
+              "export": 11668,
+              "done": 11668
+            }
+          },
+          {
+            "wall_seconds": 9.829594708,
+            "stages": {
+              "pcm": 0.865598542,
+              "spectrogram": 0.09387250000000005,
+              "beatthis": 7.727130915999999,
+              "mel": 0.28557695799999966,
+              "grid": 0.1154556250000005,
+              "rows": 0.07726366600000074,
+              "prior": 0.00008445899999969696,
+              "arrangement": 0.6564714999999997,
+              "export": 0.00032716699999946284,
+              "total": 9.828070709
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.001472875,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 0.871844583,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.49518804,
+                  "graph_seconds": 7.726846875
+                },
+                "rows": {
+                  "core_seconds": 0.02782603799999998,
+                  "graph_seconds": 0.049422448000000035
+                },
+                "arrangement": {
+                  "core_seconds": 0.04221348899999987,
+                  "graph_seconds": 0.614156158000001
+                },
+                "export": {
+                  "core_seconds": 0.000360541,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 5,
+                  "seconds": 7.726846875
+                },
+                "r2_commit": {
+                  "calls": 1262,
+                  "seconds": 0.5628985000000011
+                },
+                "r2_predict": {
+                  "calls": 1264,
+                  "seconds": 0.04686886499999995
+                },
+                "r2_release": {
+                  "calls": 65,
+                  "seconds": 0.004388793
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.026094208
+                },
+                "rows_step": {
+                  "calls": 200,
+                  "seconds": 0.023328239999999976
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 11669,
+              "timing": 11709,
+              "rows": 11743,
+              "arrangement": 11743,
+              "export": 11743,
+              "done": 11743
+            }
+          }
+        ],
+        "objects": 911,
+        "footprint_after_load_bytes": 206881728,
+        "peak_footprint_before_generation_bytes": 526533808,
+        "peak_footprint_bytes": 12314258376,
+        "sample_rate": 44100.0,
+        "request": {
+          "star": 3.5,
+          "title": "Catch the Moment",
+          "artist": "LiSA"
+        },
+        "seed": 0,
+        "same_hit_objects_as_cpu": true,
+        "same_osu_as_cpu": false
+      },
+      "adventure": {
+        "config": "Config { coreml_graphs: [\"beatthis\"], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: true }",
+        "load_seconds": 10.472070584,
+        "runs": [
+          {
+            "wall_seconds": 20.728080124999998,
+            "stages": {
+              "pcm": 3.147403333,
+              "spectrogram": 0.15978520900000012,
+              "beatthis": 15.214524583000003,
+              "mel": 0.47684208299999953,
+              "grid": 0.24281662499999948,
+              "rows": 0.15108766700000342,
+              "prior": 0.00010195799999928568,
+              "arrangement": 1.3109503750000004,
+              "export": 0.0006958340000019234,
+              "total": 20.723141959
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.004879417,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 3.166292,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.879858126,
+                  "graph_seconds": 15.214107752
+                },
+                "rows": {
+                  "core_seconds": 0.05667996799999999,
+                  "graph_seconds": 0.09437658099999996
+                },
+                "arrangement": {
+                  "core_seconds": 0.08592343299999938,
+                  "graph_seconds": 1.2247655990000013
+                },
+                "export": {
+                  "core_seconds": 0.00073425,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 7,
+                  "seconds": 15.214107752
+                },
+                "r2_commit": {
+                  "calls": 2812,
+                  "seconds": 1.1115937459999996
+                },
+                "r2_predict": {
+                  "calls": 2814,
+                  "seconds": 0.09382972099999971
+                },
+                "r2_release": {
+                  "calls": 357,
+                  "seconds": 0.019342132000000012
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.0461765
+                },
+                "rows_step": {
+                  "calls": 427,
+                  "seconds": 0.048200081000000006
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 326,
+              "timing": 510,
+              "rows": 11835,
+              "arrangement": 11866,
+              "export": 11840,
+              "done": 11840
+            }
+          },
+          {
+            "wall_seconds": 16.34065175,
+            "stages": {
+              "pcm": 3.088020458,
+              "spectrogram": 0.15072491700000046,
+              "beatthis": 10.898457665999999,
+              "mel": 0.4719193340000002,
+              "grid": 0.24854320799999913,
+              "rows": 0.14735924999999953,
+              "prior": 0.00009575000000040745,
+              "arrangement": 1.316581792000001,
+              "export": 0.0006856250000037107,
+              "total": 16.335342417
+            },
+            "timings": {
+              "by_phase": {
+                "validate": {
+                  "core_seconds": 0.005249167,
+                  "graph_seconds": 0.0
+                },
+                "loading": {
+                  "core_seconds": 3.100930292,
+                  "graph_seconds": 0.0
+                },
+                "timing": {
+                  "core_seconds": 0.871629999,
+                  "graph_seconds": 10.898011957000001
+                },
+                "rows": {
+                  "core_seconds": 0.05515148499999996,
+                  "graph_seconds": 0.09217746799999996
+                },
+                "arrangement": {
+                  "core_seconds": 0.08559850999999934,
+                  "graph_seconds": 1.2307137509999986
+                },
+                "export": {
+                  "core_seconds": 0.000722666,
+                  "graph_seconds": 0.0
+                }
+              },
+              "by_graph": {
+                "beatthis": {
+                  "calls": 7,
+                  "seconds": 10.898011957000001
+                },
+                "r2_commit": {
+                  "calls": 2812,
+                  "seconds": 1.1170837840000003
+                },
+                "r2_predict": {
+                  "calls": 2814,
+                  "seconds": 0.09435559999999986
+                },
+                "r2_release": {
+                  "calls": 357,
+                  "seconds": 0.019274366999999994
+                },
+                "rows_encoder": {
+                  "calls": 1,
+                  "seconds": 0.045270459
+                },
+                "rows_step": {
+                  "calls": 427,
+                  "seconds": 0.046907009000000055
+                }
+              }
+            },
+            "footprint_mib_at_phase": {
+              "loading": 11842,
+              "timing": 11845,
+              "rows": 11918,
+              "arrangement": 11918,
+              "export": 11889,
+              "done": 11889
+            }
+          }
+        ],
+        "objects": 2225,
+        "footprint_after_load_bytes": 207307712,
+        "peak_footprint_before_generation_bytes": 1074234928,
+        "peak_footprint_bytes": 12497267800,
+        "sample_rate": 96000.0,
+        "request": {
+          "star": 4.5,
+          "title": "Adventure",
+          "artist": "YOASOBI"
+        },
+        "seed": 0,
+        "same_hit_objects_as_cpu": true,
+        "same_osu_as_cpu": true
+      }
+    },
+    "coreml": {
+      "hesitation-snow": {
+        "failed": "Context leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\n\nthread 'main' (72541952) panicked at crates/generate-ort/examples/providers.rs:123:10:\ncalled `Result::unwrap()` on an `Err` value: \"Non-zero status code returned while running 16942845269555023860_CoreML_16942845269555023860_2 node. Name:'CoreMLExecutionProvider_16942845269555023860_CoreML_16942845269555023860_2_2' Status Message: Error executing model: Error in dynamically resizing for sequence length (error: -7).\"\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+      },
+      "saigetsu": {
+        "failed": "Context leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\n\nthread 'main' (72543986) panicked at crates/generate-ort/examples/providers.rs:123:10:\ncalled `Result::unwrap()` on an `Err` value: \"Non-zero status code returned while running 16942845269555023860_CoreML_16942845269555023860_2 node. Name:'CoreMLExecutionProvider_16942845269555023860_CoreML_16942845269555023860_2_2' Status Message: Error executing model: Error in dynamically resizing for sequence length (error: -7).\"\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+      },
+      "catch-the-moment": {
+        "failed": "Context leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\n\nthread 'main' (72545942) panicked at crates/generate-ort/examples/providers.rs:123:10:\ncalled `Result::unwrap()` on an `Err` value: \"Non-zero status code returned while running 16942845269555023860_CoreML_16942845269555023860_2 node. Name:'CoreMLExecutionProvider_16942845269555023860_CoreML_16942845269555023860_2_2' Status Message: Error executing model: Error in dynamically resizing for sequence length (error: -7).\"\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+      },
+      "adventure": {
+        "failed": "Context leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\n\nthread 'main' (72547881) panicked at crates/generate-ort/examples/providers.rs:123:10:\ncalled `Result::unwrap()` on an `Err` value: \"Non-zero status code returned while running 16942845269555023860_CoreML_16942845269555023860_2 node. Name:'CoreMLExecutionProvider_16942845269555023860_CoreML_16942845269555023860_2_2' Status Message: Error executing model: Error in dynamically resizing for sequence length (error: -7).\"\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+      }
+    }
+  }
+}

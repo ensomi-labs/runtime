@@ -66,3 +66,37 @@ result.receipt                                      // EnsomiProtocol Generation
   on a thread of its own; cancelling its task stops it at the next graph run or phase with
   `GeneratorError.Cancelled`. Refusals carry EnsomiProtocol's error code in `GeneratorError.Generation`. The
   blocking `generate(pcm:sampleRate:request:listener:cancellation:)` takes the PCM as `Data`.
+
+### Execution provider
+
+Use `.cpu`. Measured on bings-mac (M5) with `crates/generate-ort/examples/providers.rs`
+([`conformance/generate/apple-providers.json`](../conformance/generate/apple-providers.json)): seconds of the
+second generation in a process, and the process's peak physical footprint. When generation starts the
+footprint is 0.3 to 0.55 GiB: the opened model (0.2 GiB) and the recording the measurement reads.
+
+| Song | CPU seconds (BeatThis) | Core ML seconds (BeatThis) | CPU peak footprint | Core ML peak footprint |
+| --- | --- | --- | --- | --- |
+| hesitation-snow | 6.0 (3.7) | 11.6 (9.2) | 2.0 GiB | 11.5 GiB |
+| saigetsu | 5.2 (3.0) | 10.0 (7.7) | 2.0 GiB | 11.5 GiB |
+| catch-the-moment | 4.9 (3.0) | 9.8 (7.7) | 2.0 GiB | 11.5 GiB |
+| adventure | 9.5 (4.2) | 16.3 (10.9) | 2.3 GiB | 11.6 GiB |
+
+`.coreMl` gives BeatThis to Core ML and leaves the other graphs on the CPU. Opening the model then takes 10 s
+instead of 0.2 s, BeatThis runs two to three times slower and the process needs 11.5 GiB: Core ML takes BeatThis's
+dynamic frame axis in 180 partitions. Its charts have the CPU's hit objects on all four songs. Core ML for every
+graph fails on the rows graphs' dynamic sequence length. No compute unit or model format helped (exploratory,
+hesitation-snow). The Core ML rows overlapped a browser timing run on the same machine; the CPU rows did not.
+
+Most of the CPU footprint is BeatThis's working memory, which ONNX Runtime keeps after the first run: the
+footprint grows by 1.6 GiB during the timing phase on every song. The `providers` configuration `cpu-lean`
+(no CPU arena and no memory patterns) brings the peak to 1.3 to 1.6 GiB with the same charts; its times
+overlapped the browser run, and it is not exposed here. Neither is `cpu-threads` (ONNX Runtime picks the
+thread count), which took hesitation-snow from 6.0 to 5.1 s with the same chart; sessions run on one thread,
+as the parity recordings were checked.
+
+### Size
+
+The xcframework grows from 8 MiB to 128 MiB (43 MiB a slice). In the app (Release, unsigned), EnsomiCore grows by
+31.8 MiB on macOS and 31.5 MiB on iOS, or 21.6 and 21.4 MiB once stripped as an archive strips it. ONNX
+Runtime's licence (MIT) and third-party notices are in [`licenses/onnxruntime`](../licenses/onnxruntime) and
+are copied to `build/apple/licenses`; an app that ships the generator shows them with its acknowledgements.

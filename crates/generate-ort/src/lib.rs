@@ -26,12 +26,15 @@ pub struct Config {
     pub coreml_format: String,
     /// Intra-op threads of each session; 0 lets ONNX Runtime choose.
     pub threads: usize,
+    /// Whether ONNX Runtime keeps memory for the next run (the CPU arena and memory patterns, its
+    /// defaults). Off lowers the peak footprint.
+    pub reuse_memory: bool,
 }
 
 impl Default for Config {
     /// CPU only, one intra-op and one inter-op thread, as the parity recordings were checked.
     fn default() -> Self {
-        Config { coreml_graphs: Vec::new(), coreml_units: "ALL".to_string(), coreml_format: "MLProgram".to_string(), threads: 1 }
+        Config { coreml_graphs: Vec::new(), coreml_units: "ALL".to_string(), coreml_format: "MLProgram".to_string(), threads: 1, reuse_memory: true }
     }
 }
 
@@ -56,6 +59,9 @@ impl Sessions {
                 }
                 #[cfg(not(feature = "coreml"))]
                 return Err("built without the coreml feature".to_string());
+            }
+            if !config.reuse_memory {
+                builder = builder.with_execution_providers([ort::ep::CPU::default().with_arena_allocator(false).build()]).map_err(ort_error)?.with_memory_pattern(false).map_err(ort_error)?;
             }
             let session = builder.commit_from_file(dir.join(&graph.file)).map_err(ort_error)?;
             sessions.push((graph.name.clone(), session));
