@@ -1,0 +1,28 @@
+{
+  "name": "@ensomi/runtime",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "description": "The Ensomi chart generator API on the shared Rust core, compiled to WebAssembly; the graphs run in ONNX Runtime Web.",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js"
+    }
+  },
+  "files": [
+    "src",
+    "pkg",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "fflate": "0.8.2",
+    "onnxruntime-web": "1.23.2"
+  },
+  "scripts": {
+    "build": "cd .. && scripts/wasm-build.sh"
+  }
+}
