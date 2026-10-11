@@ -1,0 +1,15 @@
+[package]
+name = "ensomi-generate"
+description = "The Ensomi chart generator's host pipeline as a state machine without IO"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
+
+[dev-dependencies]
+libm = "0.2"

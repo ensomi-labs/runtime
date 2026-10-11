@@ -1,0 +1,8 @@
+#!/bin/sh
+# Builds the Wasm binding of the chart generator into js/pkg (ignored by git).
+# Needs Rust with the wasm32-unknown-unknown target and wasm-bindgen-cli 0.2.129 (cargo install wasm-bindgen-cli --version 0.2.129).
+# Run from the repository root.
+set -e
+target_dir="${CARGO_TARGET_DIR:-target/generate}"
+CARGO_TARGET_DIR="$target_dir" cargo build --release --target wasm32-unknown-unknown -p ensomi-generate-wasm
+wasm-bindgen --target web --out-dir js/pkg "$target_dir/wasm32-unknown-unknown/release/ensomi_generate_wasm.wasm"
