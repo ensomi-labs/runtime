@@ -2059,19 +2059,29 @@ public struct GeneratorOptions: Equatable, Hashable {
     public var provider: ExecutionProvider
     /**
      * Directory holding the runtime's `resample-<rate>*` tables, read for PCM at a rate other than
-     * 22050 Hz.
+     * 22050 Hz. `scripts/build-apple.sh` puts them in `build/apple/resampler` for an app to bundle.
      */
     public var resamplerDirectory: String?
+    /**
+     * Releases ONNX Runtime's working memory after each graph run (no CPU arena, no memory patterns): a
+     * lower peak footprint for a slower generation. `None` turns it on for iOS and off elsewhere.
+     */
+    public var lowMemory: Bool?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
     public init(provider: ExecutionProvider, 
         /**
          * Directory holding the runtime's `resample-<rate>*` tables, read for PCM at a rate other than
-         * 22050 Hz.
-         */resamplerDirectory: String? = nil) {
+         * 22050 Hz. `scripts/build-apple.sh` puts them in `build/apple/resampler` for an app to bundle.
+         */resamplerDirectory: String? = nil, 
+        /**
+         * Releases ONNX Runtime's working memory after each graph run (no CPU arena, no memory patterns): a
+         * lower peak footprint for a slower generation. `None` turns it on for iOS and off elsewhere.
+         */lowMemory: Bool? = nil) {
         self.provider = provider
         self.resamplerDirectory = resamplerDirectory
+        self.lowMemory = lowMemory
     }
 
     
@@ -2091,13 +2101,15 @@ public struct FfiConverterTypeGeneratorOptions: FfiConverterRustBuffer {
         return
             try GeneratorOptions(
                 provider: FfiConverterTypeExecutionProvider.read(from: &buf), 
-                resamplerDirectory: FfiConverterOptionString.read(from: &buf)
+                resamplerDirectory: FfiConverterOptionString.read(from: &buf), 
+                lowMemory: FfiConverterOptionBool.read(from: &buf)
         )
     }
 
     public static func write(_ value: GeneratorOptions, into buf: inout [UInt8]) {
         FfiConverterTypeExecutionProvider.write(value.provider, into: &buf)
         FfiConverterOptionString.write(value.resamplerDirectory, into: &buf)
+        FfiConverterOptionBool.write(value.lowMemory, into: &buf)
     }
 }
 
@@ -4619,6 +4631,30 @@ fileprivate struct FfiConverterOptionDouble: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionBool: FfiConverterRustBuffer {
+    typealias SwiftType = Bool?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterBool.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterBool.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
     typealias SwiftType = String?
 
@@ -4757,6 +4793,31 @@ fileprivate struct FfiConverterOptionTypeLongNoteAmount: FfiConverterRustBuffer 
         case 1: return try FfiConverterTypeLongNoteAmount.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceString: FfiConverterRustBuffer {
+    typealias SwiftType = [String]
+
+    public static func write(_ value: [String], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterString.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [String] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [String]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterString.read(from: &buf))
+        }
+        return seq
     }
 }
 
@@ -5027,6 +5088,17 @@ public func tierJudgement(tier: Tier) -> Judgement  {
     )
 })
 }
+/**
+ * The files a model directory needs besides its runtime config (`runtime.json`): the graphs and the
+ * arrays the config names, as paths relative to the directory.
+ */
+public func modelFiles(runtimeConfig: String)throws  -> [String]  {
+    return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
+    uniffi_ensomi_runtime_ffi_fn_func_model_files(
+        FfiConverterString.lower(runtimeConfig),$0
+    )
+})
+}
 
 private enum InitializationResult {
     case ok
@@ -5053,6 +5125,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_func_tier_judgement() != 59231) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_func_model_files() != 8209) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_method_gameplayfeedback_advance_judgement_time() != 50584) {
