@@ -1,0 +1,24 @@
+{
+  "description": "Swift testEngineAppliesNoteLockToLongNoteTailRelease: a held hold is force-missed (tail) when the next note of its lane starts, here at the release; the next note is then missed at the end of its window.",
+  "chart": {
+    "duration_ms": 2600,
+    "objects": [
+      {"lane": 0, "start_ms": 1000, "end_ms": 1500},
+      {"lane": 0, "start_ms": 1600}
+    ]
+  },
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1000}},
+    {"input": {"lane": 0, "phase": "release", "time_ms": 1600}},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 0, "lane": 0, "part": "tail", "tier": "m", "offset_ms": null, "time_ms": 1600},
+      {"object": 1, "lane": 0, "part": "head", "tier": "m", "offset_ms": null, "time_ms": 1800}
+    ],
+    "score": {"tier_counts": {"bigP": 0, "p1": 0, "p2": 0, "p3": 0, "g": 0, "m": 2}, "accuracy": 0.0, "combo": 0, "max_combo": 0, "suggested_audio_offset_ms": null},
+    "late_inputs": 0
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "description": "A four-lane chord (judge B) pressed in time order with different errors; each lane is judged on its own.",
+  "chart": {
+    "duration_ms": 2000,
+    "objects": [
+      {"lane": 0, "start_ms": 1000},
+      {"lane": 1, "start_ms": 1000},
+      {"lane": 2, "start_ms": 1000},
+      {"lane": 3, "start_ms": 1000}
+    ]
+  },
+  "ruleset": {"judge": "B"},
+  "steps": [
+    {"input": {"lane": 3, "phase": "press", "time_ms": 947}},
+    {"input": {"lane": 1, "phase": "press", "time_ms": 1010}},
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1050}},
+    {"input": {"lane": 2, "phase": "press", "time_ms": 1130}},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 3, "lane": 3, "part": "head", "tier": "p1", "offset_ms": -53, "time_ms": 947},
+      {"object": 1, "lane": 1, "part": "head", "tier": "bigP", "offset_ms": 10, "time_ms": 1010},
+      {"object": 0, "lane": 0, "part": "head", "tier": "p1", "offset_ms": 50, "time_ms": 1050},
+      {"object": 2, "lane": 2, "part": "head", "tier": "g", "offset_ms": 130, "time_ms": 1130}
+    ],
+    "score": {"tier_counts": {"bigP": 1, "p1": 2, "p2": 0, "p3": 0, "g": 1, "m": 0}, "accuracy": 0.8, "combo": 4, "max_combo": 4, "suggested_audio_offset_ms": -34.25},
+    "late_inputs": 0
+  }
+}

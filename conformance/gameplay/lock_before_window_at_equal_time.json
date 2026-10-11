@@ -1,0 +1,24 @@
+{
+  "description": "At 1200 a note lock (lane 1) and a window end (lane 0) fall due together; the lock is decided first whatever the advance schedule.",
+  "chart": {
+    "duration_ms": 2200,
+    "objects": [
+      {"lane": 0, "start_ms": 1000},
+      {"lane": 1, "start_ms": 1100},
+      {"lane": 1, "start_ms": 1200}
+    ]
+  },
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 1, "lane": 1, "part": "head", "tier": "m", "offset_ms": null, "time_ms": 1200},
+      {"object": 0, "lane": 0, "part": "head", "tier": "m", "offset_ms": null, "time_ms": 1200},
+      {"object": 2, "lane": 1, "part": "head", "tier": "m", "offset_ms": null, "time_ms": 1400}
+    ],
+    "score": {"tier_counts": {"bigP": 0, "p1": 0, "p2": 0, "p3": 0, "g": 0, "m": 3}, "accuracy": 0.0, "combo": 0, "max_combo": 0, "suggested_audio_offset_ms": null},
+    "late_inputs": 0
+  }
+}

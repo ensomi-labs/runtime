@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 3fc4c8b2a54ea82c415271080d7b6ca2f8d911a1b37efeb356dc9842857e1fef # shrinks to (chart, judge, inputs, watermarks) = (Chart { duration_ms: 2529, objects: [ChartObject { lane: 2, start_ms: 82, end_ms: Some(414) }, ChartObject { lane: 1, start_ms: 300, end_ms: Some(500) }, ChartObject { lane: 2, start_ms: 699, end_ms: None }, ChartObject { lane: 2, start_ms: 800, end_ms: Some(1164) }, ChartObject { lane: 2, start_ms: 1364, end_ms: Some(1704) }, ChartObject { lane: 2, start_ms: 1728, end_ms: None }, ChartObject { lane: 2, start_ms: 2329, end_ms: Some(2529) }] }, E, [InputEvent { lane: 1, phase: Press, time_ms: 275.5 }], [800.0])

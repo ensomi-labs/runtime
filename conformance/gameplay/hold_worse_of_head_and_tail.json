@@ -1,0 +1,30 @@
+{
+  "description": "A hold resolves once with the worse of its head and tail tiers: p2 head with bigP tail, bigP head with p3 tail, p1 head with p3 tail (tail errors 140 against p3 at 166.5 and p2 at 121.5). The reported offset is the head's.",
+  "chart": {
+    "duration_ms": 6500,
+    "objects": [
+      {"lane": 0, "start_ms": 1000, "end_ms": 1500},
+      {"lane": 1, "start_ms": 3000, "end_ms": 3500},
+      {"lane": 2, "start_ms": 5000, "end_ms": 5500}
+    ]
+  },
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1070}},
+    {"input": {"lane": 0, "phase": "release", "time_ms": 1500}},
+    {"input": {"lane": 1, "phase": "press", "time_ms": 3000}},
+    {"input": {"lane": 1, "phase": "release", "time_ms": 3640}},
+    {"input": {"lane": 2, "phase": "press", "time_ms": 5050}},
+    {"input": {"lane": 2, "phase": "release", "time_ms": 5640}},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 0, "lane": 0, "part": "tail", "tier": "p2", "offset_ms": 70, "time_ms": 1500},
+      {"object": 1, "lane": 1, "part": "tail", "tier": "p3", "offset_ms": 0, "time_ms": 3640},
+      {"object": 2, "lane": 2, "part": "tail", "tier": "p3", "offset_ms": 50, "time_ms": 5640}
+    ],
+    "score": {"tier_counts": {"bigP": 0, "p1": 0, "p2": 1, "p3": 2, "g": 0, "m": 0}, "accuracy": 0.8166666666666668, "combo": 3, "max_combo": 3, "suggested_audio_offset_ms": -40.0},
+    "late_inputs": 0
+  }
+}

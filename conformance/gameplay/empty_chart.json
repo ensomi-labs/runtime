@@ -1,0 +1,22 @@
+{
+  "description": "No objects: full accuracy, no events.",
+  "chart": {
+    "duration_ms": 1000,
+    "objects": [
+
+    ]
+  },
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"input": {"lane": 0, "phase": "press", "time_ms": 100}},
+    {"input": {"lane": 0, "phase": "release", "time_ms": 200}},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+
+    ],
+    "score": {"tier_counts": {"bigP": 0, "p1": 0, "p2": 0, "p3": 0, "g": 0, "m": 0}, "accuracy": 1, "combo": 0, "max_combo": 0, "suggested_audio_offset_ms": null},
+    "late_inputs": 0
+  }
+}

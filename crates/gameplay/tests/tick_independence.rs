@@ -17,34 +17,32 @@ fn hold() -> impl Strategy<Value = u32> {
 
 fn chart() -> impl Strategy<Value = Chart> {
     // Per lane, notes as (gap after the previous one, hold length); a hold length of 0 is a tap.
-    prop::collection::vec(prop::collection::vec((gap(), hold()), 0..8), 4).prop_map(
-        |lanes| {
-            let mut objects = Vec::new();
-            for (lane, notes) in lanes.iter().enumerate() {
-                let mut earliest = 0;
-                for &(gap, hold) in notes {
-                    let start_ms = earliest + gap;
-                    let end_ms = (hold > 0).then_some(start_ms + hold);
-                    earliest = end_ms.unwrap_or(start_ms + 1);
-                    objects.push(ChartObject {
-                        lane: lane as u32,
-                        start_ms,
-                        end_ms,
-                    });
-                }
+    prop::collection::vec(prop::collection::vec((gap(), hold()), 0..8), 4).prop_map(|lanes| {
+        let mut objects = Vec::new();
+        for (lane, notes) in lanes.iter().enumerate() {
+            let mut earliest = 0;
+            for &(gap, hold) in notes {
+                let start_ms = earliest + gap;
+                let end_ms = (hold > 0).then_some(start_ms + hold);
+                earliest = end_ms.unwrap_or(start_ms + 1);
+                objects.push(ChartObject {
+                    lane: lane as u32,
+                    start_ms,
+                    end_ms,
+                });
             }
-            objects.sort_by_key(|o| (o.start_ms, o.lane));
-            let duration_ms = objects
-                .iter()
-                .map(|o| o.end_ms.unwrap_or(o.start_ms))
-                .max()
-                .unwrap_or(0);
-            Chart {
-                duration_ms,
-                objects,
-            }
-        },
-    )
+        }
+        objects.sort_by_key(|o| (o.start_ms, o.lane));
+        let duration_ms = objects
+            .iter()
+            .map(|o| o.end_ms.unwrap_or(o.start_ms))
+            .max()
+            .unwrap_or(0);
+        Chart {
+            duration_ms,
+            objects,
+        }
+    })
 }
 
 /// Inputs near note times, so that window edges, locks and tail windows are exercised, sorted by time.
@@ -111,17 +109,22 @@ fn watermarks(chart: &Chart) -> impl Strategy<Value = Vec<f64>> + use<> {
         .objects
         .iter()
         .flat_map(|o| {
-            let (start, end) = (f64::from(o.start_ms), f64::from(o.end_ms.unwrap_or(o.start_ms)));
+            let (start, end) = (
+                f64::from(o.start_ms),
+                f64::from(o.end_ms.unwrap_or(o.start_ms)),
+            );
             [start, start + 200.0, end, end + 300.0]
         })
         .collect();
-    let watermark = (any::<prop::sample::Index>(), any::<bool>(), 0i32..8000).prop_map(move |(due_at, at_due, half_ms)| {
-        if at_due && !due.is_empty() {
-            due[due_at.index(due.len())]
-        } else {
-            f64::from(half_ms) / 2.0
-        }
-    });
+    let watermark = (any::<prop::sample::Index>(), any::<bool>(), 0i32..8000).prop_map(
+        move |(due_at, at_due, half_ms)| {
+            if at_due && !due.is_empty() {
+                due[due_at.index(due.len())]
+            } else {
+                f64::from(half_ms) / 2.0
+            }
+        },
+    );
     prop::collection::vec(watermark, 0..60)
 }
 

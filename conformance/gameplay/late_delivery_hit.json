@@ -1,0 +1,22 @@
+{
+  "description": "After advance(1100) a press stamped 1050 is late: it is handled at 1100 (error 100, tier p3) and counted.",
+  "chart": {
+    "duration_ms": 2000,
+    "objects": [
+      {"lane": 0, "start_ms": 1000}
+    ]
+  },
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"advance": 1100},
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1050}},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 0, "lane": 0, "part": "head", "tier": "p3", "offset_ms": 100, "time_ms": 1100}
+    ],
+    "score": {"tier_counts": {"bigP": 0, "p1": 0, "p2": 0, "p3": 1, "g": 0, "m": 0}, "accuracy": 0.8, "combo": 1, "max_combo": 1, "suggested_audio_offset_ms": -100.0},
+    "late_inputs": 1
+  }
+}

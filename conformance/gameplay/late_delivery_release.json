@@ -1,0 +1,23 @@
+{
+  "description": "A release stamped 1300 delivered after advance(1400) is handled at 1400: tail error -100, tier p2 (tail window 121.5).",
+  "chart": {
+    "duration_ms": 2500,
+    "objects": [
+      {"lane": 0, "start_ms": 1000, "end_ms": 1500}
+    ]
+  },
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1000}},
+    {"advance": 1400},
+    {"input": {"lane": 0, "phase": "release", "time_ms": 1300}},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 0, "lane": 0, "part": "tail", "tier": "p2", "offset_ms": 0, "time_ms": 1400}
+    ],
+    "score": {"tier_counts": {"bigP": 0, "p1": 0, "p2": 1, "p3": 0, "g": 0, "m": 0}, "accuracy": 0.85, "combo": 1, "max_combo": 1, "suggested_audio_offset_ms": 0},
+    "late_inputs": 1
+  }
+}

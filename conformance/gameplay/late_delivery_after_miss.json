@@ -1,0 +1,22 @@
+{
+  "description": "A press stamped 1100 delivered after advance(1300) finds the note missed at 1200; it is counted as late.",
+  "chart": {
+    "duration_ms": 2000,
+    "objects": [
+      {"lane": 0, "start_ms": 1000}
+    ]
+  },
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"advance": 1300},
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1100}},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 0, "lane": 0, "part": "head", "tier": "m", "offset_ms": null, "time_ms": 1200}
+    ],
+    "score": {"tier_counts": {"bigP": 0, "p1": 0, "p2": 0, "p3": 0, "g": 0, "m": 1}, "accuracy": 0.0, "combo": 0, "max_combo": 0, "suggested_audio_offset_ms": null},
+    "late_inputs": 1
+  }
+}

@@ -54,7 +54,7 @@ fn chart_validation_reports_the_offending_object() {
         ChartError::InvalidLane { object: 0 }
     );
     assert_eq!(
-        error_of(vec![tap(0, 100), hold(1, 200, 200)]),
+        error_of(vec![tap(0, 100), hold(1, 200, 199)]),
         ChartError::InvalidHold { object: 1 }
     );
     assert_eq!(

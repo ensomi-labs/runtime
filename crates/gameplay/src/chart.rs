@@ -6,7 +6,8 @@ pub struct ChartObject {
     /// Column, 0 to 3 from left to right.
     pub lane: u32,
     pub start_ms: u32,
-    /// Release time of a hold, greater than `start_ms`. `None` for a tap.
+    /// Release time of a hold. `None` for a tap. The protocol promises it is greater than `start_ms`; a
+    /// session also accepts equal, which is what the .osu loader makes of a hold that ends early.
     pub end_ms: Option<u32>,
 }
 
@@ -23,7 +24,7 @@ pub enum ChartError {
     InvalidLane {
         object: u32,
     },
-    /// `end_ms` is not greater than `start_ms`.
+    /// `end_ms` is before `start_ms`.
     InvalidHold {
         object: u32,
     },
@@ -75,7 +76,7 @@ impl Chart {
                 return Err(ChartError::InvalidLane { object: id });
             };
             let end = object.end_ms.unwrap_or(object.start_ms);
-            if object.end_ms.is_some_and(|end| end <= object.start_ms) {
+            if object.end_ms.is_some_and(|end| end < object.start_ms) {
                 return Err(ChartError::InvalidHold { object: id });
             }
             if end > self.duration_ms {

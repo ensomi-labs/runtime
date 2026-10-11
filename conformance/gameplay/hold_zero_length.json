@@ -1,0 +1,25 @@
+{
+  "description": "A hold whose end equals its start (the .osu loader clamps shorter ends to the start) is still a hold: it needs a press and a release.",
+  "chart": {
+    "duration_ms": 2000,
+    "objects": [
+      {"lane": 0, "start_ms": 1000, "end_ms": 1000},
+      {"lane": 1, "start_ms": 1000}
+    ]
+  },
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"input": {"lane": 1, "phase": "press", "time_ms": 1000}},
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1020}},
+    {"input": {"lane": 0, "phase": "release", "time_ms": 1030}},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 1, "lane": 1, "part": "head", "tier": "bigP", "offset_ms": 0, "time_ms": 1000},
+      {"object": 0, "lane": 0, "part": "tail", "tier": "bigP", "offset_ms": 20, "time_ms": 1030}
+    ],
+    "score": {"tier_counts": {"bigP": 2, "p1": 0, "p2": 0, "p3": 0, "g": 0, "m": 0}, "accuracy": 1.0, "combo": 2, "max_combo": 2, "suggested_audio_offset_ms": -10.0},
+    "late_inputs": 0
+  }
+}

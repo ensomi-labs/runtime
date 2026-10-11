@@ -1,0 +1,23 @@
+{
+  "description": "Swift testEngineAppliesPerLaneNoteLock: a press at the start of the second note force-misses the first at that time; the press then hits the second.",
+  "chart": {
+    "duration_ms": 2100,
+    "objects": [
+      {"lane": 0, "start_ms": 1000},
+      {"lane": 0, "start_ms": 1100}
+    ]
+  },
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1100}},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 0, "lane": 0, "part": "head", "tier": "m", "offset_ms": null, "time_ms": 1100},
+      {"object": 1, "lane": 0, "part": "head", "tier": "bigP", "offset_ms": 0, "time_ms": 1100}
+    ],
+    "score": {"tier_counts": {"bigP": 1, "p1": 0, "p2": 0, "p3": 0, "g": 0, "m": 1}, "accuracy": 0.5, "combo": 1, "max_combo": 1, "suggested_audio_offset_ms": 0},
+    "late_inputs": 0
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "description": "A hold ending where the next note of its lane starts: released a millisecond early it completes; released on the start of the next note it has already been force-missed (lock), as in the Swift engine. The following notes are hit on time.",
+  "chart": {
+    "duration_ms": 2500,
+    "objects": [
+      {"lane": 0, "start_ms": 1000, "end_ms": 1500},
+      {"lane": 1, "start_ms": 1000, "end_ms": 1500},
+      {"lane": 0, "start_ms": 1500},
+      {"lane": 1, "start_ms": 1500}
+    ]
+  },
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1000}},
+    {"input": {"lane": 1, "phase": "press", "time_ms": 1000}},
+    {"input": {"lane": 0, "phase": "release", "time_ms": 1499}},
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1500}},
+    {"input": {"lane": 1, "phase": "release", "time_ms": 1500}},
+    {"input": {"lane": 1, "phase": "press", "time_ms": 1500}},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 0, "lane": 0, "part": "tail", "tier": "bigP", "offset_ms": 0, "time_ms": 1499},
+      {"object": 1, "lane": 1, "part": "tail", "tier": "m", "offset_ms": null, "time_ms": 1500},
+      {"object": 2, "lane": 0, "part": "head", "tier": "bigP", "offset_ms": 0, "time_ms": 1500},
+      {"object": 3, "lane": 1, "part": "head", "tier": "bigP", "offset_ms": 0, "time_ms": 1500}
+    ],
+    "score": {"tier_counts": {"bigP": 3, "p1": 0, "p2": 0, "p3": 0, "g": 0, "m": 1}, "accuracy": 0.75, "combo": 2, "max_combo": 2, "suggested_audio_offset_ms": 0},
+    "late_inputs": 0
+  }
+}

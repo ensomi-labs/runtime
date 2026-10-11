@@ -1,0 +1,23 @@
+{
+  "description": "The note lock is decided at the start of the next note even when only a late advance observes it; the second note is then missed at the end of its own window.",
+  "chart": {
+    "duration_ms": 2100,
+    "objects": [
+      {"lane": 0, "start_ms": 1000},
+      {"lane": 0, "start_ms": 1100}
+    ]
+  },
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"advance": 5000},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 0, "lane": 0, "part": "head", "tier": "m", "offset_ms": null, "time_ms": 1100},
+      {"object": 1, "lane": 0, "part": "head", "tier": "m", "offset_ms": null, "time_ms": 1300}
+    ],
+    "score": {"tier_counts": {"bigP": 0, "p1": 0, "p2": 0, "p3": 0, "g": 0, "m": 2}, "accuracy": 0.0, "combo": 0, "max_combo": 0, "suggested_audio_offset_ms": null},
+    "late_inputs": 0
+  }
+}
