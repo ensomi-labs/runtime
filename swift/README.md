@@ -59,9 +59,14 @@ result.receipt                                      // EnsomiProtocol Generation
   in its runtime range, it is Ensomi R2 `r2-1.0` and every file it lists has its listed size; the downloader
   checks each file's SHA-256. `capabilities().files` then carry the manifest's checksums and sizes.
 - PCM at a rate other than 22050 Hz is resampled with the runtime's soxr tables, `resample-<rate>.json`,
-  `.bin` and `-boundary.bin` for 11025, 16000, 24000, 32000, 44100, 48000, 88200, 96000 and 192000 Hz, read
-  from `resamplerDirectory`. They are not in this repository; today they are in
-  `ensomi-web/packages/runtime/assets`.
+  `.bin` and `-boundary.bin` for 11025, 16000, 24000, 32000, 44100, 48000, 88200, 96000 and 192000 Hz
+  (14 MB), read from `resamplerDirectory`. They are not in this repository: `scripts/build-apple.sh` copies
+  them from the TypeScript runtime's `ensomi-web/packages/runtime/assets` (or `RESAMPLER_TABLES`) to
+  `build/apple/resampler`, beside the xcframework, for the app to bundle.
+- `lowMemory` releases ONNX Runtime's working memory after each graph run: peak footprint 1.3 to 1.6 GiB
+  instead of 2.0 to 2.3 GiB, same charts. `nil` turns it on for iOS and off on macOS.
+- `modelFiles(runtimeConfig:)` lists the files a model directory needs besides `runtime.json`, for a
+  downloader.
 - The same model, PCM, request and seed give the same chart. `generate(pcm:sampleRate:request:progress:)` runs
   on a thread of its own; cancelling its task stops it at the next graph run or phase with
   `GeneratorError.Cancelled`. Refusals carry EnsomiProtocol's error code in `GeneratorError.Generation`. The
@@ -89,8 +94,8 @@ hesitation-snow). The Core ML rows overlapped a browser timing run on the same m
 
 Most of the CPU footprint is BeatThis's working memory, which ONNX Runtime keeps after the first run: the
 footprint grows by 1.6 GiB during the timing phase on every song. The `providers` configuration `cpu-lean`
-(no CPU arena and no memory patterns) brings the peak to 1.3 to 1.6 GiB with the same charts; its times
-overlapped the browser run, and it is not exposed here. Neither is `cpu-threads` (ONNX Runtime picks the
+(no CPU arena and no memory patterns), `lowMemory` here, brings the peak to 1.3 to 1.6 GiB with the same
+charts; its times overlapped the browser run. `cpu-threads` is not exposed (ONNX Runtime picks the
 thread count), which took hesitation-snow from 6.0 to 5.1 s with the same chart; sessions run on one thread,
 as the parity recordings were checked.
 

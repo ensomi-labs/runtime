@@ -28,9 +28,13 @@ pub enum ExecutionProvider {
 pub struct GeneratorOptions {
     pub provider: ExecutionProvider,
     /// Directory holding the runtime's `resample-<rate>*` tables, read for PCM at a rate other than
-    /// 22050 Hz.
+    /// 22050 Hz. `scripts/build-apple.sh` puts them in `build/apple/resampler` for an app to bundle.
     #[uniffi(default)]
     pub resampler_directory: Option<String>,
+    /// Releases ONNX Runtime's working memory after each graph run (no CPU arena, no memory patterns): a
+    /// lower peak footprint for a slower generation. `None` turns it on for iOS and off elsewhere.
+    #[uniffi(default)]
+    pub low_memory: Option<bool>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, uniffi::Enum)]
@@ -238,11 +242,23 @@ pub struct ChartGenerator {
     loaded: Mutex<Loaded>,
 }
 
-fn session_config(provider: ExecutionProvider) -> Config {
-    match provider {
-        ExecutionProvider::Cpu => Config::default(),
-        ExecutionProvider::CoreMl => Config { coreml_graphs: vec!["beatthis".to_string()], ..Config::default() },
+fn session_config(options: &GeneratorOptions) -> Config {
+    let reuse_memory = !options.low_memory.unwrap_or(cfg!(target_os = "ios"));
+    match options.provider {
+        ExecutionProvider::Cpu => Config { reuse_memory, ..Config::default() },
+        ExecutionProvider::CoreMl => Config { coreml_graphs: vec!["beatthis".to_string()], reuse_memory, ..Config::default() },
     }
+}
+
+/// The files a model directory needs besides its runtime config (`runtime.json`): the graphs and the
+/// arrays the config names, as paths relative to the directory.
+#[uniffi::export]
+pub fn model_files(runtime_config: String) -> Result<Vec<String>, GeneratorError> {
+    let config: Value = serde_json::from_str(&runtime_config).map_err(|e| model_error(format!("runtime config: {e}")))?;
+    let graphs = config["graphs"].as_object().ok_or_else(|| model_error("runtime config: no graphs".to_string()))?;
+    let mut files: Vec<String> = graphs.values().filter_map(|g| g["file"].as_str().map(str::to_string)).collect();
+    files.extend(Models::required_files(&config));
+    Ok(files)
 }
 
 fn capabilities(models: &Models, manifest: Option<&package::Manifest>) -> ModelCapabilities {
@@ -324,7 +340,7 @@ impl ChartGenerator {
     pub fn open(model_directory: String, options: GeneratorOptions) -> Result<Arc<Self>, GeneratorError> {
         let directory = Path::new(&model_directory);
         let (models, manifest) = package::open(directory).map_err(model_error)?;
-        let sessions = Sessions::load(directory, &models, &session_config(options.provider)).map_err(model_error)?;
+        let sessions = Sessions::load(directory, &models, &session_config(&options)).map_err(model_error)?;
         Ok(Arc::new(Self {
             capabilities: capabilities(&models, manifest.as_ref()),
             resampler_directory: options.resampler_directory.map(PathBuf::from),

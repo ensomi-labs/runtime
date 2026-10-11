@@ -2,9 +2,9 @@ import Foundation
 import XCTest
 @testable import EnsomiRuntime
 
-/// The chart generator through the Swift API. The model, a release recording and the resampler tables are read
-/// from beside the repository, where bings-mac keeps them (conformance/generate/README.md); the tests skip
-/// without them.
+/// The chart generator through the Swift API. The model and a release recording are read from beside the
+/// repository, where bings-mac keeps them (conformance/generate/README.md), and the resampler tables from
+/// build/apple/resampler; the tests skip without them.
 final class GeneratorTests: XCTestCase {
     /// The chart the native driver made from the same PCM, request and seed: conformance/generate/native-charts.
     func testGeneratesTheNativeChartFromRecordedPCM() async throws {
@@ -24,16 +24,27 @@ final class GeneratorTests: XCTestCase {
         let (pcm, sampleRate) = try recordedPCM(paths.recordings.appendingPathComponent(song))
         XCTAssertEqual(sampleRate, (fixture["sample_rate"] as! NSNumber).doubleValue)
 
-        let generator = try paths.open(.cpu)
-        let phases = Phases()
-        let result = try await generator.generate(pcm: pcm, sampleRate: sampleRate, request: request) { phases.append($0) }
+        for lowMemory in [false, true] {
+            let generator = try paths.open(.cpu, lowMemory: lowMemory)
+            let phases = Phases()
+            let result = try await generator.generate(pcm: pcm, sampleRate: sampleRate, request: request) { phases.append($0) }
 
-        XCTAssertNil(firstDifference(result.osu, expected), "the .osu differs from the native chart")
-        XCTAssertEqual(result.chart.objects.count, (fixture["objects"] as! NSNumber).intValue)
-        XCTAssertEqual(phases.all, [.loading, .timing, .rows, .arrangement, .export])
-        XCTAssertEqual(result.receipt.seed, request.seed)
-        XCTAssertEqual(result.receipt.modelVersion, "r2-1.0")
-        XCTAssertNoThrow(try GameplaySession(chart: result.chart, ruleset: Ruleset(judge: .c)))
+            XCTAssertNil(firstDifference(result.osu, expected), "the .osu differs from the native chart, low memory \(lowMemory)")
+            XCTAssertEqual(result.chart.objects.count, (fixture["objects"] as! NSNumber).intValue)
+            XCTAssertEqual(phases.all, [.loading, .timing, .rows, .arrangement, .export])
+            XCTAssertEqual(result.receipt.seed, request.seed)
+            XCTAssertEqual(result.receipt.modelVersion, "r2-1.0")
+            XCTAssertNoThrow(try GameplaySession(chart: result.chart, ruleset: Ruleset(judge: .c)))
+        }
+    }
+
+    func testModelFilesAreTheGraphsAndArraysTheConfigNames() throws {
+        let paths = try Paths()
+        let files = try modelFiles(runtimeConfig: String(contentsOf: paths.model.appendingPathComponent("runtime.json"), encoding: .utf8))
+        XCTAssertEqual(files.filter { $0.hasSuffix(".onnx") }.count, 6)
+        for file in files {
+            XCTAssertTrue(FileManager.default.fileExists(atPath: paths.model.appendingPathComponent(file).path), file)
+        }
     }
 
     func testCapabilitiesDescribeTheModel() throws {
@@ -85,16 +96,17 @@ final class GeneratorTests: XCTestCase {
             let workspace = root.deletingLastPathComponent()
             model = workspace.appendingPathComponent("ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2/onnx")
             recordings = workspace.appendingPathComponent("ensomi-model/artifacts/runtime-ref/bulk")
-            resampler = workspace.appendingPathComponent("ensomi-web/packages/runtime/assets")
+            resampler = root.appendingPathComponent("build/apple/resampler")
             charts = root.appendingPathComponent("conformance/generate/native-charts")
             for url in [model, recordings, resampler] where !FileManager.default.fileExists(atPath: url.path) {
                 throw XCTSkip("\(url.path) is absent")
             }
         }
 
-        func open(_ provider: ExecutionProvider) throws -> ChartGenerator {
+        func open(_ provider: ExecutionProvider, lowMemory: Bool? = nil) throws -> ChartGenerator {
             try ChartGenerator.open(
-                modelDirectory: model.path, options: GeneratorOptions(provider: provider, resamplerDirectory: resampler.path)
+                modelDirectory: model.path,
+                options: GeneratorOptions(provider: provider, resamplerDirectory: resampler.path, lowMemory: lowMemory)
             )
         }
     }
