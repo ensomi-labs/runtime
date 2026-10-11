@@ -3,8 +3,9 @@
 ## State
 
 Branch `core/v0`. Stage 1 is committed (c0e8b40). Stage 2 passes on all four songs
-(`conformance/generate/wasm-parity.json`, committed). Stage 3: `js/checks/same-as-ts.mjs` is written; its first run
-was started as mac job `same-as-ts` (see `ens ps`) and writes `conformance/generate/same-as-ts.json`.
+(`conformance/generate/wasm-parity.json`, committed). Stage 3 passes: `conformance/generate/same-as-ts.json` (13 cases, all equal; mean wall
+seconds per chart in Node: TypeScript 26.6, Wasm 24.0, BeatThis about 18 of them). All three stages are done; what is left is in
+the report to the human.
 
 | Piece | Where | State |
 | --- | --- | --- |
@@ -13,20 +14,14 @@ was started as mac job `same-as-ts` (see `ens ps`) and writes `conformance/gener
 | Wasm binding | `crates/generate-wasm`, `scripts/wasm-build.sh` | builds; wasm-bindgen-cli 0.2.129 is installed on the mac |
 | JS API (`loadModels`, `generateChart`, `decodeAudio`, `localFilesSource`, `models.capabilities`) | `js/src` | written; used by the Wasm replay |
 | Stage 2 check | `js/checks/replay.mjs` -> `conformance/generate/wasm-parity.json` | all four songs pass (BeatThis 1.06e-4 to 1.17e-4 on ORT-web, inside the 2e-4 allowance) |
-| Stage 3 check | `js/checks/same-as-ts.mjs` -> `conformance/generate/same-as-ts.json` | first run started, result not read |
+| Stage 3 check | `js/checks/same-as-ts.mjs` -> `conformance/generate/same-as-ts.json` | passes |
 
 ## Next steps
 
-1. Read `conformance/generate/same-as-ts.json` from the mac job `same-as-ts` (`ens tail`/`ens ps`; rerun with the command
-   in `conformance/generate/README.md` if it failed to start). Commit the report when it is final.
-2. Stage 3 runs the TypeScript runtime from `ensomi-web` (read-only) with `cd ../ensomi-web/packages/runtime && node --import tsx ../../../ensomi-runtime/js/checks/same-as-ts.mjs ...`.
-   It runs both runtimes in one Node process on one onnxruntime-web instance for the four songs, seeds 0, 1, 2, plus one
-   case with `long_notes`, a star section and two pattern sections (jumpstream, chordjack) on hesitation-snow.
-   It compares chart objects, `.osu` and receipt text; only the runtime name and `seconds`/`wall_seconds` are normalised.
-3. If a case differs, `first_osu_difference` / `first_receipt_difference` in the report give the first line. Likely
-   suspects, in order: a Math.* function (`jsmath.rs`; extend `conformance/generate/jsmath_cases.mjs` to the call that
-   differs), an `f32` rounding point in `audio.rs` / `rows.rs`, JSON key order in `generate.rs` / `controls.rs`.
-4. Report the Node timings from `same-as-ts.json` (`ts` and `wasm` wall and per-stage seconds, load seconds).
+1. Commit anything the mac wrote that is still untracked under `conformance/generate/`.
+2. Open points: where the 17 MB soxr tables live for `loadModels`' default `runtimeSource` (`js/assets/` is absent);
+   a browser run of the JS API; `wasm-opt` is not installed on the mac (the `.wasm` is 1.2 MB unoptimised by binaryen);
+   resampling 48 kHz PCM in the core takes 1 to 3 s natively (`pcm` in the receipt), more in Wasm.
 
 ## Decisions taken (list them in the report)
 
