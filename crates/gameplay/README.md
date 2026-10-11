@@ -187,5 +187,10 @@ and its centre is their mean.
 
 `cargo test -p ensomi-gameplay`: every fixture (also re-run under several advance schedules, and a streamed one
 with all its pages at once), the `.osu` fixtures, property tests of tick independence over random charts, logs
-and schedules, complete and streamed as objects or tokens under random page schedules (`proptest`), stream
+and schedules, complete and streamed as objects or tokens under random page schedules, and of the per-frame
+queries (`visible_objects`, `lane_states`, `is_resolved`) against a linear reference (`proptest`), stream
 validation, and the cases of the Swift feedback and layout tests.
+
+`cargo test --release -p ensomi-gameplay --test frame_cost -- --ignored --nocapture` times a 60 Hz frame
+(`advance`, `visible_objects`, `lane_states`, `score`, `is_resolved`) over charts of 4,000 and 16,000
+objects; the frame costs the same for both.

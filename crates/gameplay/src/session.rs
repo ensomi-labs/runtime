@@ -109,6 +109,11 @@ impl Object {
     fn is_resolved(&self) -> bool {
         matches!(self.state, State::Resolved(_))
     }
+
+    /// The end of a hold, else the start. In a lane it rises with the position, as the start does.
+    fn finish(&self) -> f64 {
+        self.end.unwrap_or(self.start)
+    }
 }
 
 /// A miss that is due: the first unresolved object of a lane ran out of time, either because the next
@@ -150,6 +155,11 @@ impl Expiry {
 /// nothing the delivered objects cannot settle: it judges up to the coverage and keeps later inputs until
 /// a page covers them, so the outcome is the one of the complete chart, whatever the page and advance
 /// schedule. [`Session::decided_through_ms`] tells the caller how far it got.
+///
+/// What a frame calls costs in proportion to the objects near the current time, not to the chart length:
+/// a scan of a lane starts at its cursor or is bounded by a search on the times, which rise along a lane.
+/// A note leaves the waiting state only once every note before it in its lane has, so a lane holds
+/// held-or-resolved objects, then waiting ones.
 pub struct Session {
     windows: Windows,
     objects: Vec<Object>,
@@ -157,6 +167,8 @@ pub struct Session {
     lanes: [Vec<usize>; LANES],
     /// Per lane, position in `lanes` before which every object is resolved.
     cursor: [usize; LANES],
+    /// Objects with an outcome.
+    resolved: usize,
     pressed: [bool; LANES],
     /// The session clock: the largest watermark or input time seen. Chart time can be negative: the audio
     /// offset puts the start of the audio before 0.
@@ -200,6 +212,7 @@ impl Session {
             objects: Vec::new(),
             lanes: Default::default(),
             cursor: [0; LANES],
+            resolved: 0,
             pressed: [false; LANES],
             now: f64::NEG_INFINITY,
             coverage: f64::NEG_INFINITY,
@@ -329,43 +342,60 @@ impl Session {
     /// Objects to draw for a visible chart-time range: those overlapping it, and resolved ones for 300 ms
     /// after they pass its lower bound.
     pub fn visible_objects(&self, lower_ms: f64, upper_ms: f64) -> Vec<VisibleObject> {
-        self.objects
-            .iter()
-            .enumerate()
-            .filter_map(|(index, object)| {
-                let object_end = object
-                    .end
-                    .unwrap_or(if object.hold && !object.is_resolved() {
-                        upper_ms
-                    } else {
-                        object.start
-                    });
-                let visible = object.start <= upper_ms && object_end >= lower_ms;
-                let keep_resolved = object.is_resolved()
-                    && self.now - object_end <= 300.0
-                    && object_end >= lower_ms;
-                (visible || keep_resolved).then_some(VisibleObject {
-                    id: index as u32,
-                    lane: object.lane as u32,
-                    start_time_ms: object.start,
-                    end_time_ms: object.end,
-                    state: match object.state {
-                        State::Waiting if object.hold && object.end.is_none() => {
-                            VisibleState::OpenEnded
-                        }
-                        State::Waiting => VisibleState::Waiting,
-                        State::Holding { .. } => VisibleState::Holding,
-                        State::Resolved(Tier::M) => VisibleState::MissedButVisible,
-                        State::Resolved(_) => VisibleState::Resolved,
-                    },
-                })
-            })
-            .collect()
+        let mut shown = Vec::new();
+        for (lane, objects) in self.lanes.iter().enumerate() {
+            // From the first object not over before the range to the last one started in it, or further
+            // for the held and resolved ones, which are shown whatever their start. The last object of a
+            // lane may be a hold without its end, drawn up to the range, so it is always looked at.
+            let from = objects
+                .partition_point(|&i| self.objects[i].finish() < lower_ms)
+                .min(objects.len().saturating_sub(1));
+            let to = objects
+                .partition_point(|&i| self.objects[i].start <= upper_ms)
+                .max(self.first_waiting(lane));
+            shown.extend(
+                objects
+                    .get(from..to)
+                    .unwrap_or_default()
+                    .iter()
+                    .filter_map(|&i| self.visible(i, lower_ms, upper_ms)),
+            );
+        }
+        shown.sort_unstable_by_key(|object| object.id);
+        shown
     }
 
     /// Whether the stream has ended and every object has an outcome.
     pub fn is_resolved(&self) -> bool {
-        self.coverage == f64::INFINITY && self.objects.iter().all(Object::is_resolved)
+        self.coverage == f64::INFINITY && self.resolved == self.objects.len()
+    }
+
+    /// The object as drawn for a range, if it shows in it.
+    fn visible(&self, index: usize, lower_ms: f64, upper_ms: f64) -> Option<VisibleObject> {
+        let object = &self.objects[index];
+        let object_end = object
+            .end
+            .unwrap_or(if object.hold && !object.is_resolved() {
+                upper_ms
+            } else {
+                object.start
+            });
+        let visible = object.start <= upper_ms && object_end >= lower_ms;
+        let keep_resolved =
+            object.is_resolved() && self.now - object_end <= 300.0 && object_end >= lower_ms;
+        (visible || keep_resolved).then_some(VisibleObject {
+            id: index as u32,
+            lane: object.lane as u32,
+            start_time_ms: object.start,
+            end_time_ms: object.end,
+            state: match object.state {
+                State::Waiting if object.hold && object.end.is_none() => VisibleState::OpenEnded,
+                State::Waiting => VisibleState::Waiting,
+                State::Holding { .. } => VisibleState::Holding,
+                State::Resolved(Tier::M) => VisibleState::MissedButVisible,
+                State::Resolved(_) => VisibleState::Resolved,
+            },
+        })
     }
 
     fn push_object(&mut self, object: &ChartObject) -> Result<(), ChartError> {
@@ -608,15 +638,12 @@ impl Session {
 
     /// The first note of a lane waiting for its press.
     fn waiting(&self, lane: usize) -> Option<usize> {
-        self.lanes[lane][self.cursor[lane]..]
-            .iter()
-            .copied()
-            .find(|&i| matches!(self.objects[i].state, State::Waiting))
+        self.lanes[lane].get(self.first_waiting(lane)).copied()
     }
 
     /// The first hold being held in a lane, with its head tier and press error.
     fn holding(&self, lane: usize) -> Option<(usize, Tier, f64)> {
-        self.lanes[lane][self.cursor[lane]..]
+        self.lanes[lane][self.cursor[lane]..self.first_waiting(lane)]
             .iter()
             .find_map(|&i| match self.objects[i].state {
                 State::Holding {
@@ -625,6 +652,17 @@ impl Session {
                 } => Some((i, head_tier, head_offset_ms)),
                 _ => None,
             })
+    }
+
+    /// Position in `lanes[lane]` of the first waiting note. A note is held or resolved only once every
+    /// note before it is, so none after this one is, and a held hold lies between the cursor and it.
+    fn first_waiting(&self, lane: usize) -> usize {
+        let cursor = self.cursor[lane];
+        cursor
+            + self.lanes[lane][cursor..]
+                .iter()
+                .take_while(|&&i| !matches!(self.objects[i].state, State::Waiting))
+                .count()
     }
 
     fn resolve(
@@ -636,6 +674,7 @@ impl Session {
         time_ms: f64,
     ) -> JudgementEvent {
         self.objects[index].state = State::Resolved(tier);
+        self.resolved += 1;
         let lane = self.objects[index].lane;
         while let Some(&first) = self.lanes[lane].get(self.cursor[lane])
             && self.objects[first].is_resolved()

@@ -1,13 +1,16 @@
 //! For a given chart, ruleset and input log, events and score do not depend on the advance cadence, nor,
-//! for a streamed chart, on when its pages arrive.
+//! for a streamed chart, on when its pages arrive. Also the per-frame queries, which are indexed, against
+//! a linear reference.
 
 mod common;
 
 use common::{Delivery, Page, Step, complete, run};
 use ensomi_gameplay::{
     Chart, ChartObject, ChartToken, InputEvent, Judge, Phase, Ruleset, Session, TokenKind,
+    VisibleObject, VisibleState,
 };
 use proptest::prelude::*;
+use proptest::test_runner::TestCaseError;
 
 /// Gaps and hold lengths that are often multiples of 100 ms, so that different lanes' misses tie.
 fn gap() -> impl Strategy<Value = u32> {
@@ -308,6 +311,148 @@ proptest! {
             prop_assert_eq!(&streamed.score, &reference.score);
             prop_assert_eq!(streamed.late_inputs, 0);
             prop_assert!(streamed.resolved);
+        }
+    }
+}
+
+/// `Session::visible_objects`, as it was before it was indexed: the filter over every object. Given every
+/// object (`visible_objects(-inf, inf)`) and the session clock.
+fn reference_visible(
+    all: &[VisibleObject],
+    now: f64,
+    lower_ms: f64,
+    upper_ms: f64,
+) -> Vec<VisibleObject> {
+    let resolved = |o: &VisibleObject| {
+        matches!(
+            o.state,
+            VisibleState::Resolved | VisibleState::MissedButVisible
+        )
+    };
+    all.iter()
+        .copied()
+        .filter(|o| {
+            // Only an unresolved hold without an end is drawn up to the range.
+            let open = o.end_time_ms.is_none()
+                && matches!(o.state, VisibleState::OpenEnded | VisibleState::Holding);
+            let end = o
+                .end_time_ms
+                .unwrap_or(if open { upper_ms } else { o.start_time_ms });
+            let visible = o.start_time_ms <= upper_ms && end >= lower_ms;
+            let keep_resolved = resolved(o) && now - end <= 300.0 && end >= lower_ms;
+            visible || keep_resolved
+        })
+        .collect()
+}
+
+/// Compares the frame queries of `session` with the reference. `pressed` is the key state to expect, when
+/// the inputs are handled as they arrive.
+fn check_queries(
+    session: &Session,
+    now: f64,
+    windows: &[(f64, f64)],
+    events: usize,
+    pressed: Option<[bool; 4]>,
+) -> Result<(), TestCaseError> {
+    let all = session.visible_objects(f64::NEG_INFINITY, f64::INFINITY);
+    prop_assert!(all.iter().enumerate().all(|(i, o)| o.id as usize == i));
+    let resolved = |o: &VisibleObject| {
+        matches!(
+            o.state,
+            VisibleState::Resolved | VisibleState::MissedButVisible
+        )
+    };
+    prop_assert_eq!(all.iter().filter(|o| resolved(o)).count(), events);
+    prop_assert_eq!(
+        session.is_resolved(),
+        session.coverage_ms() == f64::INFINITY && all.iter().all(resolved)
+    );
+
+    for (lane, state) in session.lane_states().iter().enumerate() {
+        prop_assert_eq!(state.lane as usize, lane);
+        let holding = all
+            .iter()
+            .find(|o| o.lane as usize == lane && o.state == VisibleState::Holding);
+        prop_assert_eq!(state.holding_object, holding.map(|o| o.id));
+        if let Some(pressed) = pressed {
+            prop_assert_eq!(state.is_pressed, pressed[lane]);
+        }
+    }
+
+    for &(lower_ms, upper_ms) in windows {
+        prop_assert_eq!(
+            session.visible_objects(lower_ms, upper_ms),
+            reference_visible(&all, now, lower_ms, upper_ms),
+            "window {} to {}",
+            lower_ms,
+            upper_ms
+        );
+    }
+    Ok(())
+}
+
+/// Windows as (lower, upper) in milliseconds: some absolute, some around the clock, some reversed.
+fn query_windows() -> impl Strategy<Value = Vec<(i32, i32)>> {
+    prop::collection::vec((-4000i32..4000, 0i32..4000), 1..5)
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(2000))]
+
+    /// At every step of a complete or streamed session, `visible_objects`, `lane_states` and
+    /// `is_resolved` equal their linear definitions.
+    #[test]
+    fn frame_queries_match_a_linear_reference(
+        ((chart, judge, inputs, watermarks, as_tokens, (cuts, end_at)), windows) in
+            (stream_case(), query_windows())
+    ) {
+        let ruleset = Ruleset { judge };
+        let streamed = schedule(&inputs, &watermarks, pages(&chart, as_tokens, &cuts, end_at));
+        for (mut session, steps, is_complete) in [
+            (complete(&chart, ruleset), with_advances(&inputs, &watermarks), true),
+            (Session::streaming(ruleset), streamed, false),
+        ] {
+            let (mut now, mut events, mut pressed) = (f64::NEG_INFINITY, 0, [false; 4]);
+            for step in std::iter::once(None).chain(steps.iter().map(Some)) {
+                match step {
+                    None => {}
+                    Some(Step::Input(input)) => {
+                        events += session.input(*input).len();
+                        now = now.max(input.time_ms);
+                        pressed[input.lane as usize] = input.phase == Phase::Press;
+                    }
+                    Some(Step::Advance(watermark_ms)) => {
+                        events += session.advance(*watermark_ms).len();
+                        now = now.max(*watermark_ms);
+                    }
+                    Some(Step::Page(page)) => {
+                        events += match &page.delivery {
+                            Delivery::Objects(objects) => {
+                                session.append(objects, page.coverage_ms, page.end_of_stream)
+                            }
+                            Delivery::Tokens(tokens) => {
+                                session.append_tokens(tokens, page.coverage_ms, page.end_of_stream)
+                            }
+                        }
+                        .expect("valid page")
+                        .len();
+                    }
+                    Some(Step::DecidedThrough) => {}
+                }
+                let around = if now.is_finite() { now } else { 0.0 };
+                let windows: Vec<(f64, f64)> = windows
+                    .iter()
+                    .flat_map(|&(lower, length)| {
+                        let (lower, length) = (f64::from(lower) / 2.0, f64::from(length) / 2.0);
+                        [
+                            (lower, lower + length),
+                            (around + lower, around + lower + length),
+                            (lower + length, lower),
+                        ]
+                    })
+                    .collect();
+                check_queries(&session, now, &windows, events, is_complete.then_some(pressed))?;
+            }
         }
     }
 }
