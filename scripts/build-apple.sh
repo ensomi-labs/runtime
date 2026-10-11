@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Builds build/apple/EnsomiRuntimeFFI.xcframework (macOS arm64, iOS arm64, iOS simulator arm64) and
 # regenerates the Swift sources of the swift/ package. Run on a Mac with Xcode and the three Rust
-# targets installed; honours CARGO_TARGET_DIR.
+# targets installed; honours CARGO_TARGET_DIR. The archives include ONNX Runtime, which the ort crate
+# downloads as a static library for each target; its licence and third-party notices are copied to
+# build/apple/licenses beside the xcframework.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -22,7 +24,7 @@ work=build/apple/work
 # links another binary package with a top-level module.modulemap would otherwise get two files at
 # include/module.modulemap.
 headers="$work/headers/${lib}FFI"
-rm -rf "$work" build/apple/EnsomiRuntimeFFI.xcframework
+rm -rf "$work"
 mkdir -p "$headers"
 
 # The bindings are generated from the metadata embedded in the macOS library.
@@ -32,7 +34,6 @@ cargo run --release -p ensomi-runtime-ffi --features bindgen --bin uniffi-bindge
 
 cp "$work/${lib}FFI.h" "$headers/"
 cp "$work/${lib}FFI.modulemap" "$headers/module.modulemap"
-cp "$work/$lib.swift" swift/Sources/EnsomiRuntime/
 
 # Every Rust static library carries Rust's std, whose one unmangled symbol, rust_eh_personality, clashes
 # with any other Rust library linked into the app (Sonalign). Pre-link each archive into one object that
@@ -48,4 +49,10 @@ for i in "${!targets[@]}"; do
   libtool -static -o "$work/$target/lib$lib.a" "$work/$target/$lib.o"
   args+=(-library "$work/$target/lib$lib.a" -headers "$work/headers")
 done
+# The xcframework and the Swift sources generated with it are replaced last and together, so an app built
+# meanwhile sees a matching pair.
+rm -rf build/apple/EnsomiRuntimeFFI.xcframework
 xcodebuild -create-xcframework "${args[@]}" -output build/apple/EnsomiRuntimeFFI.xcframework
+cp "$work/$lib.swift" swift/Sources/EnsomiRuntime/
+mkdir -p build/apple/licenses
+cp -R licenses/onnxruntime build/apple/licenses/

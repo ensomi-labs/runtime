@@ -414,7 +414,13 @@ fileprivate final class UniffiHandleMap<T>: @unchecked Sendable {
 
 
 // Public interface members begin here.
-
+// Magic number for the Rust proxy to call using the same mechanism as every other method,
+// to free the callback once it's dropped by Rust.
+private let IDX_CALLBACK_FREE: Int32 = 0
+// Callback return codes
+private let UNIFFI_CALLBACK_SUCCESS: Int32 = 0
+private let UNIFFI_CALLBACK_ERROR: Int32 = 1
+private let UNIFFI_CALLBACK_UNEXPECTED_ERROR: Int32 = 2
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
@@ -549,6 +555,323 @@ fileprivate struct FfiConverterString: FfiConverter {
         writeBytes(&buf, value.utf8)
     }
 }
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterData: FfiConverterRustBuffer {
+    typealias SwiftType = Data
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Data {
+        let len: Int32 = try readInt(&buf)
+        return Data(try readBytes(&buf, count: Int(len)))
+    }
+
+    public static func write(_ value: Data, into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        writeBytes(&buf, value)
+    }
+}
+
+
+
+
+/**
+ * Stops a generation from another thread. The generation checks it before every graph run and phase.
+ */
+public protocol CancellationProtocol: AnyObject, Sendable {
+    
+    func cancel() 
+    
+    func isCancelled()  -> Bool
+    
+}
+/**
+ * Stops a generation from another thread. The generation checks it before every graph run and phase.
+ */
+open class Cancellation: CancellationProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_ensomi_runtime_ffi_fn_clone_cancellation(self.handle, $0) }
+    }
+public convenience init() {
+    let handle =
+        try! rustCall() {
+    uniffi_ensomi_runtime_ffi_fn_constructor_cancellation_new($0
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_ensomi_runtime_ffi_fn_free_cancellation(handle, $0) }
+    }
+
+    
+
+    
+open func cancel()  {try! rustCall() {
+    uniffi_ensomi_runtime_ffi_fn_method_cancellation_cancel(
+            self.uniffiCloneHandle(),$0
+    )
+}
+}
+    
+open func isCancelled() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+    uniffi_ensomi_runtime_ffi_fn_method_cancellation_is_cancelled(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCancellation: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = Cancellation
+
+    public static func lift(_ handle: UInt64) throws -> Cancellation {
+        return Cancellation(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: Cancellation) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Cancellation {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: Cancellation, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCancellation_lift(_ handle: UInt64) throws -> Cancellation {
+    return try FfiConverterTypeCancellation.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCancellation_lower(_ value: Cancellation) -> UInt64 {
+    return FfiConverterTypeCancellation.lower(value)
+}
+
+
+
+
+
+
+/**
+ * A model directory opened into ONNX Runtime sessions. One generation runs at a time; a second call
+ * waits for the first.
+ */
+public protocol ChartGeneratorProtocol: AnyObject, Sendable {
+    
+    func capabilities()  -> ModelCapabilities
+    
+    /**
+     * Generates a chart from mono float32 PCM in native byte order at `sample_rate`. Blocks until the
+     * chart is done; `listener` hears each phase and `cancellation` stops it at its next step.
+     */
+    func generate(pcm: Data, sampleRate: Double, request: GenerateChartRequest, listener: GenerationListener?, cancellation: Cancellation?) throws  -> ChartResult
+    
+}
+/**
+ * A model directory opened into ONNX Runtime sessions. One generation runs at a time; a second call
+ * waits for the first.
+ */
+open class ChartGenerator: ChartGeneratorProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_ensomi_runtime_ffi_fn_clone_chartgenerator(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_ensomi_runtime_ffi_fn_free_chartgenerator(handle, $0) }
+    }
+
+    
+    /**
+     * Opens a model directory: `runtime.json` and the files it names, or, when the directory has an
+     * `ensomi-model.json`, the runtime config that manifest names after checking the runtime range,
+     * the model and the size of every file it lists.
+     */
+public static func `open`(modelDirectory: String, options: GeneratorOptions)throws  -> ChartGenerator  {
+    return try  FfiConverterTypeChartGenerator_lift(try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
+    uniffi_ensomi_runtime_ffi_fn_constructor_chartgenerator_open(
+        FfiConverterString.lower(modelDirectory),
+        FfiConverterTypeGeneratorOptions_lower(options),$0
+    )
+})
+}
+    
+
+    
+open func capabilities() -> ModelCapabilities  {
+    return try!  FfiConverterTypeModelCapabilities_lift(try! rustCall() {
+    uniffi_ensomi_runtime_ffi_fn_method_chartgenerator_capabilities(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * Generates a chart from mono float32 PCM in native byte order at `sample_rate`. Blocks until the
+     * chart is done; `listener` hears each phase and `cancellation` stops it at its next step.
+     */
+open func generate(pcm: Data, sampleRate: Double, request: GenerateChartRequest, listener: GenerationListener?, cancellation: Cancellation?)throws  -> ChartResult  {
+    return try  FfiConverterTypeChartResult_lift(try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
+    uniffi_ensomi_runtime_ffi_fn_method_chartgenerator_generate(
+            self.uniffiCloneHandle(),
+        FfiConverterData.lower(pcm),
+        FfiConverterDouble.lower(sampleRate),
+        FfiConverterTypeGenerateChartRequest_lower(request),
+        FfiConverterOptionTypeGenerationListener.lower(listener),
+        FfiConverterOptionTypeCancellation.lower(cancellation),$0
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeChartGenerator: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = ChartGenerator
+
+    public static func lift(_ handle: UInt64) throws -> ChartGenerator {
+        return ChartGenerator(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: ChartGenerator) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ChartGenerator {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: ChartGenerator, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeChartGenerator_lift(_ handle: UInt64) throws -> ChartGenerator {
+    return try FfiConverterTypeChartGenerator.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeChartGenerator_lower(_ value: ChartGenerator) -> UInt64 {
+    return FfiConverterTypeChartGenerator.lower(value)
+}
+
+
 
 
 
@@ -997,6 +1320,209 @@ public func FfiConverterTypeGameplaySession_lower(_ value: GameplaySession) -> U
 
 
 
+
+
+/**
+ * Told of each phase a generation enters, on the generating thread.
+ */
+public protocol GenerationListener: AnyObject, Sendable {
+    
+    func progress(phase: GenerationPhase) 
+    
+}
+/**
+ * Told of each phase a generation enters, on the generating thread.
+ */
+open class GenerationListenerImpl: GenerationListener, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_ensomi_runtime_ffi_fn_clone_generationlistener(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_ensomi_runtime_ffi_fn_free_generationlistener(handle, $0) }
+    }
+
+    
+
+    
+open func progress(phase: GenerationPhase)  {try! rustCall() {
+    uniffi_ensomi_runtime_ffi_fn_method_generationlistener_progress(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeGenerationPhase_lower(phase),$0
+    )
+}
+}
+    
+
+    
+}
+
+
+
+// Put the implementation in a struct so we don't pollute the top-level namespace
+fileprivate struct UniffiCallbackInterfaceGenerationListener {
+
+    // Create the VTable using a series of closures.
+    // Swift automatically converts these into C callback functions.
+    //
+    // Store the vtable directly.
+    static let vtable: UniffiVTableCallbackInterfaceGenerationListener = UniffiVTableCallbackInterfaceGenerationListener(
+        uniffiFree: { (uniffiHandle: UInt64) -> () in
+            do {
+                try FfiConverterTypeGenerationListener.handleMap.remove(handle: uniffiHandle)
+            } catch {
+                print("Uniffi callback interface GenerationListener: handle missing in uniffiFree")
+            }
+        },
+        uniffiClone: { (uniffiHandle: UInt64) -> UInt64 in
+            do {
+                return try FfiConverterTypeGenerationListener.handleMap.clone(handle: uniffiHandle)
+            } catch {
+                fatalError("Uniffi callback interface GenerationListener: handle missing in uniffiClone")
+            }
+        },
+        progress: { (
+            uniffiHandle: UInt64,
+            phase: RustBuffer,
+            uniffiOutReturn: UnsafeMutableRawPointer,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> () in
+                guard let uniffiObj = try? FfiConverterTypeGenerationListener.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return uniffiObj.progress(
+                     phase: try FfiConverterTypeGenerationPhase_lift(phase)
+                )
+            }
+
+            
+            let writeReturn = { () }
+            uniffiTraitInterfaceCall(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn
+            )
+        }
+    )
+
+    // Rust stores this pointer for future callback invocations, so it must live
+    // for the process lifetime (not just for the init function call).
+    //
+    // `nonisolated(unsafe)` is needed under Swift 6 strict concurrency.
+    // This is safe because the pointee is initialized once during static init
+    // and never mutated by either side of the FFI.  Its fields are C function pointers.
+    nonisolated(unsafe) static let vtablePtr: UnsafePointer<UniffiVTableCallbackInterfaceGenerationListener> = {
+        let ptr = UnsafeMutablePointer<UniffiVTableCallbackInterfaceGenerationListener>.allocate(capacity: 1)
+        ptr.initialize(to: vtable)
+        return UnsafePointer(ptr)
+    }()
+}
+
+private func uniffiCallbackInitGenerationListener() {
+    uniffi_ensomi_runtime_ffi_fn_init_callback_vtable_generationlistener(UniffiCallbackInterfaceGenerationListener.vtablePtr)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeGenerationListener: FfiConverter {
+    fileprivate static let handleMap = UniffiHandleMap<GenerationListener>()
+
+    typealias FfiType = UInt64
+    typealias SwiftType = GenerationListener
+
+    public static func lift(_ handle: UInt64) throws -> GenerationListener {
+        if ((handle & 1) == 0) {
+            // Rust-generated handle, construct a new class that uses the handle to implement the
+            // interface
+            return GenerationListenerImpl(unsafeFromHandle: handle)
+        } else {
+            // Swift-generated handle, get the object from the handle map
+            return try handleMap.remove(handle: handle)
+        }
+    }
+
+    public static func lower(_ value: GenerationListener) -> UInt64 {
+         if let rustImpl = value as? GenerationListenerImpl {
+             // Rust-implemented object.  Clone the handle and return it
+            return rustImpl.uniffiCloneHandle()
+         } else {
+            // Swift object, generate a new vtable handle and return that.
+            return handleMap.insert(obj: value)
+         }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> GenerationListener {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: GenerationListener, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGenerationListener_lift(_ handle: UInt64) throws -> GenerationListener {
+    return try FfiConverterTypeGenerationListener.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGenerationListener_lower(_ value: GenerationListener) -> UInt64 {
+    return FfiConverterTypeGenerationListener.lower(value)
+}
+
+
+
+
 public struct Chart: Equatable, Hashable {
     public var durationMs: UInt32
     public var objects: [ChartObject]
@@ -1048,6 +1574,72 @@ public func FfiConverterTypeChart_lift(_ buf: RustBuffer) throws -> Chart {
 #endif
 public func FfiConverterTypeChart_lower(_ value: Chart) -> RustBuffer {
     return FfiConverterTypeChart.lower(value)
+}
+
+
+public struct ChartControls: Equatable, Hashable {
+    /**
+     * `None` leaves the amount of holds to the model.
+     */
+    public var longNotes: LongNoteAmount?
+    /**
+     * Spans with their own request; they must not overlap.
+     */
+    public var sections: [SectionRequest]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * `None` leaves the amount of holds to the model.
+         */longNotes: LongNoteAmount? = nil, 
+        /**
+         * Spans with their own request; they must not overlap.
+         */sections: [SectionRequest] = []) {
+        self.longNotes = longNotes
+        self.sections = sections
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension ChartControls: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeChartControls: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ChartControls {
+        return
+            try ChartControls(
+                longNotes: FfiConverterOptionTypeLongNoteAmount.read(from: &buf), 
+                sections: FfiConverterSequenceTypeSectionRequest.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ChartControls, into buf: inout [UInt8]) {
+        FfiConverterOptionTypeLongNoteAmount.write(value.longNotes, into: &buf)
+        FfiConverterSequenceTypeSectionRequest.write(value.sections, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeChartControls_lift(_ buf: RustBuffer) throws -> ChartControls {
+    return try FfiConverterTypeChartControls.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeChartControls_lower(_ value: ChartControls) -> RustBuffer {
+    return FfiConverterTypeChartControls.lower(value)
 }
 
 
@@ -1109,6 +1701,70 @@ public func FfiConverterTypeChartObject_lower(_ value: ChartObject) -> RustBuffe
 }
 
 
+public struct ChartResult: Equatable, Hashable {
+    public var chart: Chart
+    /**
+     * The chart as an osu!mania 4K beatmap.
+     */
+    public var osu: String
+    public var receipt: GenerationReceipt
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(chart: Chart, 
+        /**
+         * The chart as an osu!mania 4K beatmap.
+         */osu: String, receipt: GenerationReceipt) {
+        self.chart = chart
+        self.osu = osu
+        self.receipt = receipt
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension ChartResult: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeChartResult: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ChartResult {
+        return
+            try ChartResult(
+                chart: FfiConverterTypeChart.read(from: &buf), 
+                osu: FfiConverterString.read(from: &buf), 
+                receipt: FfiConverterTypeGenerationReceipt.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ChartResult, into buf: inout [UInt8]) {
+        FfiConverterTypeChart.write(value.chart, into: &buf)
+        FfiConverterString.write(value.osu, into: &buf)
+        FfiConverterTypeGenerationReceipt.write(value.receipt, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeChartResult_lift(_ buf: RustBuffer) throws -> ChartResult {
+    return try FfiConverterTypeChartResult.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeChartResult_lower(_ value: ChartResult) -> RustBuffer {
+    return FfiConverterTypeChartResult.lower(value)
+}
+
+
 public struct ChartToken: Equatable, Hashable {
     public var lane: UInt32
     public var timeMs: Double
@@ -1164,6 +1820,300 @@ public func FfiConverterTypeChartToken_lift(_ buf: RustBuffer) throws -> ChartTo
 #endif
 public func FfiConverterTypeChartToken_lower(_ value: ChartToken) -> RustBuffer {
     return FfiConverterTypeChartToken.lower(value)
+}
+
+
+public struct ControlCapability: Equatable, Hashable {
+    public var name: String
+    public var status: ControlStatus
+    public var note: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(name: String, status: ControlStatus, note: String) {
+        self.name = name
+        self.status = status
+        self.note = note
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension ControlCapability: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeControlCapability: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ControlCapability {
+        return
+            try ControlCapability(
+                name: FfiConverterString.read(from: &buf), 
+                status: FfiConverterTypeControlStatus.read(from: &buf), 
+                note: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ControlCapability, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.name, into: &buf)
+        FfiConverterTypeControlStatus.write(value.status, into: &buf)
+        FfiConverterString.write(value.note, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeControlCapability_lift(_ buf: RustBuffer) throws -> ControlCapability {
+    return try FfiConverterTypeControlCapability.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeControlCapability_lower(_ value: ControlCapability) -> RustBuffer {
+    return FfiConverterTypeControlCapability.lower(value)
+}
+
+
+/**
+ * EnsomiProtocol's `GenerateChartRequest` without the audio reference: the PCM is passed beside it.
+ */
+public struct GenerateChartRequest: Equatable, Hashable {
+    /**
+     * Star rating of the whole chart, within the capabilities' range.
+     */
+    public var star: Double
+    /**
+     * The same model, PCM, star, controls and seed give the same chart.
+     */
+    public var seed: UInt64
+    public var controls: ChartControls
+    /**
+     * Written to the `.osu`; "Ensomi" and "Unknown" when absent.
+     */
+    public var title: String?
+    public var artist: String?
+    /**
+     * The song's file name, whose extension names the `.osu` audio file (`audio.<extension>`);
+     * `audio.wav` when absent.
+     */
+    public var audioName: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Star rating of the whole chart, within the capabilities' range.
+         */star: Double, 
+        /**
+         * The same model, PCM, star, controls and seed give the same chart.
+         */seed: UInt64 = UInt64(0), controls: ChartControls = ChartControls(), 
+        /**
+         * Written to the `.osu`; "Ensomi" and "Unknown" when absent.
+         */title: String? = nil, artist: String? = nil, 
+        /**
+         * The song's file name, whose extension names the `.osu` audio file (`audio.<extension>`);
+         * `audio.wav` when absent.
+         */audioName: String? = nil) {
+        self.star = star
+        self.seed = seed
+        self.controls = controls
+        self.title = title
+        self.artist = artist
+        self.audioName = audioName
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension GenerateChartRequest: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeGenerateChartRequest: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> GenerateChartRequest {
+        return
+            try GenerateChartRequest(
+                star: FfiConverterDouble.read(from: &buf), 
+                seed: FfiConverterUInt64.read(from: &buf), 
+                controls: FfiConverterTypeChartControls.read(from: &buf), 
+                title: FfiConverterOptionString.read(from: &buf), 
+                artist: FfiConverterOptionString.read(from: &buf), 
+                audioName: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: GenerateChartRequest, into buf: inout [UInt8]) {
+        FfiConverterDouble.write(value.star, into: &buf)
+        FfiConverterUInt64.write(value.seed, into: &buf)
+        FfiConverterTypeChartControls.write(value.controls, into: &buf)
+        FfiConverterOptionString.write(value.title, into: &buf)
+        FfiConverterOptionString.write(value.artist, into: &buf)
+        FfiConverterOptionString.write(value.audioName, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGenerateChartRequest_lift(_ buf: RustBuffer) throws -> GenerateChartRequest {
+    return try FfiConverterTypeGenerateChartRequest.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGenerateChartRequest_lower(_ value: GenerateChartRequest) -> RustBuffer {
+    return FfiConverterTypeGenerateChartRequest.lower(value)
+}
+
+
+/**
+ * EnsomiProtocol's `GenerationReceipt`.
+ */
+public struct GenerationReceipt: Equatable, Hashable {
+    public var modelName: String
+    public var modelVersion: String
+    public var seed: UInt64
+    public var star: Double
+    /**
+     * The runtime's complete receipt, including realised settings and timings.
+     */
+    public var receiptJson: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(modelName: String, modelVersion: String, seed: UInt64, star: Double, 
+        /**
+         * The runtime's complete receipt, including realised settings and timings.
+         */receiptJson: String) {
+        self.modelName = modelName
+        self.modelVersion = modelVersion
+        self.seed = seed
+        self.star = star
+        self.receiptJson = receiptJson
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension GenerationReceipt: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeGenerationReceipt: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> GenerationReceipt {
+        return
+            try GenerationReceipt(
+                modelName: FfiConverterString.read(from: &buf), 
+                modelVersion: FfiConverterString.read(from: &buf), 
+                seed: FfiConverterUInt64.read(from: &buf), 
+                star: FfiConverterDouble.read(from: &buf), 
+                receiptJson: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: GenerationReceipt, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.modelName, into: &buf)
+        FfiConverterString.write(value.modelVersion, into: &buf)
+        FfiConverterUInt64.write(value.seed, into: &buf)
+        FfiConverterDouble.write(value.star, into: &buf)
+        FfiConverterString.write(value.receiptJson, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGenerationReceipt_lift(_ buf: RustBuffer) throws -> GenerationReceipt {
+    return try FfiConverterTypeGenerationReceipt.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGenerationReceipt_lower(_ value: GenerationReceipt) -> RustBuffer {
+    return FfiConverterTypeGenerationReceipt.lower(value)
+}
+
+
+public struct GeneratorOptions: Equatable, Hashable {
+    public var provider: ExecutionProvider
+    /**
+     * Directory holding the runtime's `resample-<rate>*` tables, read for PCM at a rate other than
+     * 22050 Hz.
+     */
+    public var resamplerDirectory: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(provider: ExecutionProvider, 
+        /**
+         * Directory holding the runtime's `resample-<rate>*` tables, read for PCM at a rate other than
+         * 22050 Hz.
+         */resamplerDirectory: String? = nil) {
+        self.provider = provider
+        self.resamplerDirectory = resamplerDirectory
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension GeneratorOptions: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeGeneratorOptions: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> GeneratorOptions {
+        return
+            try GeneratorOptions(
+                provider: FfiConverterTypeExecutionProvider.read(from: &buf), 
+                resamplerDirectory: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: GeneratorOptions, into buf: inout [UInt8]) {
+        FfiConverterTypeExecutionProvider.write(value.provider, into: &buf)
+        FfiConverterOptionString.write(value.resamplerDirectory, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGeneratorOptions_lift(_ buf: RustBuffer) throws -> GeneratorOptions {
+    return try FfiConverterTypeGeneratorOptions.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGeneratorOptions_lower(_ value: GeneratorOptions) -> RustBuffer {
+    return FfiConverterTypeGeneratorOptions.lower(value)
 }
 
 
@@ -1597,6 +2547,155 @@ public func FfiConverterTypeLaneState_lower(_ value: LaneState) -> RustBuffer {
 }
 
 
+/**
+ * EnsomiProtocol's `ModelCapabilities`.
+ */
+public struct ModelCapabilities: Equatable, Hashable {
+    public var modelName: String
+    public var modelVersion: String
+    public var files: [ModelFile]
+    /**
+     * Accepted star range: `min_star <= star < max_star_exclusive`.
+     */
+    public var minStar: Double
+    public var maxStarExclusive: Double
+    public var controls: [ControlCapability]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(modelName: String, modelVersion: String, files: [ModelFile], 
+        /**
+         * Accepted star range: `min_star <= star < max_star_exclusive`.
+         */minStar: Double, maxStarExclusive: Double, controls: [ControlCapability]) {
+        self.modelName = modelName
+        self.modelVersion = modelVersion
+        self.files = files
+        self.minStar = minStar
+        self.maxStarExclusive = maxStarExclusive
+        self.controls = controls
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension ModelCapabilities: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeModelCapabilities: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ModelCapabilities {
+        return
+            try ModelCapabilities(
+                modelName: FfiConverterString.read(from: &buf), 
+                modelVersion: FfiConverterString.read(from: &buf), 
+                files: FfiConverterSequenceTypeModelFile.read(from: &buf), 
+                minStar: FfiConverterDouble.read(from: &buf), 
+                maxStarExclusive: FfiConverterDouble.read(from: &buf), 
+                controls: FfiConverterSequenceTypeControlCapability.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ModelCapabilities, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.modelName, into: &buf)
+        FfiConverterString.write(value.modelVersion, into: &buf)
+        FfiConverterSequenceTypeModelFile.write(value.files, into: &buf)
+        FfiConverterDouble.write(value.minStar, into: &buf)
+        FfiConverterDouble.write(value.maxStarExclusive, into: &buf)
+        FfiConverterSequenceTypeControlCapability.write(value.controls, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeModelCapabilities_lift(_ buf: RustBuffer) throws -> ModelCapabilities {
+    return try FfiConverterTypeModelCapabilities.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeModelCapabilities_lower(_ value: ModelCapabilities) -> RustBuffer {
+    return FfiConverterTypeModelCapabilities.lower(value)
+}
+
+
+public struct ModelFile: Equatable, Hashable {
+    /**
+     * Relative to the model directory.
+     */
+    public var path: String
+    /**
+     * Empty when the directory has no `ensomi-model.json`.
+     */
+    public var sha256Hex: String
+    public var sizeBytes: UInt64?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Relative to the model directory.
+         */path: String, 
+        /**
+         * Empty when the directory has no `ensomi-model.json`.
+         */sha256Hex: String, sizeBytes: UInt64?) {
+        self.path = path
+        self.sha256Hex = sha256Hex
+        self.sizeBytes = sizeBytes
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension ModelFile: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeModelFile: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ModelFile {
+        return
+            try ModelFile(
+                path: FfiConverterString.read(from: &buf), 
+                sha256Hex: FfiConverterString.read(from: &buf), 
+                sizeBytes: FfiConverterOptionUInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ModelFile, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.path, into: &buf)
+        FfiConverterString.write(value.sha256Hex, into: &buf)
+        FfiConverterOptionUInt64.write(value.sizeBytes, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeModelFile_lift(_ buf: RustBuffer) throws -> ModelFile {
+    return try FfiConverterTypeModelFile.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeModelFile_lower(_ value: ModelFile) -> RustBuffer {
+    return FfiConverterTypeModelFile.lower(value)
+}
+
+
 public struct OsuBeatmap: Equatable, Hashable {
     public var chart: Chart
     public var title: String?
@@ -1768,6 +2867,67 @@ public func FfiConverterTypeScore_lift(_ buf: RustBuffer) throws -> Score {
 #endif
 public func FfiConverterTypeScore_lower(_ value: Score) -> RustBuffer {
     return FfiConverterTypeScore.lower(value)
+}
+
+
+/**
+ * A request for one span of the song, in audio milliseconds (R2: 8 to 32 seconds).
+ */
+public struct SectionRequest: Equatable, Hashable {
+    public var startMs: UInt32
+    public var endMs: UInt32
+    public var target: SectionTarget
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(startMs: UInt32, endMs: UInt32, target: SectionTarget) {
+        self.startMs = startMs
+        self.endMs = endMs
+        self.target = target
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension SectionRequest: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSectionRequest: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SectionRequest {
+        return
+            try SectionRequest(
+                startMs: FfiConverterUInt32.read(from: &buf), 
+                endMs: FfiConverterUInt32.read(from: &buf), 
+                target: FfiConverterTypeSectionTarget.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: SectionRequest, into buf: inout [UInt8]) {
+        FfiConverterUInt32.write(value.startMs, into: &buf)
+        FfiConverterUInt32.write(value.endMs, into: &buf)
+        FfiConverterTypeSectionTarget.write(value.target, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSectionRequest_lift(_ buf: RustBuffer) throws -> SectionRequest {
+    return try FfiConverterTypeSectionRequest.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSectionRequest_lower(_ value: SectionRequest) -> RustBuffer {
+    return FfiConverterTypeSectionRequest.lower(value)
 }
 
 
@@ -2063,6 +3223,359 @@ public func FfiConverterTypeChartError_lower(_ value: ChartError) -> RustBuffer 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
+public enum ControlStatus: Equatable, Hashable {
+    
+    /**
+     * Checked against human judgement.
+     */
+    case works
+    /**
+     * Accepted and measured, but not checked against human judgement.
+     */
+    case experimental
+    /**
+     * Accepted but known not to do what it says; not to be offered.
+     */
+    case notWorking
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension ControlStatus: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeControlStatus: FfiConverterRustBuffer {
+    typealias SwiftType = ControlStatus
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ControlStatus {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .works
+        
+        case 2: return .experimental
+        
+        case 3: return .notWorking
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: ControlStatus, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .works:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .experimental:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .notWorking:
+            writeInt(&buf, Int32(3))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeControlStatus_lift(_ buf: RustBuffer) throws -> ControlStatus {
+    return try FfiConverterTypeControlStatus.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeControlStatus_lower(_ value: ControlStatus) -> RustBuffer {
+    return FfiConverterTypeControlStatus.lower(value)
+}
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+/**
+ * Where ONNX Runtime runs the graphs.
+ */
+
+public enum ExecutionProvider: Equatable, Hashable {
+    
+    /**
+     * ONNX Runtime's CPU provider.
+     */
+    case cpu
+    /**
+     * Core ML for BeatThis, the CPU for the other graphs. Apple platforms only.
+     */
+    case coreMl
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension ExecutionProvider: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeExecutionProvider: FfiConverterRustBuffer {
+    typealias SwiftType = ExecutionProvider
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ExecutionProvider {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .cpu
+        
+        case 2: return .coreMl
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: ExecutionProvider, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .cpu:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .coreMl:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeExecutionProvider_lift(_ buf: RustBuffer) throws -> ExecutionProvider {
+    return try FfiConverterTypeExecutionProvider.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeExecutionProvider_lower(_ value: ExecutionProvider) -> RustBuffer {
+    return FfiConverterTypeExecutionProvider.lower(value)
+}
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+/**
+ * EnsomiProtocol's `GenerationPhase`.
+ */
+
+public enum GenerationPhase: Equatable, Hashable {
+    
+    case loading
+    case timing
+    case rows
+    case arrangement
+    case export
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension GenerationPhase: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeGenerationPhase: FfiConverterRustBuffer {
+    typealias SwiftType = GenerationPhase
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> GenerationPhase {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .loading
+        
+        case 2: return .timing
+        
+        case 3: return .rows
+        
+        case 4: return .arrangement
+        
+        case 5: return .export
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: GenerationPhase, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .loading:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .timing:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .rows:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .arrangement:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .export:
+            writeInt(&buf, Int32(5))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGenerationPhase_lift(_ buf: RustBuffer) throws -> GenerationPhase {
+    return try FfiConverterTypeGenerationPhase.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGenerationPhase_lower(_ value: GenerationPhase) -> RustBuffer {
+    return FfiConverterTypeGenerationPhase.lower(value)
+}
+
+
+
+public enum GeneratorError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+
+    
+    
+    /**
+     * A file of the model directory or a resampler table is missing or unreadable, or the directory holds
+     * a model this runtime does not run.
+     */
+    case Model(message: String
+    )
+    /**
+     * The generation was refused or failed. `code` is EnsomiProtocol's `ErrorEvent.code`:
+     * `star_out_of_range`, `unsupported_control` or `generation_failed`.
+     */
+    case Generation(code: String, message: String
+    )
+    /**
+     * Stopped through its `Cancellation`.
+     */
+    case Cancelled
+
+    
+
+    
+
+    
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+    
+}
+
+#if compiler(>=6)
+extension GeneratorError: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeGeneratorError: FfiConverterRustBuffer {
+    typealias SwiftType = GeneratorError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> GeneratorError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .Model(
+            message: try FfiConverterString.read(from: &buf)
+            )
+        case 2: return .Generation(
+            code: try FfiConverterString.read(from: &buf), 
+            message: try FfiConverterString.read(from: &buf)
+            )
+        case 3: return .Cancelled
+
+         default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: GeneratorError, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        
+        case let .Model(message):
+            writeInt(&buf, Int32(1))
+            FfiConverterString.write(message, into: &buf)
+            
+        
+        case let .Generation(code,message):
+            writeInt(&buf, Int32(2))
+            FfiConverterString.write(code, into: &buf)
+            FfiConverterString.write(message, into: &buf)
+            
+        
+        case .Cancelled:
+            writeInt(&buf, Int32(3))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGeneratorError_lift(_ buf: RustBuffer) throws -> GeneratorError {
+    return try FfiConverterTypeGeneratorError.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGeneratorError_lower(_ value: GeneratorError) -> RustBuffer {
+    return FfiConverterTypeGeneratorError.lower(value)
+}
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
 public enum Geometry: Equatable, Hashable {
     
     case tap(y: Double
@@ -2298,6 +3811,80 @@ public func FfiConverterTypeJudgement_lower(_ value: Judgement) -> RustBuffer {
 }
 
 
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
+public enum LongNoteAmount: Equatable, Hashable {
+    
+    case tapOnly
+    case half
+    case natural
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension LongNoteAmount: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeLongNoteAmount: FfiConverterRustBuffer {
+    typealias SwiftType = LongNoteAmount
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LongNoteAmount {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .tapOnly
+        
+        case 2: return .half
+        
+        case 3: return .natural
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: LongNoteAmount, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .tapOnly:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .half:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .natural:
+            writeInt(&buf, Int32(3))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLongNoteAmount_lift(_ buf: RustBuffer) throws -> LongNoteAmount {
+    return try FfiConverterTypeLongNoteAmount.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLongNoteAmount_lower(_ value: LongNoteAmount) -> RustBuffer {
+    return FfiConverterTypeLongNoteAmount.lower(value)
+}
+
+
 
 public enum OsuError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
@@ -2468,6 +4055,94 @@ public func FfiConverterTypePart_lower(_ value: Part) -> RustBuffer {
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
+public enum PatternKind: Equatable, Hashable {
+    
+    case stream
+    case jumpstream
+    case chordstream
+    case jack
+    case chordjack
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension PatternKind: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePatternKind: FfiConverterRustBuffer {
+    typealias SwiftType = PatternKind
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PatternKind {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .stream
+        
+        case 2: return .jumpstream
+        
+        case 3: return .chordstream
+        
+        case 4: return .jack
+        
+        case 5: return .chordjack
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: PatternKind, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .stream:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .jumpstream:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .chordstream:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .jack:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .chordjack:
+            writeInt(&buf, Int32(5))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePatternKind_lift(_ buf: RustBuffer) throws -> PatternKind {
+    return try FfiConverterTypePatternKind.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePatternKind_lower(_ value: PatternKind) -> RustBuffer {
+    return FfiConverterTypePatternKind.lower(value)
+}
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
 public enum Phase: Equatable, Hashable {
     
     case press
@@ -2529,6 +4204,86 @@ public func FfiConverterTypePhase_lift(_ buf: RustBuffer) throws -> Phase {
 #endif
 public func FfiConverterTypePhase_lower(_ value: Phase) -> RustBuffer {
     return FfiConverterTypePhase.lower(value)
+}
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
+public enum SectionTarget: Equatable, Hashable {
+    
+    /**
+     * Star rating for this span alone.
+     */
+    case star(star: Double
+    )
+    /**
+     * Note pattern for this span; `strength` from 0 to 1.
+     */
+    case pattern(kind: PatternKind, strength: Double
+    )
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension SectionTarget: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSectionTarget: FfiConverterRustBuffer {
+    typealias SwiftType = SectionTarget
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SectionTarget {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .star(star: try FfiConverterDouble.read(from: &buf)
+        )
+        
+        case 2: return .pattern(kind: try FfiConverterTypePatternKind.read(from: &buf), strength: try FfiConverterDouble.read(from: &buf)
+        )
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: SectionTarget, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case let .star(star):
+            writeInt(&buf, Int32(1))
+            FfiConverterDouble.write(star, into: &buf)
+            
+        
+        case let .pattern(kind,strength):
+            writeInt(&buf, Int32(2))
+            FfiConverterTypePatternKind.write(kind, into: &buf)
+            FfiConverterDouble.write(strength, into: &buf)
+            
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSectionTarget_lift(_ buf: RustBuffer) throws -> SectionTarget {
+    return try FfiConverterTypeSectionTarget.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSectionTarget_lower(_ value: SectionTarget) -> RustBuffer {
+    return FfiConverterTypeSectionTarget.lower(value)
 }
 
 
@@ -2816,6 +4571,30 @@ fileprivate struct FfiConverterOptionUInt32: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionUInt64: FfiConverterRustBuffer {
+    typealias SwiftType = UInt64?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterUInt64.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterUInt64.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionDouble: FfiConverterRustBuffer {
     typealias SwiftType = Double?
 
@@ -2856,6 +4635,54 @@ fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterString.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeCancellation: FfiConverterRustBuffer {
+    typealias SwiftType = Cancellation?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeCancellation.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeCancellation.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeGenerationListener: FfiConverterRustBuffer {
+    typealias SwiftType = GenerationListener?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeGenerationListener.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeGenerationListener.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -2912,6 +4739,30 @@ fileprivate struct FfiConverterOptionTypeLaneInputTransition: FfiConverterRustBu
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeLongNoteAmount: FfiConverterRustBuffer {
+    typealias SwiftType = LongNoteAmount?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeLongNoteAmount.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeLongNoteAmount.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeChartObject: FfiConverterRustBuffer {
     typealias SwiftType = [ChartObject]
 
@@ -2954,6 +4805,31 @@ fileprivate struct FfiConverterSequenceTypeChartToken: FfiConverterRustBuffer {
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterTypeChartToken.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeControlCapability: FfiConverterRustBuffer {
+    typealias SwiftType = [ControlCapability]
+
+    public static func write(_ value: [ControlCapability], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeControlCapability.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [ControlCapability] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [ControlCapability]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeControlCapability.read(from: &buf))
         }
         return seq
     }
@@ -3029,6 +4905,56 @@ fileprivate struct FfiConverterSequenceTypeLaneState: FfiConverterRustBuffer {
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterTypeLaneState.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeModelFile: FfiConverterRustBuffer {
+    typealias SwiftType = [ModelFile]
+
+    public static func write(_ value: [ModelFile], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeModelFile.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [ModelFile] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [ModelFile]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeModelFile.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeSectionRequest: FfiConverterRustBuffer {
+    typealias SwiftType = [SectionRequest]
+
+    public static func write(_ value: [SectionRequest], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeSectionRequest.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [SectionRequest] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [SectionRequest]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeSectionRequest.read(from: &buf))
         }
         return seq
     }
@@ -3183,6 +5109,21 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ensomi_runtime_ffi_checksum_method_gameplaysession_visible_objects() != 11197) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_cancellation_cancel() != 22995) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_cancellation_is_cancelled() != 44208) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_chartgenerator_capabilities() != 48107) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_chartgenerator_generate() != 333) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_generationlistener_progress() != 30631) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_ensomi_runtime_ffi_checksum_constructor_gameplayfeedback_new() != 12333) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -3192,7 +5133,14 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ensomi_runtime_ffi_checksum_constructor_gameplaysession_streaming() != 50311) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_ensomi_runtime_ffi_checksum_constructor_cancellation_new() != 60988) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_constructor_chartgenerator_open() != 15501) {
+        return InitializationResult.apiChecksumMismatch
+    }
 
+    uniffiCallbackInitGenerationListener()
     return InitializationResult.ok
 }()
 

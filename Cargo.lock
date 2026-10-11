@@ -318,6 +318,7 @@ name = "ensomi-generate-ort"
 version = "0.1.0"
 dependencies = [
  "ensomi-generate",
+ "libc",
  "ort",
  "serde_json",
 ]
@@ -337,6 +338,9 @@ name = "ensomi-runtime-ffi"
 version = "0.1.0"
 dependencies = [
  "ensomi-gameplay",
+ "ensomi-generate",
+ "ensomi-generate-ort",
+ "serde_json",
  "uniffi",
 ]
 

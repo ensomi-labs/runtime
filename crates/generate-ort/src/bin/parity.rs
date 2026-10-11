@@ -4,7 +4,7 @@
 //! Usage: parity --model-dir <ensomi-r2> --reference <runtime-ref> --assets <resampler tables> --out <report.json> [song...]
 use ensomi_generate::{generate, Audio, ChartObject, Generator, Grid, Models, Options, ReplayRandom, Request, Samples, Trace, TraceFn};
 use ensomi_generate_ort::recording::Recording;
-use ensomi_generate_ort::{drive, phase_name, Sessions, Timings};
+use ensomi_generate_ort::{drive, phase_name, Config, Sessions, Timings};
 use serde_json::{json, Map, Value};
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -396,7 +396,7 @@ fn main() {
         let manifest: Value = serde_json::from_slice(&std::fs::read(onnx.join("runtime.json")).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
         let files = read_files(&Models::required_files(&manifest), &onnx)?;
         let models = Rc::new(Models::new(manifest, files)?);
-        let sessions = Sessions::load(&onnx, &models, false)?;
+        let sessions = Sessions::load(&onnx, &models, &Config::default())?;
         let mut ctx = Context { models, sessions };
         let mut songs_report = Map::new();
         for song in &songs {

@@ -9,6 +9,8 @@ inputs. Paths below are relative to `~/ensomi` on bings-mac; run the commands in
 | `wasm-parity.json` | `js/checks/replay.mjs`: the same replay through the Wasm build and onnxruntime-web (WASM backend) in Node. |
 | `same-as-ts.json` | `js/checks/same-as-ts.mjs`: charts, `.osu` and receipts against the TypeScript runtime, seeds 0, 1 and 2. |
 | `jsmath_cases.mjs` | Node's `Math` results for `crates/generate/examples/jsmath_check.rs`, which compares the fdlibm port bit for bit. |
+| `apple-providers.json` | `crates/generate-ort/examples/providers.rs`: time, memory and chart equality of ONNX Runtime's CPU and Core ML providers on the four songs. |
+| `native-charts/` | The same run's CPU chart and request for hesitation-snow, which `swift test` reproduces through the Swift API. |
 
 Large intermediate files go under `bulk/`, which is never mirrored.
 
@@ -26,6 +28,20 @@ Criteria: every recorded graph call within 1e-4 (BeatThis 2e-4), grid positions 
 same whole milliseconds and Mel frames, identical head times, prior exactly equal, identical sampled
 choices for every recorded draw, identical hit objects, timing points within 1e-6 ms, all other `.osu`
 text identical.
+
+## Providers on Apple silicon
+
+```sh
+CARGO_TARGET_DIR=target/apple cargo build --release -p ensomi-generate-ort --features coreml --example providers
+target/apple/release/examples/providers --model-dir ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 \
+  --reference ../ensomi-model/artifacts/runtime-ref --assets ../ensomi-web/packages/runtime/assets \
+  --out conformance/generate/apple-providers.json --charts conformance/generate/bulk/charts
+cp conformance/generate/bulk/charts/hesitation-snow.* conformance/generate/native-charts/
+```
+
+The input is what a client passes: the recorded PCM averaged to mono float32 at its recorded rate, without
+the recorded frontend streams, with the release example's star, seed, title and artist. Each configuration
+and song runs in a process of its own, which generates twice.
 
 ## Wasm replay and equality with TypeScript
 

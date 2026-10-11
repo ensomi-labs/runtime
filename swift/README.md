@@ -33,3 +33,36 @@ An app depends on the package with `.package(path: "../ensomi-runtime/swift")`.
 milliseconds as `Double`; the caller applies the audio offset once and passes chart time. A streamed session
 judges only as far as the coverage; `decidedThroughMs()` below the last watermark means the stream fell behind.
 Rules, streams and the differences from the Swift engine are in [`crates/gameplay/README.md`](../crates/gameplay/README.md).
+
+## Chart generator
+
+`ChartGenerator` runs the released R2 generator on the device: ONNX Runtime is linked into the xcframework and
+runs the graphs, so a chart is one call.
+
+```swift
+let generator = try ChartGenerator.open(
+    modelDirectory: onnx.path,                     // sed-i/ensomi-r2 onnx/: runtime.json and the files it names
+    options: GeneratorOptions(provider: .cpu, resamplerDirectory: tables.path)
+)
+let capabilities = generator.capabilities()        // EnsomiProtocol ModelCapabilities
+let result = try await generator.generate(
+    pcm: samples, sampleRate: 44_100,               // mono Float PCM at its own rate
+    request: GenerateChartRequest(star: 3.5, seed: 7, title: "Song", artist: "Artist", audioName: "song.mp3")
+) { phase in print(phase) }                         // .loading, .timing, .rows, .arrangement, .export
+try GameplaySession(chart: result.chart, ruleset: Ruleset(judge: .c))
+result.osu                                          // the chart as an osu!mania beatmap
+result.receipt                                      // EnsomiProtocol GenerationReceipt
+```
+
+- `open` reads `runtime.json` and the files it names. When the directory also holds an EnsomiProtocol
+  `ensomi-model.json`, `open` reads the runtime config it names and refuses the package unless this runtime is
+  in its runtime range, it is Ensomi R2 `r2-1.0` and every file it lists has its listed size; the downloader
+  checks each file's SHA-256. `capabilities().files` then carry the manifest's checksums and sizes.
+- PCM at a rate other than 22050 Hz is resampled with the runtime's soxr tables, `resample-<rate>.json`,
+  `.bin` and `-boundary.bin` for 11025, 16000, 24000, 32000, 44100, 48000, 88200, 96000 and 192000 Hz, read
+  from `resamplerDirectory`. They are not in this repository; today they are in
+  `ensomi-web/packages/runtime/assets`.
+- The same model, PCM, request and seed give the same chart. `generate(pcm:sampleRate:request:progress:)` runs
+  on a thread of its own; cancelling its task stops it at the next graph run or phase with
+  `GeneratorError.Cancelled`. Refusals carry EnsomiProtocol's error code in `GeneratorError.Generation`. The
+  blocking `generate(pcm:sampleRate:request:listener:cancellation:)` takes the PCM as `Data`.

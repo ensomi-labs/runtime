@@ -7,10 +7,32 @@ use std::collections::BTreeMap;
 use std::path::Path;
 use std::time::Instant;
 
+pub mod package;
 pub mod recording;
 
 fn ort_error(e: impl std::fmt::Display) -> String {
     e.to_string()
+}
+
+/// How ONNX Runtime runs the graphs.
+#[derive(Clone, Debug)]
+pub struct Config {
+    /// Graphs that the Core ML execution provider runs, in front of the CPU provider (Apple platforms,
+    /// the `coreml` feature). Empty runs every graph on the CPU.
+    pub coreml_graphs: Vec<String>,
+    /// Core ML `MLComputeUnits`: `ALL`, `CPUAndGPU`, `CPUAndNeuralEngine` or `CPUOnly`.
+    pub coreml_units: String,
+    /// Core ML `ModelFormat`: `MLProgram` or `NeuralNetwork`.
+    pub coreml_format: String,
+    /// Intra-op threads of each session; 0 lets ONNX Runtime choose.
+    pub threads: usize,
+}
+
+impl Default for Config {
+    /// CPU only, one intra-op and one inter-op thread, as the parity recordings were checked.
+    fn default() -> Self {
+        Config { coreml_graphs: Vec::new(), coreml_units: "ALL".to_string(), coreml_format: "MLProgram".to_string(), threads: 1 }
+    }
 }
 
 /// The six graphs of the release as ONNX Runtime sessions.
@@ -19,17 +41,18 @@ pub struct Sessions {
 }
 
 impl Sessions {
-    /// Loads every graph named in the manifest from `dir`. CPU, one intra-op and one inter-op thread,
-    /// as the parity recordings were checked; `coreml` adds the Core ML provider in front of the CPU.
-    pub fn load(dir: &Path, models: &Models, coreml: bool) -> Result<Sessions, String> {
+    /// Loads every graph named in the manifest from `dir`.
+    pub fn load(dir: &Path, models: &Models, config: &Config) -> Result<Sessions, String> {
         let mut sessions = Vec::new();
         for graph in &models.graphs {
             #[allow(unused_mut)]
-            let mut builder = Session::builder().map_err(ort_error)?.with_intra_threads(1).map_err(ort_error)?.with_inter_threads(1).map_err(ort_error)?;
-            if coreml {
+            let mut builder = Session::builder().map_err(ort_error)?.with_intra_threads(config.threads).map_err(ort_error)?.with_inter_threads(1).map_err(ort_error)?;
+            if config.coreml_graphs.contains(&graph.name) {
                 #[cfg(feature = "coreml")]
                 {
-                    builder = builder.with_execution_providers([ort::ep::CoreML::default().build()]).map_err(ort_error)?;
+                    use ort::ep::ArbitrarilyConfigurableExecutionProvider;
+                    let coreml = ort::ep::CoreML::default().with_arbitrary_config("MLComputeUnits", &config.coreml_units).with_arbitrary_config("ModelFormat", &config.coreml_format);
+                    builder = builder.with_execution_providers([coreml.build().error_on_failure()]).map_err(ort_error)?;
                 }
                 #[cfg(not(feature = "coreml"))]
                 return Err("built without the coreml feature".to_string());
@@ -87,6 +110,12 @@ pub struct Timings {
 
 /// Runs the generator to the end with `sessions`, timing the core and the graph runs.
 pub fn drive(generator: &mut Generator, sessions: &mut Sessions) -> Result<(GenerationResult, Timings), String> {
+    drive_observed(generator, sessions, |_| Ok(()))
+}
+
+/// [`drive`], calling `observe` with each phase the generator enters and with `None` before each graph
+/// run. An error from `observe` stops the generation with that error.
+pub fn drive_observed(generator: &mut Generator, sessions: &mut Sessions, mut observe: impl FnMut(Option<Phase>) -> Result<(), String>) -> Result<(GenerationResult, Timings), String> {
     let mut timings = Timings::default();
     let mut phase = 0usize;
     let mut outputs: Option<Tensors> = None;
@@ -96,6 +125,7 @@ pub fn drive(generator: &mut Generator, sessions: &mut Sessions) -> Result<(Gene
         timings.phases[phase].0 += start.elapsed().as_secs_f64();
         match step {
             Step::Run { graph, inputs } => {
+                observe(None)?;
                 let start = Instant::now();
                 outputs = Some(sessions.run(&graph, inputs)?);
                 let seconds = start.elapsed().as_secs_f64();
@@ -104,7 +134,10 @@ pub fn drive(generator: &mut Generator, sessions: &mut Sessions) -> Result<(Gene
                 entry.0 += 1;
                 entry.1 += seconds;
             }
-            Step::Progress(p) => phase = p as usize,
+            Step::Progress(p) => {
+                observe(Some(p))?;
+                phase = p as usize;
+            }
             Step::Done(result) => return Ok((*result, timings)),
         }
     }

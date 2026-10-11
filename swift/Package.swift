@@ -10,7 +10,12 @@ let package = Package(
     ],
     targets: [
         .binaryTarget(name: "EnsomiRuntimeFFI", path: "../build/apple/EnsomiRuntimeFFI.xcframework"),
-        .target(name: "EnsomiRuntime", dependencies: ["EnsomiRuntimeFFI"]),
+        // The xcframework carries ONNX Runtime, which is C++ and uses Core ML.
+        .target(
+            name: "EnsomiRuntime",
+            dependencies: ["EnsomiRuntimeFFI"],
+            linkerSettings: [.linkedLibrary("c++"), .linkedFramework("CoreML"), .linkedFramework("Foundation")]
+        ),
         .testTarget(name: "EnsomiRuntimeTests", dependencies: ["EnsomiRuntime"]),
     ],
     swiftLanguageModes: [.v5]

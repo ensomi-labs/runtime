@@ -1,5 +1,5 @@
-//! UniFFI bindings of the runtime core: the gameplay session, feedback state, note layout and the
-//! `.osu` loader.
+//! UniFFI bindings of the runtime core: the gameplay session, feedback state, note layout, the
+//! `.osu` loader and the chart generator ([`generator`]).
 //!
 //! The data types are the core's own, declared here again for the binding generator
 //! (`uniffi::remote`), so a change to a core type that is not mirrored fails to compile. The two stateful
@@ -13,6 +13,8 @@ use ensomi_gameplay::{
     TierCounts, TokenKind, VisibleObject, VisibleState,
 };
 use std::sync::{Arc, Mutex};
+
+pub mod generator;
 
 uniffi::setup_scaffolding!();
 

@@ -13,8 +13,14 @@ crate-type = ["staticlib", "cdylib", "lib"]
 
 [dependencies]
 ensomi-gameplay = { path = "../gameplay" }
+ensomi-generate = { path = "../generate" }
+ensomi-generate-ort = { path = "../generate-ort" }
+serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
 # Minor version pinned: third-party C# and JS generators target a UniFFI release series.
 uniffi = "0.31"
+
+[target.'cfg(target_vendor = "apple")'.dependencies]
+ensomi-generate-ort = { path = "../generate-ort", features = ["coreml"] }
 
 [features]
 # The binding generator, `cargo run --features bindgen --bin uniffi-bindgen`.

@@ -16,3 +16,6 @@ coreml = ["ort/coreml"]
 ensomi-generate = { path = "../generate" }
 ort = { version = "=2.0.0-rc.11" }
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
+
+[dev-dependencies]
+libc = "0.2"
