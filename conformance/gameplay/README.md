@@ -79,6 +79,7 @@ value, and keep the final one. The Rust test re-runs each fixture under several 
 - Order of simultaneous outcomes: `lock_before_window_at_equal_time`, `simultaneous_misses_in_chart_order`,
   `misses_without_input`.
 - Score and lanes: `combo_and_accuracy`, `chord_and_lanes`, `empty_chart`.
+- Chart time before 0: `input_before_zero`.
 - Late delivery: `late_delivery_hit`, `late_delivery_after_miss`, `late_delivery_release`, `late_delivery_out_of_order`.
 - `one_log_sparse_advances` and `one_log_dense_advances`: one log under two schedules, same expectations.
 

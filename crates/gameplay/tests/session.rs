@@ -115,6 +115,17 @@ fn a_late_input_is_handled_at_the_session_clock_and_counted() {
 }
 
 #[test]
+fn chart_time_may_be_negative() {
+    let mut session = session(vec![tap(0, 50)]);
+    let events = session.input(press(0, -100.0));
+    assert_eq!(
+        (events[0].tier, events[0].offset_ms, events[0].time_ms),
+        (Tier::G, Some(-150.0), -100.0)
+    );
+    assert_eq!(session.late_inputs(), 0);
+}
+
+#[test]
 fn an_input_stamped_on_the_clock_is_not_late() {
     let mut session = session(vec![tap(0, 1_000)]);
     session.advance(1_100.0);

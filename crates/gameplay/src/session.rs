@@ -147,7 +147,8 @@ pub struct Session {
     /// Per lane, position in `lanes` before which every object is resolved.
     cursor: [usize; LANES],
     pressed: [bool; LANES],
-    /// The session clock: the largest watermark or input time seen.
+    /// The session clock: the largest watermark or input time seen. Chart time can be negative: the audio
+    /// offset puts the start of the audio before 0.
     now: f64,
     late_inputs: u32,
     next_event_id: u64,
@@ -182,7 +183,7 @@ impl Session {
             lanes,
             cursor: [0; LANES],
             pressed: [false; LANES],
-            now: 0.0,
+            now: f64::NEG_INFINITY,
             late_inputs: 0,
             next_event_id: 0,
             counts: TierCounts::default(),

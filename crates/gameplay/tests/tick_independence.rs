@@ -77,7 +77,7 @@ fn inputs(chart: &Chart) -> impl Strategy<Value = Vec<InputEvent>> + use<> {
             InputEvent {
                 lane,
                 phase: if press { Phase::Press } else { Phase::Release },
-                time_ms: time_ms.max(0.0),
+                time_ms,
             }
         });
     prop::collection::vec(input, 0..40).prop_map(|mut inputs| {
