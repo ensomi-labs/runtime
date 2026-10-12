@@ -3,8 +3,8 @@ import XCTest
 @testable import EnsomiRuntime
 
 /// The chart generator through the Swift API. The model and a release recording are read from beside the
-/// repository, where bings-mac keeps them (conformance/generate/README.md), and the resampler tables from
-/// build/apple/resampler; the tests skip without them.
+/// repository, where bings-mac keeps them (conformance/generate/README.md); the tests skip without them. The
+/// resampler tables are the package's own.
 final class GeneratorTests: XCTestCase {
     /// The chart the native driver made from the same PCM, request and seed: conformance/generate/native-charts.
     func testGeneratesTheNativeChartFromRecordedPCM() async throws {
@@ -85,6 +85,16 @@ final class GeneratorTests: XCTestCase {
         } catch GeneratorError.Cancelled {}
     }
 
+    /// `open` reads the tables from the package's bundle when the options name no directory.
+    func testThePackageCarriesTheResamplerTables() throws {
+        let files = try FileManager.default.contentsOfDirectory(atPath: ChartGenerator.bundledResamplerDirectory)
+        for rate in [11_025, 16_000, 24_000, 32_000, 44_100, 48_000, 88_200, 96_000, 192_000] {
+            for name in ["resample-\(rate).json", "resample-\(rate).bin", "resample-\(rate)-boundary.bin"] {
+                XCTAssert(files.contains(name), name)
+            }
+        }
+    }
+
     #if os(macOS)
     /// The archive opens with the system's unzip and holds the files the web runtime's `.osz` holds.
     func testOszOpensWithTheChartTheSongAndTheReceipt() throws {
@@ -114,7 +124,7 @@ final class GeneratorTests: XCTestCase {
     // MARK: Inputs
 
     private struct Paths {
-        let model, recordings, resampler, charts: URL
+        let model, recordings, charts: URL
 
         init() throws {
             // .../swift/Tests/EnsomiRuntimeTests/GeneratorTests.swift -> repository root
@@ -124,9 +134,8 @@ final class GeneratorTests: XCTestCase {
             let workspace = root.deletingLastPathComponent()
             model = workspace.appendingPathComponent("ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2/onnx")
             recordings = workspace.appendingPathComponent("ensomi-model/artifacts/runtime-ref/bulk")
-            resampler = root.appendingPathComponent("build/apple/resampler")
             charts = root.appendingPathComponent("conformance/generate/native-charts")
-            for url in [model, recordings, resampler] where !FileManager.default.fileExists(atPath: url.path) {
+            for url in [model, recordings] where !FileManager.default.fileExists(atPath: url.path) {
                 throw XCTSkip("\(url.path) is absent")
             }
         }
@@ -134,7 +143,7 @@ final class GeneratorTests: XCTestCase {
         func open(_ provider: ExecutionProvider, lowMemory: Bool? = nil) throws -> ChartGenerator {
             try ChartGenerator.open(
                 modelDirectory: model.path,
-                options: GeneratorOptions(provider: provider, resamplerDirectory: resampler.path, lowMemory: lowMemory)
+                options: GeneratorOptions(provider: provider, lowMemory: lowMemory)
             )
         }
     }

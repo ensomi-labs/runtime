@@ -3,9 +3,8 @@
 # regenerates the Swift sources of the swift/ package. Run on a Mac with Xcode and the three Rust
 # targets installed; honours CARGO_TARGET_DIR. The archives include ONNX Runtime, which the ort crate
 # downloads as a static library for each target; its licence and third-party notices are copied to
-# build/apple/licenses beside the xcframework. The resampler tables an app bundles for the generator are
-# copied to build/apple/resampler from RESAMPLER_TABLES, by default the TypeScript runtime's
-# ../ensomi-web/packages/runtime/assets.
+# build/apple/licenses beside the xcframework. The Swift package uses this xcframework when
+# ENSOMI_RUNTIME_XCFRAMEWORK=build/apple/EnsomiRuntimeFFI.xcframework is set.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -56,8 +55,5 @@ done
 rm -rf build/apple/EnsomiRuntimeFFI.xcframework
 xcodebuild -create-xcframework "${args[@]}" -output build/apple/EnsomiRuntimeFFI.xcframework
 cp "$work/$lib.swift" swift/Sources/EnsomiRuntime/
-rm -rf build/apple/resampler
-mkdir -p build/apple/resampler
-cp "${RESAMPLER_TABLES:-../ensomi-web/packages/runtime/assets}"/resample-* build/apple/resampler/
 mkdir -p build/apple/licenses
 cp -R licenses/onnxruntime build/apple/licenses/

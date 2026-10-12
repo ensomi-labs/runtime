@@ -1,6 +1,18 @@
 import Foundation
 
 extension ChartGenerator {
+    /// The resampler tables the package carries: `resample-<rate>.json`, `.bin` and `-boundary.bin`.
+    static let bundledResamplerDirectory = Bundle.module.url(forResource: "resampler", withExtension: nil)!.path
+
+    /// Opens a model directory: `runtime.json` and the files it names, or the runtime config an EnsomiProtocol
+    /// `ensomi-model.json` names. Without `options.resamplerDirectory`, PCM at a rate other than 22050 Hz is
+    /// resampled with the tables the package carries.
+    public static func open(modelDirectory: String, options: GeneratorOptions) throws -> ChartGenerator {
+        var options = options
+        options.resamplerDirectory = options.resamplerDirectory ?? bundledResamplerDirectory
+        return try ffiOpen(modelDirectory: modelDirectory, options: options)
+    }
+
     /// Generates a chart from mono PCM at `sampleRate` on a thread of its own. `progress` hears each phase on
     /// that thread. Cancelling the task stops the generation at its next step with `GeneratorError.Cancelled`.
     public func generate(

@@ -790,7 +790,7 @@ open class ChartGenerator: ChartGeneratorProtocol, @unchecked Sendable {
      * `ensomi-model.json`, the runtime config that manifest names after checking the runtime range,
      * the model and the size of every file it lists.
      */
-public static func `open`(modelDirectory: String, options: GeneratorOptions)throws  -> ChartGenerator  {
+public static func ffiOpen(modelDirectory: String, options: GeneratorOptions)throws  -> ChartGenerator  {
     return try  FfiConverterTypeChartGenerator_lift(try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
     uniffi_ensomi_runtime_ffi_fn_constructor_chartgenerator_open(
         FfiConverterString.lower(modelDirectory),
@@ -2059,7 +2059,7 @@ public struct GeneratorOptions: Equatable, Hashable {
     public var provider: ExecutionProvider
     /**
      * Directory holding the runtime's `resample-<rate>*` tables, read for PCM at a rate other than
-     * 22050 Hz. `scripts/build-apple.sh` puts them in `build/apple/resampler` for an app to bundle.
+     * 22050 Hz. The Swift package's `ChartGenerator.open` passes the tables it carries when this is unset.
      */
     public var resamplerDirectory: String?
     /**
@@ -2073,7 +2073,7 @@ public struct GeneratorOptions: Equatable, Hashable {
     public init(provider: ExecutionProvider, 
         /**
          * Directory holding the runtime's `resample-<rate>*` tables, read for PCM at a rate other than
-         * 22050 Hz. `scripts/build-apple.sh` puts them in `build/apple/resampler` for an app to bundle.
+         * 22050 Hz. The Swift package's `ChartGenerator.open` passes the tables it carries when this is unset.
          */resamplerDirectory: String? = nil, 
         /**
          * Releases ONNX Runtime's working memory after each graph run (no CPU arena, no memory patterns): a

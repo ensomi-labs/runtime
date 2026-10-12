@@ -1,0 +1,4 @@
+# Swift names. The Swift package wraps the renamed constructor in ChartGenerator.open(modelDirectory:options:),
+# which fills a missing resamplerDirectory with the tables the package carries.
+[bindings.swift.rename]
+"ChartGenerator.open" = "ffi_open"

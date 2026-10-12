@@ -28,7 +28,7 @@ pub enum ExecutionProvider {
 pub struct GeneratorOptions {
     pub provider: ExecutionProvider,
     /// Directory holding the runtime's `resample-<rate>*` tables, read for PCM at a rate other than
-    /// 22050 Hz. `scripts/build-apple.sh` puts them in `build/apple/resampler` for an app to bundle.
+    /// 22050 Hz. The Swift package's `ChartGenerator.open` passes the tables it carries when this is unset.
     #[uniffi(default)]
     pub resampler_directory: Option<String>,
     /// Releases ONNX Runtime's working memory after each graph run (no CPU arena, no memory patterns): a
