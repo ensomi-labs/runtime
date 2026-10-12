@@ -27,7 +27,9 @@ final class GeneratorTests: XCTestCase {
         for lowMemory in [false, true] {
             let generator = try paths.open(.cpu, lowMemory: lowMemory)
             let phases = Phases()
+            let started = Date()
             let result = try await generator.generate(pcm: pcm, sampleRate: sampleRate, request: request) { phases.append($0) }
+            print("GENERATE \(song), low memory \(lowMemory): \(String(format: "%.2f", Date().timeIntervalSince(started))) s")
 
             XCTAssertNil(firstDifference(result.osu, expected), "the .osu differs from the native chart, low memory \(lowMemory)")
             XCTAssertEqual(result.chart.objects.count, (fixture["objects"] as! NSNumber).intValue)
@@ -82,6 +84,32 @@ final class GeneratorTests: XCTestCase {
             XCTFail("the generation finished")
         } catch GeneratorError.Cancelled {}
     }
+
+    #if os(macOS)
+    /// The archive opens with the system's unzip and holds the files the web runtime's `.osz` holds.
+    func testOszOpensWithTheChartTheSongAndTheReceipt() throws {
+        let osu = "osu file format v14\n\n[General]\nAudioFilename:audio.mp3\nMode: 3\n"
+        let audio = Data((0..<50_000).map { UInt8($0 % 251) })
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let unpacked = directory.appendingPathComponent("unpacked")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let archive = directory.appendingPathComponent("chart.osz")
+        try exportOsz(osu: osu, audio: audio, receiptJson: #"{"seed":7}"#).write(to: archive)
+
+        let unzip = Process()
+        unzip.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
+        unzip.arguments = ["-q", archive.path, "-d", unpacked.path]
+        try unzip.run()
+        unzip.waitUntilExit()
+
+        XCTAssertEqual(unzip.terminationStatus, 0)
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: unpacked.path).sorted(), ["audio.mp3", "generated.osu", "receipt.json"])
+        XCTAssertEqual(try String(contentsOf: unpacked.appendingPathComponent("generated.osu"), encoding: .utf8), osu)
+        XCTAssertEqual(try Data(contentsOf: unpacked.appendingPathComponent("audio.mp3")), audio)
+        XCTAssertEqual(try String(contentsOf: unpacked.appendingPathComponent("receipt.json"), encoding: .utf8), "{\"seed\":7}\n")
+    }
+    #endif
 
     // MARK: Inputs
 

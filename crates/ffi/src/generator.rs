@@ -167,6 +167,14 @@ pub struct ChartResult {
     pub receipt: GenerationReceipt,
 }
 
+/// The `.osz` of a generated chart: `generated.osu`, the song's audio file under the name the `.osu` gives it, and
+/// `receipt.json` from the receipt's JSON; see `ensomi_osz::osz`. Bytes in, bytes out: the caller reads the song and
+/// saves the archive.
+#[uniffi::export]
+pub fn export_osz(osu: String, audio: Vec<u8>, receipt_json: String) -> Vec<u8> {
+    ensomi_osz::osz(&osu, &audio, &receipt_json)
+}
+
 #[derive(Debug, uniffi::Error)]
 pub enum GeneratorError {
     /// A file of the model directory or a resampler table is missing or unreadable, or the directory holds

@@ -67,6 +67,10 @@ result.receipt                                      // EnsomiProtocol Generation
   instead of 2.0 to 2.3 GiB, same charts. `nil` turns it on for iOS and off on macOS.
 - `modelFiles(runtimeConfig:)` lists the files a model directory needs besides `runtime.json`, for a
   downloader.
+- `exportOsz(osu:audio:receiptJson:)` makes the chart's `.osz` from `result.osu`, the song file's bytes and
+  `result.receipt.receiptJson` (`crates/osz`): `generated.osu`, the audio under the name the `.osu` gives it
+  (`audio.<extension>`) and `receipt.json`, the layout of the web runtime's `.osz`. The app reads the song and saves
+  the archive.
 - The same model, PCM, request and seed give the same chart. `generate(pcm:sampleRate:request:progress:)` runs
   on a thread of its own; cancelling its task stops it at the next graph run or phase with
   `GeneratorError.Cancelled`. Refusals carry EnsomiProtocol's error code in `GeneratorError.Generation`. The

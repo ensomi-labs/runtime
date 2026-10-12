@@ -5089,6 +5089,20 @@ public func tierJudgement(tier: Tier) -> Judgement  {
 })
 }
 /**
+ * The `.osz` of a generated chart: `generated.osu`, the song's audio file under the name the `.osu` gives it, and
+ * `receipt.json` from the receipt's JSON; see `ensomi_osz::osz`. Bytes in, bytes out: the caller reads the song and
+ * saves the archive.
+ */
+public func exportOsz(osu: String, audio: Data, receiptJson: String) -> Data  {
+    return try!  FfiConverterData.lift(try! rustCall() {
+    uniffi_ensomi_runtime_ffi_fn_func_export_osz(
+        FfiConverterString.lower(osu),
+        FfiConverterData.lower(audio),
+        FfiConverterString.lower(receiptJson),$0
+    )
+})
+}
+/**
  * The files a model directory needs besides its runtime config (`runtime.json`): the graphs and the
  * arrays the config names, as paths relative to the directory.
  */
@@ -5125,6 +5139,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_func_tier_judgement() != 59231) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_func_export_osz() != 11885) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_func_model_files() != 8209) {

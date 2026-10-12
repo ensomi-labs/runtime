@@ -15,6 +15,7 @@ crate-type = ["staticlib", "cdylib", "lib"]
 ensomi-gameplay = { path = "../gameplay" }
 ensomi-generate = { path = "../generate" }
 ensomi-generate-ort = { path = "../generate-ort" }
+ensomi-osz = { path = "../osz" }
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
 # Minor version pinned: third-party C# and JS generators target a UniFFI release series.
 uniffi = "0.31"
