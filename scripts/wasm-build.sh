@@ -3,10 +3,11 @@
 # of the resampler tables and the licence (all ignored by git). Then `cd js && npm pack` packs it.
 # Needs Rust with the wasm32-unknown-unknown target and wasm-bindgen-cli 0.2.129 (cargo install wasm-bindgen-cli --version 0.2.129).
 # Run from the repository root. --experimental-reset-state-function exports __wbg_reset_state, with which the JavaScript
-# API replaces the core's instance after a trap (js/src/core.js).
+# API replaces the core's instance after a trap (js/src/core.js). The core is built with simd128 (WebAssembly SIMD:
+# Chrome 91, Firefox 89, Safari 16.4, as onnxruntime-web's Wasm needs), with which resampling takes a fifth less time.
 set -e
 target_dir="${CARGO_TARGET_DIR:-target/generate}"
-CARGO_TARGET_DIR="$target_dir" cargo build --release --target wasm32-unknown-unknown -p ensomi-generate-wasm
+CARGO_TARGET_DIR="$target_dir" RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=+simd128" cargo build --release --target wasm32-unknown-unknown -p ensomi-generate-wasm
 wasm-bindgen --target web --experimental-reset-state-function --out-dir js/pkg "$target_dir/wasm32-unknown-unknown/release/ensomi_generate_wasm.wasm"
 rm -rf js/resampler
 cp -R assets/resampler js/resampler
