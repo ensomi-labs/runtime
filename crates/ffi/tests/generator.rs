@@ -138,3 +138,27 @@ fn a_start_at_a_position_joins_where_no_hold_is_open() {
     assert!(!expected.is_empty());
     assert_eq!(objects, expected);
 }
+
+#[test]
+fn a_request_changes_the_chart_only_while_the_audio_stages_run() {
+    let Some(model) = model() else { return };
+    let generator = open(&model);
+    let lead = LeadPolicy { ruleset: Ruleset { judge: Judge::C }, render_lead_ms: 500.0, margin_ms: 0.0 };
+    let scheduler = ChartScheduler::from_pcm(generator.clone(), noise(30), 22_050.0, request(), ScheduleMode::AheadOfPlay, lead).unwrap();
+    let refused = |result: Result<(), GeneratorError>| matches!(result, Err(GeneratorError::Generation { code, .. }) if code == "unsupported_control");
+    let changed = GenerateChartRequest { star: 4.5, ..request() };
+    // The audio name goes into the options; it stays, as the seed does.
+    assert!(refused(scheduler.request(GenerateChartRequest { audio_name: Some("song.ogg".to_string()), ..changed.clone() })));
+    assert!(refused(scheduler.request(GenerateChartRequest { seed: 1, ..changed.clone() })));
+    scheduler.request(changed.clone()).unwrap();
+    scheduler.start(0.0, GameplaySession::streaming(Ruleset { judge: Judge::C }));
+    assert_eq!(scheduler.work().unwrap(), SchedulerAction::Ready { join_ms: 0.0 });
+    // Pages are committed: refused, while `work()` generates the rest on another thread.
+    let worker = {
+        let scheduler = scheduler.clone();
+        std::thread::spawn(move || scheduler.work())
+    };
+    assert!(refused(scheduler.request(request())));
+    assert_eq!(worker.join().unwrap().unwrap(), SchedulerAction::Done);
+    assert_eq!(scheduler.result().unwrap().osu, generator.generate(noise(30), 22_050.0, changed, None, None).unwrap().osu);
+}

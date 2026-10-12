@@ -3,7 +3,8 @@
 //! The shell calls `work()` on its inference worker; it runs graphs and appends committed pages to the session given
 //! with the last `start`, and returns when play may start (`Ready`) or nothing is left to do (`Done`). While play is
 //! far enough ahead it blocks until the next event. The frame loop calls `heard` and returns at once; `stop` ends a
-//! blocked or running `work()` after its current graph run.
+//! blocked or running `work()` after its current graph run. `request` changes the chart's controls; `work()` leaves
+//! the scheduler free while a graph runs, so `request` waits at most for the current step of the core's own work.
 
 use crate::generator::{chart_result, clock, core_request, generation_error, panic_error, ChartGenerator, ChartResult, GenerateChartRequest, GeneratorError, Prepared};
 use crate::{lock, GameplaySession};
@@ -60,6 +61,8 @@ unsafe impl Send for Core {}
 #[derive(uniffi::Object)]
 pub struct ChartScheduler {
     generator: Arc<ChartGenerator>,
+    /// The request's `audio_name`, which goes into the options; a later request must keep it.
+    audio_name: Option<String>,
     core: Mutex<Core>,
     messages: Mutex<VecDeque<Message>>,
     wake: Condvar,
@@ -76,7 +79,8 @@ fn token(token: &ensomi_generate::Token) -> ChartToken {
 
 impl ChartScheduler {
     fn new(generator: Arc<ChartGenerator>, source: Source, request: GenerateChartRequest, mode: ScheduleMode, lead: LeadPolicy) -> Result<Arc<Self>, GeneratorError> {
-        let options = Options { audio_name: request.audio_name.clone(), ..Options::new(clock()) };
+        let audio_name = request.audio_name.clone();
+        let options = Options { audio_name: audio_name.clone(), ..Options::new(clock()) };
         let request = core_request(&request).map_err(generation_error)?;
         let mode = match mode {
             ScheduleMode::WholeChart => Mode::WholeChart,
@@ -84,7 +88,7 @@ impl ChartScheduler {
         };
         let lead = Lead { settle_ms: lead.ruleset.settle_lead_ms(), render_ms: lead.render_lead_ms, margin_ms: lead.margin_ms };
         let scheduler = Scheduler::new(generator.models.clone(), source, request, options, mode, lead);
-        Ok(Arc::new(Self { generator, core: Mutex::new(Core { scheduler, session: None }), messages: Mutex::new(VecDeque::new()), wake: Condvar::new() }))
+        Ok(Arc::new(Self { generator, audio_name, core: Mutex::new(Core { scheduler, session: None }), messages: Mutex::new(VecDeque::new()), wake: Condvar::new() }))
     }
 
     fn send(&self, message: Message) {
@@ -97,23 +101,28 @@ impl ChartScheduler {
         self.wake.notify_one();
     }
 
-    /// Generates until play may start, nothing is left to do, or the scheduler waits for an event (`None`).
-    fn run(&self, core: &mut Core) -> Result<Option<SchedulerAction>, GeneratorError> {
+    /// Generates until play may start, nothing is left to do, or the scheduler waits for an event (`None`). The
+    /// scheduler is unlocked while a graph runs.
+    fn run(&self) -> Result<Option<SchedulerAction>, GeneratorError> {
         loop {
+            let mut core = lock(&self.core);
             for message in lock(&self.messages).drain(..) {
-                match message {
-                    Message::Heard(chart_ms, wall_ms) => core.scheduler.handle(Event::Heard { chart_ms, wall_ms }),
+                let event = match message {
+                    Message::Heard(chart_ms, wall_ms) => Event::Heard { chart_ms, wall_ms },
                     Message::Start(at_ms, session) => {
                         core.session = Some(session);
-                        core.scheduler.handle(Event::Start { at_ms });
+                        Event::Start { at_ms }
                     }
-                    Message::Stop => core.scheduler.handle(Event::Stop),
-                }
+                    Message::Stop => Event::Stop,
+                };
+                core.scheduler.handle(event).map_err(generation_error)?;
             }
-            match core.scheduler.next().map_err(generation_error)? {
+            let action = core.scheduler.next().map_err(generation_error)?;
+            match action {
                 Action::Run { graph, inputs } => {
+                    drop(core);
                     let outputs = lock(&self.generator.sessions).run(&graph, inputs).map_err(generation_error)?;
-                    core.scheduler.handle(Event::Outputs(outputs));
+                    lock(&self.core).scheduler.handle(Event::Outputs(outputs)).map_err(generation_error)?;
                 }
                 Action::Commit(page) => {
                     if let Some(session) = &core.session {
@@ -160,15 +169,25 @@ impl ChartScheduler {
         self.send(Message::Stop);
     }
 
+    /// New controls for the chart from the first uncommitted head row on: `star` and `controls` may change; the seed,
+    /// title, artist and audio name stay those the scheduler was made with. For requests from game events during
+    /// play, such as multiplayer attacks or players coordinating, which a pipeline that resumes from a committed
+    /// prefix will apply. R2 cannot yet: it takes a request only while the audio stages run (from PCM), and the chart
+    /// is then the one a fresh generation with it makes. Otherwise it fails with `unsupported_control` and the
+    /// generation is unchanged.
+    pub fn request(&self, request: GenerateChartRequest) -> Result<(), GeneratorError> {
+        if request.audio_name != self.audio_name {
+            return Err(generation_error("unsupported_control: a request during generation may change only star and controls".to_string()));
+        }
+        let request = core_request(&request).map_err(generation_error)?;
+        catch_unwind(AssertUnwindSafe(|| lock(&self.core).scheduler.handle(Event::Request(request)))).map_err(panic_error)?.map_err(generation_error)
+    }
+
     /// Generates, on the caller's thread, until play may start or nothing is left to do; see the module
     /// documentation. A panic in the core ends it with `GeneratorError::Generation`, a page the session refuses too.
     pub fn work(&self) -> Result<SchedulerAction, GeneratorError> {
         loop {
-            let action = {
-                let mut core = lock(&self.core);
-                catch_unwind(AssertUnwindSafe(|| self.run(&mut core))).map_err(panic_error)??
-            };
-            if let Some(action) = action {
+            if let Some(action) = catch_unwind(AssertUnwindSafe(|| self.run())).map_err(panic_error)?? {
                 return Ok(action);
             }
             // Waiting for play to move on, without holding the scheduler.

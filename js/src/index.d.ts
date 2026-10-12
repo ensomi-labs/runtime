@@ -206,6 +206,14 @@ export declare class ChartScheduler {
     start(atMs: number): void;
     heard(chartMs: number, wallMs: number): void;
     stop(): void;
+    /**
+     * New controls for the chart from the first uncommitted head row on: only `star` and `controls` may differ from the
+     * request given to `create`. For requests from game events during play (multiplayer attacks, players
+     * coordinating), which a pipeline that resumes from a committed prefix will apply. R2 cannot yet: it takes a
+     * request only while the audio stages run, the chart then being the one a fresh generation with it makes; otherwise
+     * this throws and the generation is unchanged.
+     */
+    request(request: GenerateChartRequest): void;
     /** Runs the graphs until play may start or nothing is left to do; waits for the next event while far enough ahead. */
     work(): Promise<SchedulerAction>;
     /** Committed chart milliseconds per wall millisecond of work so far. */

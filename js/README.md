@@ -42,6 +42,10 @@ scheduler.work().then(({ result }) => {});                 // generates ahead of
   `{kind: 'done', result}` at the end; while play is far enough ahead it waits for `heard`, `start` or `stop`.
   `start(atMs)` at a position joins at the first time at or after `atMs` plus the lead where no hold is open, and
   sends the pages again from there. `rate` is the measured generation speed (chart ms per wall ms).
+- `request(request)` changes `star` and `controls` for the chart in progress; `seed`, `audio`, `title` and `artist`
+  stay. It is for requests from game events during play (multiplayer attacks, players coordinating), which a pipeline
+  that resumes from a committed prefix will apply. R2 takes one only while the audio stages run (from PCM), and the
+  chart is then the one a fresh generation with it makes; later it throws and the generation goes on unchanged.
 
 - `pcm` is mono `Float32Array` or `Float64Array`, or `{samples, channels}` with interleaved samples. PCM at a rate
   other than 22050 Hz is resampled with the soxr tables in the package's `resampler/` directory.

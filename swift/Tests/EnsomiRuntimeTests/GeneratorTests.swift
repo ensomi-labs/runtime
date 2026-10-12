@@ -94,6 +94,34 @@ final class GeneratorTests: XCTestCase {
         XCTAssertEqual(result.osu, wholeResult.osu)
     }
 
+    /// A request replaces the scheduler's while the audio stages run, and the chart is the one a fresh generation with
+    /// it makes; once pages are committed, R2 refuses one and the chart goes on unchanged.
+    func testARequestChangesTheChartOnlyWhileTheAudioStagesRun() async throws {
+        let generator = try Paths().open(.cpu)
+        let pcm = noise(seconds: 30)
+        let changed = GenerateChartRequest(star: 4.5)
+        let scheduler = try ChartScheduler.fromPcm(
+            generator: generator, pcm: pcm, sampleRate: 22_050, request: GenerateChartRequest(star: 3), mode: .aheadOfPlay,
+            lead: LeadPolicy(ruleset: Ruleset(judge: .c), renderLeadMs: 500, marginMs: 0)
+        )
+        func assertRefused(_ request: GenerateChartRequest) {
+            XCTAssertThrowsError(try scheduler.request(request: request)) { error in
+                guard case .Generation(let code, _) = error as? GeneratorError else { return XCTFail("\(error)") }
+                XCTAssertEqual(code, "unsupported_control")
+            }
+        }
+        assertRefused(GenerateChartRequest(star: 4.5, seed: 1))
+        try scheduler.request(request: changed)
+        scheduler.start(atMs: 0, session: GameplaySession.streaming(ruleset: Ruleset(judge: .c)))
+        let ready = try await scheduler.work()
+        XCTAssertEqual(ready, .ready(joinMs: 0))
+        assertRefused(GenerateChartRequest(star: 3))
+        let done = try await scheduler.work()
+        XCTAssertEqual(done, .done)
+        let fresh = try await generator.generate(pcm: pcm, sampleRate: 22_050, request: changed)
+        XCTAssertEqual(scheduler.result()?.osu, fresh.osu)
+    }
+
     func testModelFilesAreTheGraphsAndArraysTheConfigNames() throws {
         let paths = try Paths()
         let files = try modelFiles(runtimeConfig: String(contentsOf: paths.model.appendingPathComponent("runtime.json"), encoding: .utf8))

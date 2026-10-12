@@ -128,6 +128,11 @@ scheduler.result()                                  // the whole chart, .osu and
   the chart falls behind play (`session.decidedThroughMs()` below the watermark), pause; the next `.ready` says
   where to resume. `stop()`, or cancelling the task, ends it.
 - `prepared()` gives the `Prepared` a `fromPcm` scheduler made, to store.
+- `request(request:)` changes `star` and `controls` for the chart in progress; the seed, title, artist and audio name
+  stay. It is for requests from game events during play (multiplayer attacks, players coordinating), which a pipeline
+  that resumes from a committed prefix will apply. R2 takes one only while the audio stages of `fromPcm` run, and the
+  chart is then the one a fresh generation with it makes; later it throws `GeneratorError.Generation` with
+  `unsupported_control` and the generation goes on unchanged.
 
 ### Execution provider
 

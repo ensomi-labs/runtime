@@ -6,6 +6,7 @@ import { Prepared, chartResult, coreAudio, coreSeed, runGraph } from './generate
  * runs `work()`, which runs the graphs, hands each committed page to `options.onPage`, and resolves when play may
  * start (`{kind: 'ready', joinMs}`) or nothing is left to do (`{kind: 'done', result}`, with the chart once
  * generation has finished). While play is far enough ahead it waits for the next `heard`, `start` or `stop`.
+ * `request` changes the chart's controls while it is generated.
  */
 export class ChartScheduler {
     #models;
@@ -54,6 +55,17 @@ export class ChartScheduler {
     stop() {
         callCore(() => this.#core.stop());
         this.#wake?.();
+    }
+
+    /**
+     * New controls for the chart from the first uncommitted head row on: `star` and `controls` may change; `seed`,
+     * `audio`, `title` and `artist` stay those of `create`. R2 takes a request only while the audio stages run (from
+     * PCM), and the chart is then the one a fresh generation with it makes; otherwise this throws and the generation
+     * is unchanged. A pipeline that resumes from a committed prefix will take requests during play.
+     */
+    request(request) {
+        const { seed, json } = coreSeed(request);
+        callCore(() => this.#core.request(json, BigInt(seed), typeof seed === 'bigint'));
     }
 
     async work() {

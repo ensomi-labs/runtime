@@ -52,6 +52,12 @@ pub enum Event {
     /// Play is to start at this chart time: 0, or a position such as a seek target. The pages that follow are for a
     /// new session, from the join point on.
     Start { at_ms: f64 },
+    /// New controls for the chart from the first uncommitted head row on: only `star` and `controls` may differ from
+    /// the running request, and committed pages never change. It is for requests that game events send during play,
+    /// with or without Sonalign: a multiplayer attack that changes another player's coming chart, players
+    /// coordinating. A pipeline that resumes from a committed prefix will apply them there. R2 cannot yet: it takes a
+    /// request only while the audio stages run, and the chart is then the one a fresh generation with it makes.
+    Request(Request),
     Stop,
     /// The outputs of the last `Run`.
     Outputs(Tensors),
@@ -251,13 +257,17 @@ impl Scheduler {
         Scheduler { models, mode, work, clock, outputs: None, running: false, busy: 0.0, last: None, prepared, result: None, stream }
     }
 
-    pub fn handle(&mut self, event: Event) {
+    /// Only a `Request` is refused: one that changes more than `star` and `controls`, or one that comes after the
+    /// audio stages, once R2 generates from the running request. The generation is then unchanged.
+    pub fn handle(&mut self, event: Event) -> Result<(), String> {
         match event {
             Event::Heard { chart_ms, wall_ms } => self.stream.heard(chart_ms, wall_ms),
             Event::Start { at_ms } => self.stream.start(at_ms),
+            Event::Request(request) => return self.request(request),
             Event::Stop => self.work = Work::Stopped,
             Event::Outputs(outputs) => (self.outputs, self.running) = (Some(outputs), false),
         }
+        Ok(())
     }
 
     /// What to do now. Not an iterator: `Wait` and `Done` end nothing, and events change what follows.
@@ -326,6 +336,20 @@ impl Scheduler {
     /// The throughput r measured so far: committed chart milliseconds per busy wall millisecond.
     pub fn rate(&self) -> Option<f64> {
         self.stream.rate()
+    }
+
+    /// Replaces the request held while the audio stages run. R2 cannot resume from a committed prefix, so it refuses
+    /// a request after them, and from a stored `Prepared` at once.
+    fn request(&mut self, request: Request) -> Result<(), String> {
+        let Work::Prepare(_, pending) = &mut self.work else {
+            return Err("unsupported_control: R2 cannot apply a request after the audio stages; the generation is unchanged".to_string());
+        };
+        let running = &pending.0;
+        if (&request.audio, request.seed, request.seed_is_bigint, &request.title, &request.artist) != (&running.audio, running.seed, running.seed_is_bigint, &running.title, &running.artist) {
+            return Err("unsupported_control: a request during generation may change only star and controls".to_string());
+        }
+        pending.0 = request;
+        Ok(())
     }
 
     fn run(&mut self, graph: String, inputs: Tensors) -> Action {

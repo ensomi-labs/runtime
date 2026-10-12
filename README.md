@@ -45,6 +45,12 @@ generates for play: R2's arrangement committed per head row, and play allowed to
 chart ([`swift/README.md`](swift/README.md), [`js/README.md`](js/README.md)). The scheduler is in the core without IO
 (`crates/generate/src/schedule.rs`); natively its pages go into the gameplay session inside Rust.
 
+Requests during generation: the scheduler takes a new request for the chart in progress (`Event::Request`), for play
+in which game events change the coming chart, with or without Sonalign: a multiplayer attack on another player's
+chart, players coordinating. Only `star` and `controls` may change, from the first uncommitted head row on; committed
+pages never do. A pipeline that resumes from a committed prefix will apply such requests. R2 cannot yet: it takes a
+request only while the audio stages run, and refuses one after them, leaving the generation unchanged.
+
 The generator arranges a song once, whether it commits per head row or the whole chart at the end, so both give the
 same chart. The published Python R2 (`r2-1.0`) arranged a song a second time when the first arrangement missed the
 star's difficulty target by more than the difficulty fit's seed spread; where it did, its chart differs from this

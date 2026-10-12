@@ -431,20 +431,26 @@ impl WasmScheduler {
     /// The outputs of the graph `next()` asked to run, as for `WasmGenerator.step`.
     pub fn outputs(&mut self, outputs: JsValue) -> Result<(), JsError> {
         let outputs = outputs_from_js(outputs)?.ok_or_else(|| error("no graph outputs"))?;
-        self.inner.handle(Event::Outputs(outputs));
-        Ok(())
+        self.inner.handle(Event::Outputs(outputs)).map_err(error)
     }
 
-    pub fn heard(&mut self, chart_ms: f64, wall_ms: f64) {
-        self.inner.handle(Event::Heard { chart_ms, wall_ms });
+    pub fn heard(&mut self, chart_ms: f64, wall_ms: f64) -> Result<(), JsError> {
+        self.inner.handle(Event::Heard { chart_ms, wall_ms }).map_err(error)
     }
 
-    pub fn start(&mut self, at_ms: f64) {
-        self.inner.handle(Event::Start { at_ms });
+    pub fn start(&mut self, at_ms: f64) -> Result<(), JsError> {
+        self.inner.handle(Event::Start { at_ms }).map_err(error)
     }
 
-    pub fn stop(&mut self) {
-        self.inner.handle(Event::Stop);
+    /// New controls for the chart, read as for `new`: `ensomi_generate::Event::Request`, which says when R2 takes
+    /// them; otherwise it throws and the generation is unchanged.
+    pub fn request(&mut self, request_json: &str, seed: u64, seed_is_bigint: bool) -> Result<(), JsError> {
+        let request = Request::from_json(request_json, seed, seed_is_bigint).map_err(error)?;
+        self.inner.handle(Event::Request(request)).map_err(error)
+    }
+
+    pub fn stop(&mut self) -> Result<(), JsError> {
+        self.inner.handle(Event::Stop).map_err(error)
     }
 
     /// While a graph runs, does a slice of the work that needs no outputs; see `WasmGenerator.work`.
