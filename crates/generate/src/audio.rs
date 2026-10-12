@@ -62,7 +62,7 @@ pub struct Resampler {
 /// coefficients, in the order of [`resampler_files`].
 pub fn load_resampler(files: &[Vec<u8>; 3]) -> Result<Resampler, String> {
     let spec: ResamplerSpec = serde_json::from_slice(&files[0]).map_err(|e| format!("resampler table: {e}"))?;
-    let doubles = |bytes: &[u8]| -> Vec<f64> { bytes.chunks_exact(8).map(|c| f64::from_le_bytes(c.try_into().unwrap())).collect() };
+    let doubles = |bytes: &[u8]| -> Vec<f64> { bytes.as_chunks::<8>().0.iter().map(|c| f64::from_le_bytes(*c)).collect() };
     Ok(Resampler {
         numerator: spec.numerator,
         phases: spec.phases,

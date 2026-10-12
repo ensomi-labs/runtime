@@ -20,7 +20,7 @@ fn main() -> Result<(), String> {
     let arg = |key: &str| args.get(key).cloned().ok_or_else(|| format!("--{key} is required"));
     let model_dir = PathBuf::from(arg("model-dir")?);
     let sample_rate: f64 = arg("sample-rate")?.parse().map_err(|_| "--sample-rate is a number")?;
-    let pcm: Vec<f32> = std::fs::read(arg("pcm")?).map_err(|e| e.to_string())?.chunks_exact(4).map(|c| f32::from_le_bytes(c.try_into().unwrap())).collect();
+    let pcm: Vec<f32> = std::fs::read(arg("pcm")?).map_err(|e| e.to_string())?.as_chunks::<4>().0.iter().map(|c| f32::from_le_bytes(*c)).collect();
     let resampler = match resampler_files(sample_rate) {
         Some(names) => {
             let assets = PathBuf::from(arg("assets")?);

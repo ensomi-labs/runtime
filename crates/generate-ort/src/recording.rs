@@ -22,10 +22,10 @@ impl Array {
     /// The elements as doubles (booleans as 0 and 1, float16 widened).
     pub fn f64s(&self) -> Vec<f64> {
         match self.dtype.as_str() {
-            "<f8" => self.bytes.chunks_exact(8).map(|c| f64::from_le_bytes(c.try_into().unwrap())).collect(),
-            "<f4" => self.bytes.chunks_exact(4).map(|c| f32::from_le_bytes(c.try_into().unwrap()) as f64).collect(),
-            "<i8" => self.bytes.chunks_exact(8).map(|c| i64::from_le_bytes(c.try_into().unwrap()) as f64).collect(),
-            "<f2" => self.bytes.chunks_exact(2).map(|c| half_to_f64(u16::from_le_bytes(c.try_into().unwrap()))).collect(),
+            "<f8" => self.bytes.as_chunks::<8>().0.iter().map(|c| f64::from_le_bytes(*c)).collect(),
+            "<f4" => self.bytes.as_chunks::<4>().0.iter().map(|c| f32::from_le_bytes(*c) as f64).collect(),
+            "<i8" => self.bytes.as_chunks::<8>().0.iter().map(|c| i64::from_le_bytes(*c) as f64).collect(),
+            "<f2" => self.bytes.as_chunks::<2>().0.iter().map(|c| half_to_f64(u16::from_le_bytes(*c))).collect(),
             "|b1" | "|u1" => self.bytes.iter().map(|&b| b as f64).collect(),
             other => panic!("unsupported recorded dtype {other}"),
         }
@@ -33,13 +33,13 @@ impl Array {
 
     pub fn f32s(&self) -> Vec<f32> {
         assert_eq!(self.dtype, "<f4");
-        self.bytes.chunks_exact(4).map(|c| f32::from_le_bytes(c.try_into().unwrap())).collect()
+        self.bytes.as_chunks::<4>().0.iter().map(|c| f32::from_le_bytes(*c)).collect()
     }
 
     pub fn tensor(&self) -> Tensor {
         match self.dtype.as_str() {
             "<f4" => Tensor { shape: self.shape.clone(), data: Data::F32(self.f32s()) },
-            "<i8" => Tensor { shape: self.shape.clone(), data: Data::I64(self.bytes.chunks_exact(8).map(|c| i64::from_le_bytes(c.try_into().unwrap())).collect()) },
+            "<i8" => Tensor { shape: self.shape.clone(), data: Data::I64(self.bytes.as_chunks::<8>().0.iter().map(|c| i64::from_le_bytes(*c)).collect()) },
             "|b1" => Tensor { shape: self.shape.clone(), data: Data::Bool(self.bytes.clone()) },
             other => panic!("unsupported recorded tensor dtype {other}"),
         }

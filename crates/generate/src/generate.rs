@@ -140,7 +140,7 @@ fn all_finite_f32(a: &[f32]) -> bool {
 
 fn validate(audio: &Audio, request: &Request) -> Result<f64, String> {
     let len = audio.samples.len();
-    if !audio.sample_rate.is_finite() || audio.sample_rate <= 0.0 || audio.channels < 1 || len == 0 || len % audio.channels != 0 {
+    if !audio.sample_rate.is_finite() || audio.sample_rate <= 0.0 || audio.channels < 1 || len == 0 || !len.is_multiple_of(audio.channels) {
         return Err("PCM needs nonempty interleaved samples, a positive sample rate and a channel count".to_string());
     }
     let finite = match &audio.samples {
@@ -176,7 +176,7 @@ fn validate(audio: &Audio, request: &Request) -> Result<f64, String> {
         if s.star.is_some() == s.pattern.is_some() {
             return Err("unsupported_control: each section needs exactly one star or pattern target".to_string());
         }
-        if s.star.is_some_and(|star| !(star >= 2.0 && star < 6.0)) {
+        if s.star.is_some_and(|star| !(2.0..6.0).contains(&star)) {
             return Err("star_out_of_range: section star must be in [2, 6)".to_string());
         }
         if s.pattern.as_ref().is_some_and(|p| ![1, 2, 3, 4, 5].contains(&p.kind) || !(p.strength >= 0.0 && p.strength <= 1.0)) {

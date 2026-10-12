@@ -11,3 +11,9 @@ repository.workspace = true
 libm = "0.2"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
+
+[lints.clippy]
+# The port keeps the TypeScript runtime's index loops and argument lists, so the two read side by side.
+needless_range_loop = "allow"
+too_many_arguments = "allow"
+len_without_is_empty = "allow"

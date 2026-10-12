@@ -110,7 +110,6 @@ pub fn detect_changes(signal: &[f64], times: &[f64], downbeat: &[f64], fit: &Seg
         if before <= 0.0 || after <= 0.0 {
             continue;
         }
-        let u = u;
         let change = (after - before).abs();
         let relative = change / f64::max(f64::min(before, after), 1e-6);
         if relative < min_change {

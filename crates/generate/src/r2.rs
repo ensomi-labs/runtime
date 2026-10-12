@@ -165,7 +165,7 @@ pub fn query_features(chart: &ChartState, k: usize) -> Vec<f32> {
         let index = k + i;
         let a = index.min(kk - 1);
         let b = index.saturating_sub(1).min(kk - 1);
-        if index <= kk - 1 {
+        if index < kk {
             shared.extend(psi_pair(chart.head_ms[a] - chart.head_ms[b], chart.head_beats[a] - chart.head_beats[b]));
         } else {
             shared.extend([0.0; 4]);

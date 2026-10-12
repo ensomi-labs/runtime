@@ -61,10 +61,10 @@ pub fn validate_chart(chart: &Chart) -> Result<(), String> {
         if start < end[lane] {
             return Err(format!("Head inside an open hold in lane {lane} at {}", number_string(start)));
         }
-        if let Some(release) = object.end_ms {
-            if !integer(release) || release <= start || release > chart.duration_ms {
-                return Err(format!("Invalid hold release in lane {lane} at {}", number_string(start)));
-            }
+        if let Some(release) = object.end_ms
+            && (!integer(release) || release <= start || release > chart.duration_ms)
+        {
+            return Err(format!("Invalid hold release in lane {lane} at {}", number_string(start)));
         }
         end[lane] = object.end_ms.unwrap_or(start);
         previous = Some(object);

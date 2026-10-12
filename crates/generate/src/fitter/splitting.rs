@@ -4,6 +4,7 @@ use super::segment_fit::fit_segment;
 use super::segments::{fits_mergeable, weighted_score};
 use super::SegmentFit;
 use crate::models::FitterConfig;
+use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
 struct EvaluatedSplit {
@@ -72,7 +73,7 @@ pub fn split_segments(signal: &[f64], times: &[f64], downbeat: &[f64], initial: 
         for i in 0..fits.len() {
             let f = fits[i];
             let key = (f.start_frame, f.end_frame);
-            if !splits.contains_key(&key) {
+            if let Entry::Vacant(entry) = splits.entry(key) {
                 let mut local: Option<EvaluatedSplit> = None;
                 for candidate in detect_changes(signal, times, downbeat, &f, c).into_iter().take(c.max_split_candidates_per_segment as usize) {
                     let left = fits_cache.fit(f.start_frame, candidate.frame);
@@ -85,7 +86,7 @@ pub fn split_segments(signal: &[f64], times: &[f64], downbeat: &[f64], initial: 
                         local = Some(value);
                     }
                 }
-                splits.insert(key, local);
+                entry.insert(local);
             }
             let Some(cached) = splits.get(&key).and_then(Option::as_ref) else { continue };
             let value = EvaluatedSplit { segment_index: i, candidate: SplitCandidate { frame: cached.candidate.frame, score: cached.candidate.score }, left_fit: cached.left_fit, right_fit: cached.right_fit, improvement: cached.improvement };

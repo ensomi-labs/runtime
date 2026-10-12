@@ -356,18 +356,18 @@ impl Models {
     }
 
     pub fn f32s(&self, path: &str) -> Result<Vec<f32>, String> {
-        Ok(self.file(path)?.chunks_exact(4).map(|c| f32::from_le_bytes(c.try_into().unwrap())).collect())
+        Ok(self.file(path)?.as_chunks::<4>().0.iter().map(|c| f32::from_le_bytes(*c)).collect())
     }
 
     pub fn f64s(&self, path: &str) -> Result<Vec<f64>, String> {
-        Ok(self.file(path)?.chunks_exact(8).map(|c| f64::from_le_bytes(c.try_into().unwrap())).collect())
+        Ok(self.file(path)?.as_chunks::<8>().0.iter().map(|c| f64::from_le_bytes(*c)).collect())
     }
 
     /// A column of the scope table as doubles, whether the file holds int64 or float64.
     pub fn scope_column(&self, column: &ScopeColumn) -> Result<Vec<f64>, String> {
         let bytes = self.file(&column.file)?;
         match column.dtype.as_str() {
-            "<i8" => Ok(bytes.chunks_exact(8).map(|c| i64::from_le_bytes(c.try_into().unwrap()) as f64).collect()),
+            "<i8" => Ok(bytes.as_chunks::<8>().0.iter().map(|c| i64::from_le_bytes(*c) as f64).collect()),
             "<f8" => self.f64s(&column.file),
             other => Err(format!("Unsupported scope column dtype: {other}")),
         }
@@ -384,7 +384,7 @@ impl Models {
         let bytes = self.file(&spec.file)?;
         match spec.dtype.as_str() {
             "<f4" => Ok(Tensor::f32(&spec.shape, self.f32s(&spec.file)?)),
-            "<i8" => Ok(Tensor::i64(&spec.shape, bytes.chunks_exact(8).map(|c| i64::from_le_bytes(c.try_into().unwrap())).collect())),
+            "<i8" => Ok(Tensor::i64(&spec.shape, bytes.as_chunks::<8>().0.iter().map(|c| i64::from_le_bytes(*c)).collect())),
             other => Err(format!("Unsupported external array dtype: {other}")),
         }
     }

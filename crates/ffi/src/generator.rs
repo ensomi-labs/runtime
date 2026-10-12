@@ -370,10 +370,10 @@ impl ChartGenerator {
         listener: Option<Arc<dyn GenerationListener>>,
         cancellation: Option<Arc<Cancellation>>,
     ) -> Result<ChartResult, GeneratorError> {
-        if pcm.len() % 4 != 0 {
+        if !pcm.len().is_multiple_of(4) {
             return Err(generation_error("PCM must be whole float32 samples".to_string()));
         }
-        let samples: Vec<f32> = pcm.chunks_exact(4).map(|c| f32::from_ne_bytes(c.try_into().unwrap())).collect();
+        let samples: Vec<f32> = pcm.as_chunks::<4>().0.iter().map(|c| f32::from_ne_bytes(*c)).collect();
         drop(pcm);
         let resampler = read_resampler(self.resampler_directory.as_deref(), sample_rate)?;
         let audio = Audio { samples: Samples::F32(samples), channels: 1, sample_rate, mel: None, beatthis: None, resampler };

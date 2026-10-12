@@ -23,7 +23,7 @@ pub struct Fft {
 
 fn radix(size: usize) -> usize {
     let mut r = 2;
-    while size % r != 0 && r < size {
+    while !size.is_multiple_of(r) && r < size {
         r += 1;
     }
     r

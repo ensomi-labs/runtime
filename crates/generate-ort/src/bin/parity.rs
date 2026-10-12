@@ -31,9 +31,8 @@ struct Diff {
 
 fn difference(actual: &[f64], expected: &[f64]) -> Diff {
     let (mut max_abs, mut index, mut nonfinite_equal, mut sse) = (0.0f64, -1i64, true, 0.0);
-    for i in 0..expected.len() {
+    for (i, &b) in expected.iter().enumerate() {
         let a = actual.get(i).copied().unwrap_or(f64::NAN);
-        let b = expected[i];
         if !a.is_finite() || !b.is_finite() {
             if !(a.to_bits() == b.to_bits() || (a.is_nan() && b.is_nan())) {
                 nonfinite_equal = false;
@@ -181,10 +180,7 @@ fn song_inputs(model_dir: &Path, reference: &Path, assets: &Path, recording: &Re
     let audio_name = summary["audio"].as_str().ok_or("no audio in summary")?.rsplit('/').next().unwrap().to_string();
     let channels = *audio_event["pcm"].shape.get(1).unwrap_or(&1);
     let sample_rate = audio_event["sample_rate"].f64s()[0];
-    let resampler = match ensomi_generate::resampler_files(sample_rate) {
-        Some(names) => Some(names.map(|n| std::fs::read(assets.join(n)).unwrap())),
-        None => None,
-    };
+    let resampler = ensomi_generate::resampler_files(sample_rate).map(|names| names.map(|n| std::fs::read(assets.join(n)).unwrap()));
     let audio = Audio { samples: Samples::F64(audio_event["pcm"].f64s()), channels, sample_rate, mel: Some(audio_event["mel_pcm"].f32s()), beatthis: None, resampler };
     let request_json = json!({"star": receipt["star"], "title": receipt["metadata"]["title"], "artist": receipt["metadata"]["artist"], "audio": {"asset_id": song}});
     let request = Request::from_json(&request_json.to_string(), receipt["seed"].as_u64().ok_or("seed")?, false)?;

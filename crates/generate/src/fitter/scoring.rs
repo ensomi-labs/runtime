@@ -217,12 +217,11 @@ pub fn best_candidate(candidates: &[GridCandidate], downbeat: Option<&[f64]>, do
     let mut sorted: Vec<&GridCandidate> = candidates.iter().collect();
     sorted.sort_by(|a, b| order(b.score - a.score));
     let mut best = sorted[0];
-    if (quantize_bpm(best.bpm, c) - best.bpm).abs() > 1e-6 {
-        if let Some(coarse) = sorted.iter().find(|x| (quantize_bpm(x.bpm, c) - x.bpm).abs() <= 1e-6) {
-            if best.score < coarse.score + 0.08 {
-                best = coarse;
-            }
-        }
+    if (quantize_bpm(best.bpm, c) - best.bpm).abs() > 1e-6
+        && let Some(coarse) = sorted.iter().find(|x| (quantize_bpm(x.bpm, c) - x.bpm).abs() <= 1e-6)
+        && best.score < coarse.score + 0.08
+    {
+        best = coarse;
     }
     if downbeat.is_none() || down_norm == 0.0 {
         return (best.score, f64::NEG_INFINITY, best.bpm, best.beat_length_ms, best.offset_ms);
