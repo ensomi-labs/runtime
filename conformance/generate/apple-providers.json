@@ -6,167 +6,167 @@
     "cpu": {
       "hesitation-snow": {
         "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: true }",
-        "load_seconds": 0.232173709,
+        "load_seconds": 0.244653417,
         "runs": [
           {
-            "wall_seconds": 6.126553583,
+            "wall_seconds": 5.365257375,
             "stages": {
-              "pcm": 1.2103966659999998,
-              "spectrogram": 0.12599466699999995,
-              "beatthis": 3.817828542,
-              "mel": 0.31961662499999877,
-              "grid": 0.15713737500000025,
-              "rows": 0.11485341700000026,
-              "prior": 0.00008045799999945303,
-              "arrangement": 0.3713301249999995,
-              "export": 0.0003231249999998909,
-              "total": 6.124606915999999
+              "pcm": 0.47447625000000004,
+              "spectrogram": 0.12140499999999997,
+              "beatthis": 3.804664625,
+              "mel": 0.3258300830000007,
+              "grid": 0.15714024999999948,
+              "rows": 0.10053620800000045,
+              "prior": 0.00008024999999997817,
+              "arrangement": 0.3787134999999998,
+              "export": 0.0003553329999995185,
+              "total": 5.363283166
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.00189375,
+                  "core_seconds": 0.001946208,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 1.21739825,
+                  "core_seconds": 0.47448175,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.6029924149999999,
-                  "graph_seconds": 3.817585334
+                  "core_seconds": 0.6047742899999999,
+                  "graph_seconds": 3.804278208
                 },
                 "rows": {
-                  "core_seconds": 0.042468464,
-                  "graph_seconds": 0.07236212
+                  "core_seconds": 0.027742213999999998,
+                  "graph_seconds": 0.07276937300000001
                 },
                 "arrangement": {
-                  "core_seconds": 0.020882353999999975,
-                  "graph_seconds": 0.35044438799999944
+                  "core_seconds": 0.011229005999999988,
+                  "graph_seconds": 0.36745766100000055
                 },
                 "export": {
-                  "core_seconds": 0.000352541,
+                  "core_seconds": 0.000383792,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 6,
-                  "seconds": 3.817585334
+                  "seconds": 3.804278208
                 },
                 "r2_commit": {
                   "calls": 767,
-                  "seconds": 0.32225249999999994
+                  "seconds": 0.3370344160000001
                 },
                 "r2_predict": {
                   "calls": 768,
-                  "seconds": 0.027277263000000055
+                  "seconds": 0.029441452000000024
                 },
                 "r2_release": {
                   "calls": 11,
-                  "seconds": 0.000914625
+                  "seconds": 0.0009817930000000001
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.032529417
+                  "seconds": 0.032812042
                 },
                 "rows_step": {
                   "calls": 374,
-                  "seconds": 0.03983270300000002
+                  "seconds": 0.039957330999999985
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 230,
-              "timing": 321,
-              "rows": 1954,
-              "arrangement": 1976,
-              "export": 1979,
-              "done": 1979
+              "loading": 232,
+              "timing": 263,
+              "rows": 1919,
+              "arrangement": 1921,
+              "export": 1923,
+              "done": 1923
             }
           },
           {
-            "wall_seconds": 5.983157333,
+            "wall_seconds": 5.2348985,
             "stages": {
-              "pcm": 1.218256958,
-              "spectrogram": 0.12428687499999978,
-              "beatthis": 3.667897333,
-              "mel": 0.318931458,
-              "grid": 0.15606887499999994,
-              "rows": 0.11274537500000043,
-              "prior": 0.00008325000000058935,
-              "arrangement": 0.3751221659999992,
-              "export": 0.0003113329999996495,
-              "total": 5.980955290999999
+              "pcm": 0.47449270800000004,
+              "spectrogram": 0.12010770900000012,
+              "beatthis": 3.679195875,
+              "mel": 0.32525295800000004,
+              "grid": 0.15700583300000107,
+              "rows": 0.09843854200000078,
+              "prior": 0.00006920799999988958,
+              "arrangement": 0.37770937499999946,
+              "export": 0.00033579199999985576,
+              "total": 5.23264425
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.002159,
+                  "core_seconds": 0.002209417,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 1.2254758749999999,
+                  "core_seconds": 0.474494541,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.59954675,
-                  "graph_seconds": 3.6676367930000002
+                  "core_seconds": 0.60273975,
+                  "graph_seconds": 3.678822374
                 },
                 "rows": {
-                  "core_seconds": 0.04161029500000001,
-                  "graph_seconds": 0.071112907
+                  "core_seconds": 0.027381844000000006,
+                  "graph_seconds": 0.07103275399999999
                 },
                 "arrangement": {
-                  "core_seconds": 0.02155154299999998,
-                  "graph_seconds": 0.3535689180000005
+                  "core_seconds": 0.011197545999999985,
+                  "graph_seconds": 0.3664601380000005
                 },
                 "export": {
-                  "core_seconds": 0.000339084,
+                  "core_seconds": 0.000364542,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 6,
-                  "seconds": 3.6676367930000002
+                  "seconds": 3.678822374
                 },
                 "r2_commit": {
                   "calls": 767,
-                  "seconds": 0.3251024240000001
+                  "seconds": 0.3363611570000002
                 },
                 "r2_predict": {
                   "calls": 768,
-                  "seconds": 0.02758811799999998
+                  "seconds": 0.02918614700000003
                 },
                 "r2_release": {
                   "calls": 11,
-                  "seconds": 0.0008783759999999999
+                  "seconds": 0.000912834
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.031339875
+                  "seconds": 0.031280708
                 },
                 "rows_step": {
                   "calls": 374,
-                  "seconds": 0.03977303200000003
+                  "seconds": 0.039752046000000006
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 2010,
-              "timing": 2072,
-              "rows": 2084,
-              "arrangement": 2084,
-              "export": 2084,
-              "done": 2084
+              "loading": 1954,
+              "timing": 1971,
+              "rows": 1971,
+              "arrangement": 1971,
+              "export": 1971,
+              "done": 1971
             }
           }
         ],
         "objects": 1059,
-        "footprint_after_load_bytes": 206652208,
-        "peak_footprint_before_generation_bytes": 595395664,
-        "peak_footprint_bytes": 2185775456,
+        "footprint_after_load_bytes": 208814896,
+        "peak_footprint_before_generation_bytes": 597689424,
+        "peak_footprint_bytes": 2067269936,
         "sample_rate": 48000.0,
         "request": {
           "star": 2.5,
@@ -179,167 +179,167 @@
       },
       "saigetsu": {
         "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: true }",
-        "load_seconds": 0.200968375,
+        "load_seconds": 0.19950075,
         "runs": [
           {
-            "wall_seconds": 5.254533208,
+            "wall_seconds": 4.377529959,
             "stages": {
-              "pcm": 0.8903606249999999,
-              "spectrogram": 0.10078062499999998,
-              "beatthis": 3.0891939170000007,
-              "mel": 0.258451540999999,
-              "grid": 0.06712266699999964,
-              "rows": 0.07614612500000022,
-              "prior": 0.00007304199999907723,
-              "arrangement": 0.7651463750000012,
-              "export": 0.00037133300000095914,
-              "total": 5.253042334
+              "pcm": 0.35480174999999997,
+              "spectrogram": 0.09814950000000004,
+              "beatthis": 3.1299726669999997,
+              "mel": 0.26060604200000037,
+              "grid": 0.06520249999999987,
+              "rows": 0.06638495899999998,
+              "prior": 0.000068000000000211,
+              "arrangement": 0.40048320800000053,
+              "export": 0.0003526670000001104,
+              "total": 4.376069708999999
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.001443042,
+                  "core_seconds": 0.001417958,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 0.895720125,
+                  "core_seconds": 0.35480325,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.42660971000000003,
-                  "graph_seconds": 3.0889379989999997
+                  "core_seconds": 0.424465041,
+                  "graph_seconds": 3.1294688739999996
                 },
                 "rows": {
-                  "core_seconds": 0.026878925,
-                  "graph_seconds": 0.04925275599999998
+                  "core_seconds": 0.017647913999999997,
+                  "graph_seconds": 0.04872258300000001
                 },
                 "arrangement": {
-                  "core_seconds": 0.04288544699999966,
-                  "graph_seconds": 0.7221526149999975
+                  "core_seconds": 0.011605153999999975,
+                  "graph_seconds": 0.3888390259999997
                 },
                 "export": {
-                  "core_seconds": 0.000401959,
+                  "core_seconds": 0.000380833,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 5,
-                  "seconds": 3.0889379989999997
+                  "seconds": 3.1294688739999996
                 },
                 "r2_commit": {
-                  "calls": 1610,
-                  "seconds": 0.6646366899999996
+                  "calls": 805,
+                  "seconds": 0.356949716
                 },
                 "r2_predict": {
-                  "calls": 1612,
-                  "seconds": 0.05616479900000001
+                  "calls": 806,
+                  "seconds": 0.031075434000000002
                 },
                 "r2_release": {
-                  "calls": 19,
-                  "seconds": 0.0013511259999999998
+                  "calls": 10,
+                  "seconds": 0.0008138759999999999
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.024640708
+                  "seconds": 0.024435875
                 },
                 "rows_step": {
                   "calls": 228,
-                  "seconds": 0.024612048000000015
+                  "seconds": 0.024286708000000008
                 }
               }
             },
             "footprint_mib_at_phase": {
               "loading": 252,
-              "timing": 310,
-              "rows": 1955,
-              "arrangement": 1974,
-              "export": 1977,
-              "done": 1977
+              "timing": 276,
+              "rows": 1933,
+              "arrangement": 1936,
+              "export": 1938,
+              "done": 1939
             }
           },
           {
-            "wall_seconds": 5.15334275,
+            "wall_seconds": 4.275712083,
             "stages": {
-              "pcm": 0.8942783750000001,
-              "spectrogram": 0.1003811669999999,
-              "beatthis": 2.9931606250000002,
-              "mel": 0.2536656659999999,
-              "grid": 0.06594229200000064,
-              "rows": 0.07380650000000151,
-              "prior": 0.00007370799999989686,
-              "arrangement": 0.764904958,
-              "export": 0.00037895799999932935,
-              "total": 5.151867542
+              "pcm": 0.35429937499999997,
+              "spectrogram": 0.09692233300000004,
+              "beatthis": 3.0438155410000003,
+              "mel": 0.26076941700000045,
+              "grid": 0.06489466700000003,
+              "rows": 0.06469787499999984,
+              "prior": 0.00006833299999971132,
+              "arrangement": 0.38839662500000033,
+              "export": 0.0003414169999996375,
+              "total": 4.274239541999999
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.001430834,
+                  "core_seconds": 0.001430417,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 0.8995295,
+                  "core_seconds": 0.354300333,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.420168751,
-                  "graph_seconds": 2.9929796260000003
+                  "core_seconds": 0.42303958399999997,
+                  "graph_seconds": 3.043362124
                 },
                 "rows": {
-                  "core_seconds": 0.025640717000000004,
-                  "graph_seconds": 0.04815103799999996
+                  "core_seconds": 0.016881322999999997,
+                  "graph_seconds": 0.04780229199999998
                 },
                 "arrangement": {
-                  "core_seconds": 0.04343259499999953,
-                  "graph_seconds": 0.7213712750000006
+                  "core_seconds": 0.010189121999999984,
+                  "graph_seconds": 0.3781905989999993
                 },
                 "export": {
-                  "core_seconds": 0.000407625,
+                  "core_seconds": 0.000368333,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 5,
-                  "seconds": 2.9929796260000003
+                  "seconds": 3.043362124
                 },
                 "r2_commit": {
-                  "calls": 1610,
-                  "seconds": 0.6643698250000025
+                  "calls": 805,
+                  "seconds": 0.34793292199999937
                 },
                 "r2_predict": {
-                  "calls": 1612,
-                  "seconds": 0.05571323899999999
+                  "calls": 806,
+                  "seconds": 0.02954805399999998
                 },
                 "r2_release": {
-                  "calls": 19,
-                  "seconds": 0.001288211
+                  "calls": 10,
+                  "seconds": 0.000709623
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.023882958
+                  "seconds": 0.02353875
                 },
                 "rows_step": {
                   "calls": 228,
-                  "seconds": 0.024268080000000018
+                  "seconds": 0.024263542000000013
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 1977,
-              "timing": 2022,
-              "rows": 2025,
-              "arrangement": 2032,
-              "export": 2032,
-              "done": 2032
+              "loading": 1939,
+              "timing": 1939,
+              "rows": 1942,
+              "arrangement": 1942,
+              "export": 1942,
+              "done": 1942
             }
           }
         ],
-        "objects": 1295,
-        "footprint_after_load_bytes": 205832984,
-        "peak_footprint_before_generation_bytes": 545752096,
-        "peak_footprint_bytes": 2131233024,
+        "objects": 1131,
+        "footprint_after_load_bytes": 205308720,
+        "peak_footprint_before_generation_bytes": 545686560,
+        "peak_footprint_bytes": 2036697320,
         "sample_rate": 44100.0,
         "request": {
           "star": 3.5,
@@ -352,167 +352,167 @@
       },
       "catch-the-moment": {
         "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: true }",
-        "load_seconds": 0.199359292,
+        "load_seconds": 0.200597083,
         "runs": [
           {
-            "wall_seconds": 5.024976166,
+            "wall_seconds": 4.275592875,
             "stages": {
-              "pcm": 0.808417584,
-              "spectrogram": 0.09065491700000007,
-              "beatthis": 3.1166053750000002,
-              "mel": 0.23409829200000104,
-              "grid": 0.09501095899999927,
-              "rows": 0.06718345899999986,
-              "prior": 0.00007716600000003381,
-              "arrangement": 0.606393833,
-              "export": 0.0002929589999994278,
-              "total": 5.023611583
+              "pcm": 0.323909,
+              "spectrogram": 0.08823683299999999,
+              "beatthis": 3.173893666,
+              "mel": 0.23696687500000008,
+              "grid": 0.09410395899999957,
+              "rows": 0.05868166599999995,
+              "prior": 0.00006804199999942284,
+              "arrangement": 0.2980154169999996,
+              "export": 0.000324041999999281,
+              "total": 4.274247458
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.001316041,
+                  "core_seconds": 0.001302791,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 0.81326075,
+                  "core_seconds": 0.323910833,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.41996075,
-                  "graph_seconds": 3.1164085819999996
+                  "core_seconds": 0.41987629299999996,
+                  "graph_seconds": 3.173327124
                 },
                 "rows": {
-                  "core_seconds": 0.023144910999999994,
-                  "graph_seconds": 0.04402412899999999
+                  "core_seconds": 0.015072044000000008,
+                  "graph_seconds": 0.04359828999999998
                 },
                 "arrangement": {
-                  "core_seconds": 0.03478919799999995,
-                  "graph_seconds": 0.5715421420000001
+                  "core_seconds": 0.00866961099999999,
+                  "graph_seconds": 0.28934148000000026
                 },
                 "export": {
-                  "core_seconds": 0.000325791,
+                  "core_seconds": 0.00035275,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 5,
-                  "seconds": 3.1164085819999996
+                  "seconds": 3.173327124
                 },
                 "r2_commit": {
-                  "calls": 1262,
-                  "seconds": 0.523240134
+                  "calls": 631,
+                  "seconds": 0.2635344960000002
                 },
                 "r2_predict": {
-                  "calls": 1264,
-                  "seconds": 0.04391359200000005
+                  "calls": 632,
+                  "seconds": 0.02256361000000001
                 },
                 "r2_release": {
-                  "calls": 65,
-                  "seconds": 0.004388416
+                  "calls": 56,
+                  "seconds": 0.0032433739999999994
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.022628917
+                  "seconds": 0.022189333
                 },
                 "rows_step": {
                   "calls": 200,
-                  "seconds": 0.021395211999999997
+                  "seconds": 0.021408957000000003
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 247,
-              "timing": 299,
-              "rows": 1944,
-              "arrangement": 1953,
-              "export": 1956,
-              "done": 1956
+              "loading": 246,
+              "timing": 267,
+              "rows": 1924,
+              "arrangement": 1930,
+              "export": 1933,
+              "done": 1933
             }
           },
           {
-            "wall_seconds": 4.901845417,
+            "wall_seconds": 4.15507875,
             "stages": {
-              "pcm": 0.8139204999999999,
-              "spectrogram": 0.09083799999999996,
-              "beatthis": 2.998914042,
-              "mel": 0.23261870899999984,
-              "grid": 0.09332387500000004,
-              "rows": 0.06463095799999882,
-              "prior": 0.00007458399999995891,
-              "arrangement": 0.6007609589999993,
-              "export": 0.0002890830000005735,
-              "total": 4.900507
+              "pcm": 0.322721958,
+              "spectrogram": 0.08813154199999997,
+              "beatthis": 3.052686417,
+              "mel": 0.23770300000000044,
+              "grid": 0.09355500000000029,
+              "rows": 0.05835104199999978,
+              "prior": 0.00006608399999959147,
+              "arrangement": 0.3001496249999996,
+              "export": 0.0003174169999992955,
+              "total": 4.1537415
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.001291875,
+                  "core_seconds": 0.00129125,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 0.819031792,
+                  "core_seconds": 0.32272625,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.416947457,
-                  "graph_seconds": 2.998746126
+                  "core_seconds": 0.419741291,
+                  "graph_seconds": 3.052338416
                 },
                 "rows": {
-                  "core_seconds": 0.022152259999999997,
-                  "graph_seconds": 0.042466172
+                  "core_seconds": 0.01505642,
+                  "graph_seconds": 0.043281628999999974
                 },
                 "arrangement": {
-                  "core_seconds": 0.034966564000000026,
-                  "graph_seconds": 0.5657326899999986
+                  "core_seconds": 0.008796391999999991,
+                  "graph_seconds": 0.2913459000000001
                 },
                 "export": {
-                  "core_seconds": 0.000319708,
+                  "core_seconds": 0.0003455,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 5,
-                  "seconds": 2.998746126
+                  "seconds": 3.052338416
                 },
                 "r2_commit": {
-                  "calls": 1262,
-                  "seconds": 0.5178931989999996
+                  "calls": 631,
+                  "seconds": 0.265349308
                 },
                 "r2_predict": {
-                  "calls": 1264,
-                  "seconds": 0.043500913000000106
+                  "calls": 632,
+                  "seconds": 0.022904176
                 },
                 "r2_release": {
-                  "calls": 65,
-                  "seconds": 0.004338578000000001
+                  "calls": 56,
+                  "seconds": 0.0030924159999999993
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.021189083
+                  "seconds": 0.021997292
                 },
                 "rows_step": {
                   "calls": 200,
-                  "seconds": 0.021277088999999992
+                  "seconds": 0.021284336999999993
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 1956,
-              "timing": 1997,
-              "rows": 2012,
-              "arrangement": 2012,
-              "export": 2015,
-              "done": 2015
+              "loading": 1933,
+              "timing": 1933,
+              "rows": 1948,
+              "arrangement": 1948,
+              "export": 1948,
+              "done": 1948
             }
           }
         ],
-        "objects": 911,
-        "footprint_after_load_bytes": 206291736,
-        "peak_footprint_before_generation_bytes": 524289056,
-        "peak_footprint_bytes": 2113046808,
+        "objects": 976,
+        "footprint_after_load_bytes": 205177624,
+        "peak_footprint_before_generation_bytes": 523568160,
+        "peak_footprint_bytes": 2043267256,
         "sample_rate": 44100.0,
         "request": {
           "star": 3.5,
@@ -525,167 +525,167 @@
       },
       "adventure": {
         "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: true }",
-        "load_seconds": 0.204772041,
+        "load_seconds": 0.203392,
         "runs": [
           {
-            "wall_seconds": 9.573857584,
+            "wall_seconds": 7.048713,
             "stages": {
-              "pcm": 3.006578584,
-              "spectrogram": 0.14910945799999992,
-              "beatthis": 4.302930999999999,
-              "mel": 0.38694166700000004,
-              "grid": 0.20468116600000122,
-              "rows": 0.13553791700000056,
-              "prior": 0.00008641700000043784,
-              "arrangement": 1.3656680410000008,
-              "export": 0.0005735409999997501,
-              "total": 9.569310084
+              "pcm": 1.1368690830000001,
+              "spectrogram": 0.14662416600000006,
+              "beatthis": 4.361822,
+              "mel": 0.3949039579999999,
+              "grid": 0.20387862500000029,
+              "rows": 0.11534370899999977,
+              "prior": 0.00006974999999965803,
+              "arrangement": 0.6838885420000006,
+              "export": 0.0005524589999995441,
+              "total": 7.043997375
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.004497083,
+                  "core_seconds": 0.00467425,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 3.023745875,
+                  "core_seconds": 1.13687175,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.741010876,
-                  "graph_seconds": 4.302652417
+                  "core_seconds": 0.745922708,
+                  "graph_seconds": 4.361307625
                 },
                 "rows": {
-                  "core_seconds": 0.049132535000000026,
-                  "graph_seconds": 0.086380013
+                  "core_seconds": 0.031523749999999996,
+                  "graph_seconds": 0.08379407700000002
                 },
                 "arrangement": {
-                  "core_seconds": 0.07657619400000013,
-                  "graph_seconds": 1.2888576220000016
+                  "core_seconds": 0.018085013999999976,
+                  "graph_seconds": 0.6657158910000024
                 },
                 "export": {
-                  "core_seconds": 0.000606042,
+                  "core_seconds": 0.000580333,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 7,
-                  "seconds": 4.302652417
+                  "seconds": 4.361307625
                 },
                 "r2_commit": {
-                  "calls": 2812,
-                  "seconds": 1.1699052669999974
+                  "calls": 1406,
+                  "seconds": 0.6078407799999996
                 },
                 "r2_predict": {
-                  "calls": 2814,
-                  "seconds": 0.0979292290000004
+                  "calls": 1407,
+                  "seconds": 0.05121852900000004
                 },
                 "r2_release": {
-                  "calls": 357,
-                  "seconds": 0.02102312600000002
+                  "calls": 99,
+                  "seconds": 0.006656581999999996
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.040680542
+                  "seconds": 0.038429083
                 },
                 "rows_step": {
                   "calls": 427,
-                  "seconds": 0.045699470999999985
+                  "seconds": 0.045364993999999964
                 }
               }
             },
             "footprint_mib_at_phase": {
               "loading": 375,
-              "timing": 559,
-              "rows": 2195,
-              "arrangement": 2226,
-              "export": 2229,
-              "done": 2229
+              "timing": 413,
+              "rows": 2038,
+              "arrangement": 2040,
+              "export": 2043,
+              "done": 2043
             }
           },
           {
-            "wall_seconds": 9.458211125,
+            "wall_seconds": 6.919611875,
             "stages": {
-              "pcm": 3.015388583,
-              "spectrogram": 0.15003141700000014,
-              "beatthis": 4.187603916,
-              "mel": 0.39443395899999995,
-              "grid": 0.20273050000000056,
-              "rows": 0.1309999999999991,
-              "prior": 0.00008608299999923474,
-              "arrangement": 1.359409417,
-              "export": 0.000575291000001016,
-              "total": 9.452890625
+              "pcm": 1.135746125,
+              "spectrogram": 0.14557416699999998,
+              "beatthis": 4.219543291999999,
+              "mel": 0.4058267499999993,
+              "grid": 0.2044593329999998,
+              "rows": 0.11569941700000072,
+              "prior": 0.00006633299999975862,
+              "arrangement": 0.6865625,
+              "export": 0.0005480420000003505,
+              "total": 6.914076042
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.005271584,
+                  "core_seconds": 0.0054935,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 3.026983291,
+                  "core_seconds": 1.135747959,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.747499749,
-                  "graph_seconds": 4.187298666
+                  "core_seconds": 0.7564859159999999,
+                  "graph_seconds": 4.218918583
                 },
                 "rows": {
-                  "core_seconds": 0.04767133599999998,
-                  "graph_seconds": 0.08330215399999999
+                  "core_seconds": 0.03226300800000001,
+                  "graph_seconds": 0.08341041000000006
                 },
                 "arrangement": {
-                  "core_seconds": 0.07600781399999984,
-                  "graph_seconds": 1.283168247999997
+                  "core_seconds": 0.018045018999999978,
+                  "graph_seconds": 0.6684270930000022
                 },
                 "export": {
-                  "core_seconds": 0.000607125,
+                  "core_seconds": 0.000575125,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 7,
-                  "seconds": 4.187298666
+                  "seconds": 4.218918583
                 },
                 "r2_commit": {
-                  "calls": 2812,
-                  "seconds": 1.1651799790000024
+                  "calls": 1406,
+                  "seconds": 0.6105650759999992
                 },
                 "r2_predict": {
-                  "calls": 2814,
-                  "seconds": 0.09731798300000022
+                  "calls": 1407,
+                  "seconds": 0.05142543300000001
                 },
                 "r2_release": {
-                  "calls": 357,
-                  "seconds": 0.020670286000000024
+                  "calls": 99,
+                  "seconds": 0.006436584000000003
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.038402209
+                  "seconds": 0.038847083
                 },
                 "rows_step": {
                   "calls": 427,
-                  "seconds": 0.044899945000000045
+                  "seconds": 0.04456332699999998
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 2304,
-              "timing": 2306,
-              "rows": 2353,
-              "arrangement": 2353,
-              "export": 2354,
-              "done": 2354
+              "loading": 2117,
+              "timing": 2120,
+              "rows": 2167,
+              "arrangement": 2167,
+              "export": 2167,
+              "done": 2167
             }
           }
         ],
-        "objects": 2225,
-        "footprint_after_load_bytes": 206013208,
-        "peak_footprint_before_generation_bytes": 1071629728,
-        "peak_footprint_bytes": 2469153264,
+        "objects": 2048,
+        "footprint_after_load_bytes": 205062960,
+        "peak_footprint_before_generation_bytes": 1071941024,
+        "peak_footprint_bytes": 2273085864,
         "sample_rate": 96000.0,
         "request": {
           "star": 4.5,
@@ -700,167 +700,167 @@
     "cpu-threads": {
       "hesitation-snow": {
         "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 0, reuse_memory: true }",
-        "load_seconds": 0.20655825,
+        "load_seconds": 0.199572041,
         "runs": [
           {
-            "wall_seconds": 5.038652584,
+            "wall_seconds": 4.341996125,
             "stages": {
-              "pcm": 1.220178875,
-              "spectrogram": 0.12395112499999981,
-              "beatthis": 2.5800644160000004,
-              "mel": 0.3537514170000004,
-              "grid": 0.15852208299999984,
-              "rows": 0.10522979099999975,
-              "prior": 0.00008912499999951251,
-              "arrangement": 0.48741874999999985,
-              "export": 0.00033174999999937427,
-              "total": 5.036666250000001
+              "pcm": 0.475141125,
+              "spectrogram": 0.12063758300000006,
+              "beatthis": 2.640867459,
+              "mel": 0.35070524999999997,
+              "grid": 0.16406479200000013,
+              "rows": 0.0878316249999998,
+              "prior": 0.00008054200000015044,
+              "arrangement": 0.5002973749999996,
+              "export": 0.00033716700000059065,
+              "total": 4.340021833
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.0019395,
+                  "core_seconds": 0.001931209,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 1.227253208,
+                  "core_seconds": 0.475143375,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.636459999,
-                  "graph_seconds": 2.5798281259999998
+                  "core_seconds": 0.63580475,
+                  "graph_seconds": 2.6404736669999997
                 },
                 "rows": {
-                  "core_seconds": 0.04714754000000001,
-                  "graph_seconds": 0.05805740099999996
+                  "core_seconds": 0.030023543000000003,
+                  "graph_seconds": 0.05778528500000004
                 },
                 "arrangement": {
-                  "core_seconds": 0.02285840500000005,
-                  "graph_seconds": 0.464553305000001
+                  "core_seconds": 0.01117063800000003,
+                  "graph_seconds": 0.4891070349999998
                 },
                 "export": {
-                  "core_seconds": 0.000362042,
+                  "core_seconds": 0.000366125,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 6,
-                  "seconds": 2.5798281259999998
+                  "seconds": 2.6404736669999997
                 },
                 "r2_commit": {
                   "calls": 767,
-                  "seconds": 0.4257848460000009
+                  "seconds": 0.4475253989999997
                 },
                 "r2_predict": {
                   "calls": 768,
-                  "seconds": 0.03762195800000005
+                  "seconds": 0.04037259599999997
                 },
                 "r2_release": {
                   "calls": 11,
-                  "seconds": 0.0011465009999999999
+                  "seconds": 0.00120904
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.014938583
+                  "seconds": 0.014632417
                 },
                 "rows_step": {
                   "calls": 374,
-                  "seconds": 0.043118817999999996
+                  "seconds": 0.043152868000000025
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 231,
-              "timing": 322,
-              "rows": 2003,
-              "arrangement": 2034,
-              "export": 2036,
-              "done": 2036
+              "loading": 230,
+              "timing": 260,
+              "rows": 1949,
+              "arrangement": 1963,
+              "export": 1965,
+              "done": 1965
             }
           },
           {
-            "wall_seconds": 5.073886667,
+            "wall_seconds": 4.345516875,
             "stages": {
-              "pcm": 1.218450125,
-              "spectrogram": 0.12434629099999983,
-              "beatthis": 2.554603041,
-              "mel": 0.3666133330000007,
-              "grid": 0.16986575000000084,
-              "rows": 0.10510804199999985,
-              "prior": 0.00008633299999928568,
-              "arrangement": 0.5239554580000003,
-              "export": 0.0003196250000009968,
-              "total": 5.071682708
+              "pcm": 0.474631458,
+              "spectrogram": 0.12329891699999997,
+              "beatthis": 2.611353792,
+              "mel": 0.37793620899999997,
+              "grid": 0.17076833399999986,
+              "rows": 0.08717337499999984,
+              "prior": 0.00007645899999988614,
+              "arrangement": 0.49765037500000014,
+              "export": 0.00032429100000081233,
+              "total": 4.343265917000001
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.002155917,
+                  "core_seconds": 0.002205458,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 1.226747167,
+                  "core_seconds": 0.474632708,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.661056957,
-                  "graph_seconds": 2.554370376
+                  "core_seconds": 0.672509374,
+                  "graph_seconds": 2.61084825
                 },
                 "rows": {
-                  "core_seconds": 0.04543703999999996,
-                  "graph_seconds": 0.05964583200000002
+                  "core_seconds": 0.029995460000000033,
+                  "graph_seconds": 0.05715529099999999
                 },
                 "arrangement": {
-                  "core_seconds": 0.023966317000000133,
-                  "graph_seconds": 0.49996890599999927
+                  "core_seconds": 0.011052915999999982,
+                  "graph_seconds": 0.4865804340000004
                 },
                 "export": {
-                  "core_seconds": 0.00035125,
+                  "core_seconds": 0.000353125,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 6,
-                  "seconds": 2.554370376
+                  "seconds": 2.61084825
                 },
                 "r2_commit": {
                   "calls": 767,
-                  "seconds": 0.45632323099999933
+                  "seconds": 0.4450627480000003
                 },
                 "r2_predict": {
                   "calls": 768,
-                  "seconds": 0.04239188299999996
+                  "seconds": 0.04038772800000001
                 },
                 "r2_release": {
                   "calls": 11,
-                  "seconds": 0.001253792
+                  "seconds": 0.0011299580000000001
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.0134345
+                  "seconds": 0.014115459
                 },
                 "rows_step": {
                   "calls": 374,
-                  "seconds": 0.04621133200000002
+                  "seconds": 0.043039832000000014
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 2066,
-              "timing": 2127,
-              "rows": 2139,
-              "arrangement": 2139,
-              "export": 2139,
-              "done": 2139
+              "loading": 1996,
+              "timing": 1996,
+              "rows": 2008,
+              "arrangement": 2008,
+              "export": 2008,
+              "done": 2008
             }
           }
         ],
         "objects": 1059,
-        "footprint_after_load_bytes": 206979864,
-        "peak_footprint_before_generation_bytes": 595559504,
-        "peak_footprint_bytes": 2243529128,
+        "footprint_after_load_bytes": 206619464,
+        "peak_footprint_before_generation_bytes": 595739728,
+        "peak_footprint_bytes": 2105887072,
         "sample_rate": 48000.0,
         "request": {
           "star": 2.5,
@@ -873,167 +873,167 @@
       },
       "saigetsu": {
         "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 0, reuse_memory: true }",
-        "load_seconds": 0.221287083,
+        "load_seconds": 0.224632708,
         "runs": [
           {
-            "wall_seconds": 4.839962625,
+            "wall_seconds": 3.586218083,
             "stages": {
-              "pcm": 0.906333083,
-              "spectrogram": 0.1143343749999999,
-              "beatthis": 2.1909896669999998,
-              "mel": 0.30652183300000024,
-              "grid": 0.0726530829999997,
-              "rows": 0.06687312500000053,
-              "prior": 0.00008108300000048985,
-              "arrangement": 1.1745929999999998,
-              "export": 0.0004132500000005166,
-              "total": 4.838418375
+              "pcm": 0.35617195900000004,
+              "spectrogram": 0.09948783400000002,
+              "beatthis": 2.2200556669999996,
+              "mel": 0.28874575,
+              "grid": 0.07016108299999996,
+              "rows": 0.055366833000000046,
+              "prior": 0.00006958299999996598,
+              "arrangement": 0.49425137500000027,
+              "export": 0.00037395799999967493,
+              "total": 3.5847487909999995
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.001492417,
+                  "core_seconds": 0.001427,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 0.911917,
+                  "core_seconds": 0.356174334,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.493691,
-                  "graph_seconds": 2.190807
+                  "core_seconds": 0.458989419,
+                  "graph_seconds": 2.219464168
                 },
                 "rows": {
-                  "core_seconds": 0.028484627999999998,
-                  "graph_seconds": 0.038373122999999995
+                  "core_seconds": 0.018374533,
+                  "graph_seconds": 0.036978207000000006
                 },
                 "arrangement": {
-                  "core_seconds": 0.055242781999999956,
-                  "graph_seconds": 1.1191762730000023
+                  "core_seconds": 0.011079573000000004,
+                  "graph_seconds": 0.48314897399999895
                 },
                 "export": {
-                  "core_seconds": 0.000445542,
+                  "core_seconds": 0.000401625,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 5,
-                  "seconds": 2.190807
+                  "seconds": 2.219464168
                 },
                 "r2_commit": {
-                  "calls": 1610,
-                  "seconds": 1.0187755450000013
+                  "calls": 805,
+                  "seconds": 0.44322191800000016
                 },
                 "r2_predict": {
-                  "calls": 1612,
-                  "seconds": 0.09829305799999996
+                  "calls": 806,
+                  "seconds": 0.03898051400000007
                 },
                 "r2_release": {
-                  "calls": 19,
-                  "seconds": 0.00210767
+                  "calls": 10,
+                  "seconds": 0.000946542
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.010282
+                  "seconds": 0.010387917
                 },
                 "rows_step": {
                   "calls": 228,
-                  "seconds": 0.028091123000000013
+                  "seconds": 0.02659029
                 }
               }
             },
             "footprint_mib_at_phase": {
               "loading": 254,
-              "timing": 311,
-              "rows": 1996,
-              "arrangement": 2020,
-              "export": 2023,
-              "done": 2023
+              "timing": 277,
+              "rows": 1967,
+              "arrangement": 1968,
+              "export": 1971,
+              "done": 1971
             }
           },
           {
-            "wall_seconds": 6.615486583,
+            "wall_seconds": 3.600470458,
             "stages": {
-              "pcm": 1.107531375,
-              "spectrogram": 0.15155758300000002,
-              "beatthis": 3.420109333000001,
-              "mel": 0.36021016599999983,
-              "grid": 0.08606674999999996,
-              "rows": 0.0874639159999997,
-              "prior": 0.00009679199999936827,
-              "arrangement": 1.3943630409999996,
-              "export": 0.0004960419999997612,
-              "total": 6.613819250000001
+              "pcm": 0.355205542,
+              "spectrogram": 0.10538525000000004,
+              "beatthis": 2.2098302910000003,
+              "mel": 0.311963792,
+              "grid": 0.07213095900000008,
+              "rows": 0.0543917919999999,
+              "prior": 0.00006991600000037578,
+              "arrangement": 0.48945120799999997,
+              "export": 0.0003301249999999527,
+              "total": 3.598809208
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.001607208,
+                  "core_seconds": 0.001616125,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 1.113394542,
+                  "core_seconds": 0.355206667,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.59817175,
-                  "graph_seconds": 3.419768667
+                  "core_seconds": 0.489839542,
+                  "graph_seconds": 2.2094720829999996
                 },
                 "rows": {
-                  "core_seconds": 0.03355666300000001,
-                  "graph_seconds": 0.053887618999999956
+                  "core_seconds": 0.01826116900000001,
+                  "graph_seconds": 0.03611615399999999
                 },
                 "arrangement": {
-                  "core_seconds": 0.06356775100000019,
-                  "graph_seconds": 1.330482013999997
+                  "core_seconds": 0.01079246799999998,
+                  "graph_seconds": 0.47863855299999997
                 },
                 "export": {
-                  "core_seconds": 0.000533875,
+                  "core_seconds": 0.000359166,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 5,
-                  "seconds": 3.419768667
+                  "seconds": 2.2094720829999996
                 },
                 "r2_commit": {
-                  "calls": 1610,
-                  "seconds": 1.2116210499999998
+                  "calls": 805,
+                  "seconds": 0.4389396420000002
                 },
                 "r2_predict": {
-                  "calls": 1612,
-                  "seconds": 0.11659012899999993
+                  "calls": 806,
+                  "seconds": 0.03882266200000001
                 },
                 "r2_release": {
-                  "calls": 19,
-                  "seconds": 0.002270835
+                  "calls": 10,
+                  "seconds": 0.000876249
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.012732375
+                  "seconds": 0.010200583
                 },
                 "rows_step": {
                   "calls": 228,
-                  "seconds": 0.04115524399999998
+                  "seconds": 0.02591557100000001
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 2023,
-              "timing": 2068,
-              "rows": 2068,
-              "arrangement": 2068,
-              "export": 2068,
-              "done": 2068
+              "loading": 1971,
+              "timing": 1983,
+              "rows": 1983,
+              "arrangement": 1983,
+              "export": 1983,
+              "done": 1983
             }
           }
         ],
-        "objects": 1295,
-        "footprint_after_load_bytes": 207684424,
-        "peak_footprint_before_generation_bytes": 547144736,
-        "peak_footprint_bytes": 2169194872,
+        "objects": 1131,
+        "footprint_after_load_bytes": 205882160,
+        "peak_footprint_before_generation_bytes": 546243640,
+        "peak_footprint_bytes": 2080295216,
         "sample_rate": 44100.0,
         "request": {
           "star": 3.5,
@@ -1046,167 +1046,167 @@
       },
       "catch-the-moment": {
         "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 0, reuse_memory: true }",
-        "load_seconds": 0.29644725,
+        "load_seconds": 0.220926916,
         "runs": [
           {
-            "wall_seconds": 6.739038417,
+            "wall_seconds": 3.5105217079999997,
             "stages": {
-              "pcm": 1.1362703340000002,
-              "spectrogram": 0.14400141699999994,
-              "beatthis": 3.6314165000000003,
-              "mel": 0.4181092920000001,
-              "grid": 0.16948508300000048,
-              "rows": 0.09925183299999935,
-              "prior": 0.00009825000000000728,
-              "arrangement": 1.1316347080000004,
-              "export": 0.00041258400000060647,
-              "total": 6.737156833
+              "pcm": 0.348791375,
+              "spectrogram": 0.08963741600000003,
+              "beatthis": 2.235536,
+              "mel": 0.2846428330000003,
+              "grid": 0.10581745799999999,
+              "rows": 0.04868987500000003,
+              "prior": 0.0000751669999999649,
+              "arrangement": 0.3954819580000003,
+              "export": 0.00033624999999938153,
+              "total": 3.5090738749999995
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.001812792,
+                  "core_seconds": 0.001403583,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 1.142676917,
+                  "core_seconds": 0.348793875,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.732093543,
-                  "graph_seconds": 3.630915875
+                  "core_seconds": 0.480528499,
+                  "graph_seconds": 2.235108832
                 },
                 "rows": {
-                  "core_seconds": 0.03814433800000001,
-                  "graph_seconds": 0.06107538400000002
+                  "core_seconds": 0.016437417999999995,
+                  "graph_seconds": 0.03224042200000001
                 },
                 "arrangement": {
-                  "core_seconds": 0.046506924999999935,
-                  "graph_seconds": 1.0850100779999996
+                  "core_seconds": 0.009377102000000042,
+                  "graph_seconds": 0.3860985380000004
                 },
                 "export": {
-                  "core_seconds": 0.000458208,
+                  "core_seconds": 0.000365917,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 5,
-                  "seconds": 3.630915875
+                  "seconds": 2.235108832
                 },
                 "r2_commit": {
-                  "calls": 1262,
-                  "seconds": 0.9818441929999997
+                  "calls": 631,
+                  "seconds": 0.35082904100000006
                 },
                 "r2_predict": {
-                  "calls": 1264,
-                  "seconds": 0.09680858799999989
+                  "calls": 632,
+                  "seconds": 0.03121103999999998
                 },
                 "r2_release": {
-                  "calls": 65,
-                  "seconds": 0.0063572970000000005
+                  "calls": 56,
+                  "seconds": 0.004058457
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.012887792
+                  "seconds": 0.009268708
                 },
                 "rows_step": {
                   "calls": 200,
-                  "seconds": 0.04818759200000002
+                  "seconds": 0.022971714000000004
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 248,
-              "timing": 300,
-              "rows": 1982,
-              "arrangement": 1992,
-              "export": 1996,
-              "done": 1996
+              "loading": 247,
+              "timing": 268,
+              "rows": 1958,
+              "arrangement": 1959,
+              "export": 1962,
+              "done": 1962
             }
           },
           {
-            "wall_seconds": 6.8508975,
+            "wall_seconds": 3.42047675,
             "stages": {
-              "pcm": 1.1042223340000001,
-              "spectrogram": 0.11384254099999998,
-              "beatthis": 3.8013927919999997,
-              "mel": 0.3831212080000005,
-              "grid": 0.133406833,
-              "rows": 0.0839491250000001,
-              "prior": 0.00010674999999991997,
-              "arrangement": 1.221661792,
-              "export": 0.0003752080000003843,
-              "total": 6.849030790999999
+              "pcm": 0.32334554200000004,
+              "spectrogram": 0.09573875000000004,
+              "beatthis": 2.1809922499999996,
+              "mel": 0.27247191699999984,
+              "grid": 0.10383116599999993,
+              "rows": 0.04847791599999982,
+              "prior": 0.00007416699999976117,
+              "arrangement": 0.39378570899999976,
+              "export": 0.00030733400000053737,
+              "total": 3.4190850420000003
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.001803542,
+                  "core_seconds": 0.001344834,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 1.1111067079999999,
+                  "core_seconds": 0.323346666,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.630715332,
-                  "graph_seconds": 3.8010456660000003
+                  "core_seconds": 0.472372833,
+                  "graph_seconds": 2.180662751
                 },
                 "rows": {
-                  "core_seconds": 0.03300621,
-                  "graph_seconds": 0.05092174499999997
+                  "core_seconds": 0.016053417,
+                  "graph_seconds": 0.03241199600000001
                 },
                 "arrangement": {
-                  "core_seconds": 0.05629496199999988,
-                  "graph_seconds": 1.1651685629999993
+                  "core_seconds": 0.009198421999999998,
+                  "graph_seconds": 0.3845774380000001
                 },
                 "export": {
-                  "core_seconds": 0.000418958,
+                  "core_seconds": 0.000336375,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 5,
-                  "seconds": 3.8010456660000003
+                  "seconds": 2.180662751
                 },
                 "r2_commit": {
-                  "calls": 1262,
-                  "seconds": 1.0525920769999995
+                  "calls": 631,
+                  "seconds": 0.34984771900000056
                 },
                 "r2_predict": {
-                  "calls": 1264,
-                  "seconds": 0.10419336100000008
+                  "calls": 632,
+                  "seconds": 0.030641388000000016
                 },
                 "r2_release": {
-                  "calls": 65,
-                  "seconds": 0.008383124999999998
+                  "calls": 56,
+                  "seconds": 0.0040883310000000015
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.011595209
+                  "seconds": 0.009488209
                 },
                 "rows_step": {
                   "calls": 200,
-                  "seconds": 0.03932653599999998
+                  "seconds": 0.022923786999999998
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 1996,
-              "timing": 2036,
-              "rows": 2039,
-              "arrangement": 2039,
-              "export": 2039,
-              "done": 2039
+              "loading": 1962,
+              "timing": 1973,
+              "rows": 1973,
+              "arrangement": 1973,
+              "export": 1973,
+              "done": 1973
             }
           }
         ],
-        "objects": 911,
-        "footprint_after_load_bytes": 206701360,
-        "peak_footprint_before_generation_bytes": 525321272,
-        "peak_footprint_bytes": 2138687792,
+        "objects": 976,
+        "footprint_after_load_bytes": 206291760,
+        "peak_footprint_before_generation_bytes": 525042744,
+        "peak_footprint_bytes": 2069334296,
         "sample_rate": 44100.0,
         "request": {
           "star": 3.5,
@@ -1219,167 +1219,167 @@
       },
       "adventure": {
         "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 0, reuse_memory: true }",
-        "load_seconds": 0.279115708,
+        "load_seconds": 0.216353042,
         "runs": [
           {
-            "wall_seconds": 18.18424125,
+            "wall_seconds": 6.053990875,
             "stages": {
-              "pcm": 5.048119750000001,
-              "spectrogram": 0.16126775000000088,
-              "beatthis": 5.172650958,
-              "mel": 1.3555691250000017,
-              "grid": 0.761052208000001,
-              "rows": 0.3486701249999987,
-              "prior": 0.00023641700000007405,
-              "arrangement": 5.304488166000001,
-              "export": 0.0015845420000041486,
-              "total": 18.177511542000005
+              "pcm": 1.149685083,
+              "spectrogram": 0.15580216700000005,
+              "beatthis": 3.0888933749999996,
+              "mel": 0.44878158300000087,
+              "grid": 0.22819958399999996,
+              "rows": 0.10140279100000044,
+              "prior": 0.00007533299999977316,
+              "arrangement": 0.8755502080000006,
+              "export": 0.0006002500000013242,
+              "total": 6.049065209
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.00661025,
+                  "core_seconds": 0.004877167,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 5.071922834,
+                  "core_seconds": 1.149688541,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 2.278452709,
-                  "graph_seconds": 5.172084167
+                  "core_seconds": 0.833277626,
+                  "graph_seconds": 3.088406583
                 },
                 "rows": {
-                  "core_seconds": 0.1357807389999999,
-                  "graph_seconds": 0.21280792099999998
+                  "core_seconds": 0.034325006999999984,
+                  "graph_seconds": 0.06705229300000005
                 },
                 "arrangement": {
-                  "core_seconds": 0.20437893200000087,
-                  "graph_seconds": 5.09915617100001
+                  "core_seconds": 0.019655867000000053,
+                  "graph_seconds": 0.8557983179999998
                 },
                 "export": {
-                  "core_seconds": 0.001662917,
+                  "core_seconds": 0.000627917,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 7,
-                  "seconds": 5.172084167
+                  "seconds": 3.088406583
                 },
                 "r2_commit": {
-                  "calls": 2812,
-                  "seconds": 4.622994420000002
+                  "calls": 1406,
+                  "seconds": 0.7784857299999998
                 },
                 "r2_predict": {
-                  "calls": 2814,
-                  "seconds": 0.40549274899999993
+                  "calls": 1407,
+                  "seconds": 0.06909309000000013
                 },
                 "r2_release": {
-                  "calls": 357,
-                  "seconds": 0.07066900199999997
+                  "calls": 99,
+                  "seconds": 0.008219497999999999
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.032399958
+                  "seconds": 0.01739375
                 },
                 "rows_step": {
                   "calls": 427,
-                  "seconds": 0.18040796299999992
+                  "seconds": 0.049658542999999986
                 }
               }
             },
             "footprint_mib_at_phase": {
               "loading": 377,
-              "timing": 561,
-              "rows": 2238,
-              "arrangement": 2274,
-              "export": 2278,
-              "done": 2278
+              "timing": 415,
+              "rows": 2069,
+              "arrangement": 2081,
+              "export": 2084,
+              "done": 2084
             }
           },
           {
-            "wall_seconds": 22.186998917,
+            "wall_seconds": 6.031447125,
             "stages": {
-              "pcm": 4.617507000000001,
-              "spectrogram": 0.21782124999999997,
-              "beatthis": 10.729773458,
-              "mel": 1.1115572500000017,
-              "grid": 0.5019519589999981,
-              "rows": 0.1905119999999988,
-              "prior": 0.00014962500000547153,
-              "arrangement": 4.77086275,
-              "export": 0.0007612090000002354,
-              "total": 22.174665958
+              "pcm": 1.156867375,
+              "spectrogram": 0.15904775000000018,
+              "beatthis": 3.0518905830000005,
+              "mel": 0.4581712500000003,
+              "grid": 0.2298667919999998,
+              "rows": 0.10001825000000009,
+              "prior": 0.00007516600000053586,
+              "arrangement": 0.8671592089999994,
+              "export": 0.0005430000000005748,
+              "total": 6.023711166999999
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.012268291,
+                  "core_seconds": 0.007688917,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 4.6512030840000005,
+                  "core_seconds": 1.156869709,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 1.832221334,
-                  "graph_seconds": 10.728877626
+                  "core_seconds": 0.847630251,
+                  "graph_seconds": 3.0513473749999998
                 },
                 "rows": {
-                  "core_seconds": 0.08091251100000005,
-                  "graph_seconds": 0.10955496
+                  "core_seconds": 0.03422061699999999,
+                  "graph_seconds": 0.06577257100000007
                 },
                 "arrangement": {
-                  "core_seconds": 0.13914545800000028,
-                  "graph_seconds": 4.63117383999999
+                  "core_seconds": 0.019471850000000082,
+                  "graph_seconds": 0.8475951910000006
                 },
                 "export": {
-                  "core_seconds": 0.000803625,
+                  "core_seconds": 0.000570208,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 7,
-                  "seconds": 10.728877626
+                  "seconds": 3.0513473749999998
                 },
                 "r2_commit": {
-                  "calls": 2812,
-                  "seconds": 4.260918483999984
+                  "calls": 1406,
+                  "seconds": 0.772271536000001
                 },
                 "r2_predict": {
-                  "calls": 2814,
-                  "seconds": 0.32928659899999874
+                  "calls": 1407,
+                  "seconds": 0.06738623599999995
                 },
                 "r2_release": {
-                  "calls": 357,
-                  "seconds": 0.04096875699999998
+                  "calls": 99,
+                  "seconds": 0.007937419000000003
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.022404417
+                  "seconds": 0.01730175
                 },
                 "rows_step": {
                   "calls": 427,
-                  "seconds": 0.08715054299999998
+                  "seconds": 0.04847082100000002
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 2351,
-              "timing": 2351,
-              "rows": 2172,
-              "arrangement": 2191,
-              "export": 2191,
-              "done": 2191
+              "loading": 2157,
+              "timing": 2157,
+              "rows": 2187,
+              "arrangement": 2196,
+              "export": 2197,
+              "done": 2197
             }
           }
         ],
-        "objects": 2225,
-        "footprint_after_load_bytes": 209584944,
-        "peak_footprint_before_generation_bytes": 1075217872,
-        "peak_footprint_bytes": 2497776184,
+        "objects": 2048,
+        "footprint_after_load_bytes": 206652208,
+        "peak_footprint_before_generation_bytes": 1073989024,
+        "peak_footprint_bytes": 2303773072,
         "sample_rate": 96000.0,
         "request": {
           "star": 4.5,
@@ -1394,167 +1394,167 @@
     "cpu-lean": {
       "hesitation-snow": {
         "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: false }",
-        "load_seconds": 0.240645167,
+        "load_seconds": 0.207571917,
         "runs": [
           {
-            "wall_seconds": 7.426061875,
+            "wall_seconds": 5.294729458,
             "stages": {
-              "pcm": 1.303380167,
-              "spectrogram": 0.13059704199999989,
-              "beatthis": 4.841294167,
-              "mel": 0.41670499999999994,
-              "grid": 0.1869713330000004,
-              "rows": 0.1346552500000007,
-              "prior": 0.000092874999999367,
-              "arrangement": 0.4013974579999995,
-              "export": 0.00038545799999974406,
-              "total": 7.423739417
+              "pcm": 0.478482792,
+              "spectrogram": 0.13016958300000003,
+              "beatthis": 3.7177614169999993,
+              "mel": 0.3517839590000003,
+              "grid": 0.15981862499999988,
+              "rows": 0.10134175000000051,
+              "prior": 0.00007612499999959255,
+              "arrangement": 0.3527797080000009,
+              "export": 0.00033866699999998673,
+              "total": 5.292601375
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.002266416,
+                  "core_seconds": 0.002084917,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 1.311595,
+                  "core_seconds": 0.478485792,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.7346128749999999,
-                  "graph_seconds": 4.840953331
+                  "core_seconds": 0.6421893750000001,
+                  "graph_seconds": 3.717347208
                 },
                 "rows": {
-                  "core_seconds": 0.05160420399999997,
-                  "graph_seconds": 0.0830226170000001
+                  "core_seconds": 0.029092578,
+                  "graph_seconds": 0.07221675000000002
                 },
                 "arrangement": {
-                  "core_seconds": 0.0255056680000001,
-                  "graph_seconds": 0.37587959200000054
+                  "core_seconds": 0.009525087999999984,
+                  "graph_seconds": 0.34323386899999947
                 },
                 "export": {
-                  "core_seconds": 0.0004225,
+                  "core_seconds": 0.000366334,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 6,
-                  "seconds": 4.840953331
+                  "seconds": 3.717347208
                 },
                 "r2_commit": {
                   "calls": 767,
-                  "seconds": 0.3457194210000002
+                  "seconds": 0.3153245759999997
                 },
                 "r2_predict": {
                   "calls": 768,
-                  "seconds": 0.029187377999999986
+                  "seconds": 0.02698083400000001
                 },
                 "r2_release": {
                   "calls": 11,
-                  "seconds": 0.0009727930000000001
+                  "seconds": 0.0009284590000000002
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.040571208
+                  "seconds": 0.03259125
                 },
                 "rows_step": {
                   "calls": 374,
-                  "seconds": 0.042451408999999996
+                  "seconds": 0.03962549999999995
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 227,
-              "timing": 318,
-              "rows": 1341,
-              "arrangement": 1357,
-              "export": 1359,
-              "done": 1359
+              "loading": 228,
+              "timing": 258,
+              "rows": 1280,
+              "arrangement": 1280,
+              "export": 1282,
+              "done": 1282
             }
           },
           {
-            "wall_seconds": 11.323490334,
+            "wall_seconds": 5.263548291,
             "stages": {
-              "pcm": 1.3219477499999999,
-              "spectrogram": 0.1317663339999999,
-              "beatthis": 6.5676383750000005,
-              "mel": 0.9357109170000003,
-              "grid": 0.5701439999999984,
-              "rows": 0.4020967500000006,
-              "prior": 0.00020712500000263389,
-              "arrangement": 1.3851190829999995,
-              "export": 0.0008492499999993015,
-              "total": 11.321120208
+              "pcm": 0.474979625,
+              "spectrogram": 0.12927329200000004,
+              "beatthis": 3.674662084,
+              "mel": 0.35995366699999976,
+              "grid": 0.16242462499999966,
+              "rows": 0.09997416699999939,
+              "prior": 0.00006950000000051659,
+              "arrangement": 0.35982116699999916,
+              "export": 0.00033495800000036977,
+              "total": 5.261536208
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.002265875,
+                  "core_seconds": 0.001963875,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 1.327522625,
+                  "core_seconds": 0.474981417,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 1.6381088350000002,
-                  "graph_seconds": 6.567151209
+                  "core_seconds": 0.652045919,
+                  "graph_seconds": 3.674268166
                 },
                 "rows": {
-                  "core_seconds": 0.121698251,
-                  "graph_seconds": 0.2802652020000002
+                  "core_seconds": 0.028751846999999994,
+                  "graph_seconds": 0.07119650899999998
                 },
                 "arrangement": {
-                  "core_seconds": 0.06237268400000009,
-                  "graph_seconds": 1.322539074999999
+                  "core_seconds": 0.009204130999999987,
+                  "graph_seconds": 0.3505965649999999
                 },
                 "export": {
-                  "core_seconds": 0.00091925,
+                  "core_seconds": 0.000363334,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 6,
-                  "seconds": 6.567151209
+                  "seconds": 3.674268166
                 },
                 "r2_commit": {
                   "calls": 767,
-                  "seconds": 1.213767501
+                  "seconds": 0.32323010900000054
                 },
                 "r2_predict": {
                   "calls": 768,
-                  "seconds": 0.10610794900000015
+                  "seconds": 0.026553499999999994
                 },
                 "r2_release": {
                   "calls": 11,
-                  "seconds": 0.002663625
+                  "seconds": 0.0008129560000000001
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.097663708
+                  "seconds": 0.031679333
                 },
                 "rows_step": {
                   "calls": 374,
-                  "seconds": 0.18260149399999986
+                  "seconds": 0.03951717599999993
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 1359,
-              "timing": 1359,
-              "rows": 1364,
-              "arrangement": 1364,
-              "export": 1364,
-              "done": 1364
+              "loading": 1282,
+              "timing": 1282,
+              "rows": 1282,
+              "arrangement": 1282,
+              "export": 1282,
+              "done": 1282
             }
           }
         ],
         "objects": 1059,
-        "footprint_after_load_bytes": 205046576,
-        "peak_footprint_before_generation_bytes": 593331256,
-        "peak_footprint_bytes": 1430669016,
+        "footprint_after_load_bytes": 204473112,
+        "peak_footprint_before_generation_bytes": 593675344,
+        "peak_footprint_bytes": 1345029800,
         "sample_rate": 48000.0,
         "request": {
           "star": 2.5,
@@ -1567,167 +1567,167 @@
       },
       "saigetsu": {
         "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: false }",
-        "load_seconds": 0.575602625,
+        "load_seconds": 0.205062333,
         "runs": [
           {
-            "wall_seconds": 14.2334075,
+            "wall_seconds": 4.361139125,
             "stages": {
-              "pcm": 1.4388897090000001,
-              "spectrogram": 0.31262929200000006,
-              "beatthis": 10.095652709,
-              "mel": 0.6992320419999997,
-              "grid": 0.13682120899999972,
-              "rows": 0.15445545800000218,
-              "prior": 0.00014166699999987033,
-              "arrangement": 1.3783372090000012,
-              "export": 0.0006508329999996931,
-              "total": 14.230184459
+              "pcm": 0.357785167,
+              "spectrogram": 0.10155570799999998,
+              "beatthis": 3.1003435000000006,
+              "mel": 0.29177887500000044,
+              "grid": 0.07029974999999967,
+              "rows": 0.06826891699999987,
+              "prior": 0.00006937499999958163,
+              "arrangement": 0.3691969159999999,
+              "export": 0.0003384590000005119,
+              "total": 4.359677084
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.003143041,
+                  "core_seconds": 0.00141925,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 1.452219458,
+                  "core_seconds": 0.357786916,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 1.149213959,
-                  "graph_seconds": 10.095120124000001
+                  "core_seconds": 0.464055168,
+                  "graph_seconds": 3.099925584
                 },
                 "rows": {
-                  "core_seconds": 0.054625164999999955,
-                  "graph_seconds": 0.0997932510000001
+                  "core_seconds": 0.018742671000000006,
+                  "graph_seconds": 0.04951154499999998
                 },
                 "arrangement": {
-                  "core_seconds": 0.085538329,
-                  "graph_seconds": 1.2925025289999983
+                  "core_seconds": 0.010005066999999987,
+                  "graph_seconds": 0.35916697499999883
                 },
                 "export": {
-                  "core_seconds": 0.000704,
+                  "core_seconds": 0.000367125,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 5,
-                  "seconds": 10.095120124000001
+                  "seconds": 3.099925584
                 },
                 "r2_commit": {
-                  "calls": 1610,
-                  "seconds": 1.1856449480000002
+                  "calls": 805,
+                  "seconds": 0.3307280409999998
                 },
                 "r2_predict": {
-                  "calls": 1612,
-                  "seconds": 0.10451174800000024
+                  "calls": 806,
+                  "seconds": 0.027731516999999987
                 },
                 "r2_release": {
-                  "calls": 19,
-                  "seconds": 0.0023458330000000003
+                  "calls": 10,
+                  "seconds": 0.000707417
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.048467916
+                  "seconds": 0.025892417
                 },
                 "rows_step": {
                   "calls": 228,
-                  "seconds": 0.051325335000000034
+                  "seconds": 0.023619128000000003
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 251,
-              "timing": 308,
-              "rows": 1328,
-              "arrangement": 1347,
-              "export": 1350,
-              "done": 1350
+              "loading": 252,
+              "timing": 275,
+              "rows": 1294,
+              "arrangement": 1294,
+              "export": 1296,
+              "done": 1296
             }
           },
           {
-            "wall_seconds": 15.882695667,
+            "wall_seconds": 4.331704125,
             "stages": {
-              "pcm": 1.450891875,
-              "spectrogram": 0.3145279589999998,
-              "beatthis": 10.784821915999999,
-              "mel": 0.45048016700000154,
-              "grid": 0.1462980829999997,
-              "rows": 0.20103258300000015,
-              "prior": 0.0001694580000003043,
-              "arrangement": 2.524778375,
-              "export": 0.0009599999999991269,
-              "total": 15.880123334
+              "pcm": 0.35449170799999996,
+              "spectrogram": 0.10475841600000001,
+              "beatthis": 3.0751332090000005,
+              "mel": 0.2860784170000002,
+              "grid": 0.06828495800000019,
+              "rows": 0.0663114999999998,
+              "prior": 0.00006566699999984849,
+              "arrangement": 0.37477554199999985,
+              "export": 0.0003417909999998301,
+              "total": 4.330275458999999
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.002471,
+                  "core_seconds": 0.001385,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 1.457012084,
+                  "core_seconds": 0.354493125,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.9118596250000001,
-                  "graph_seconds": 10.784266667
+                  "core_seconds": 0.459432835,
+                  "graph_seconds": 3.074822291
                 },
                 "rows": {
-                  "core_seconds": 0.062678832,
-                  "graph_seconds": 0.138307667
+                  "core_seconds": 0.01787517,
+                  "graph_seconds": 0.04842137300000003
                 },
                 "arrangement": {
-                  "core_seconds": 0.11220265099999971,
-                  "graph_seconds": 2.41209886899999
+                  "core_seconds": 0.010107178999999987,
+                  "graph_seconds": 0.36464338799999996
                 },
                 "export": {
-                  "core_seconds": 0.001028875,
+                  "core_seconds": 0.000369333,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 5,
-                  "seconds": 10.784266667
+                  "seconds": 3.074822291
                 },
                 "r2_commit": {
-                  "calls": 1610,
-                  "seconds": 2.21529817
+                  "calls": 805,
+                  "seconds": 0.3355470199999998
                 },
                 "r2_predict": {
-                  "calls": 1612,
-                  "seconds": 0.19319961799999996
+                  "calls": 806,
+                  "seconds": 0.028390743999999996
                 },
                 "r2_release": {
-                  "calls": 19,
-                  "seconds": 0.003601081
+                  "calls": 10,
+                  "seconds": 0.000705624
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.058055792
+                  "seconds": 0.024294167
                 },
                 "rows_step": {
                   "calls": 228,
-                  "seconds": 0.08025187499999997
+                  "seconds": 0.02412720600000001
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 1350,
-              "timing": 1350,
-              "rows": 1248,
-              "arrangement": 1248,
-              "export": 1248,
-              "done": 1248
+              "loading": 1296,
+              "timing": 1296,
+              "rows": 1296,
+              "arrangement": 1296,
+              "export": 1296,
+              "done": 1296
             }
           }
         ],
-        "objects": 1295,
-        "footprint_after_load_bytes": 204391192,
-        "peak_footprint_before_generation_bytes": 544687136,
-        "peak_footprint_bytes": 1425180376,
+        "objects": 1131,
+        "footprint_after_load_bytes": 203899672,
+        "peak_footprint_before_generation_bytes": 544441376,
+        "peak_footprint_bytes": 1359398544,
         "sample_rate": 44100.0,
         "request": {
           "star": 3.5,
@@ -1740,167 +1740,167 @@
       },
       "catch-the-moment": {
         "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: false }",
-        "load_seconds": 0.461808791,
+        "load_seconds": 0.221323333,
         "runs": [
           {
-            "wall_seconds": 6.304299708,
+            "wall_seconds": 4.28029875,
             "stages": {
-              "pcm": 1.10633925,
-              "spectrogram": 0.1022327499999999,
-              "beatthis": 3.9037853750000004,
-              "mel": 0.30718104199999924,
-              "grid": 0.12073858299999939,
-              "rows": 0.07862487499999861,
-              "prior": 0.00008891700000003767,
-              "arrangement": 0.6731022499999999,
-              "export": 0.000340874999999869,
-              "total": 6.302043208
+              "pcm": 0.33942404099999995,
+              "spectrogram": 0.09143266600000004,
+              "beatthis": 3.139383167,
+              "mel": 0.2582655410000002,
+              "grid": 0.0975205409999994,
+              "rows": 0.05854341700000032,
+              "prior": 0.0000674579999999878,
+              "arrangement": 0.2938642919999993,
+              "export": 0.0003097920000000158,
+              "total": 4.278853083
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.00220375,
+                  "core_seconds": 0.001403292,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 1.115903166,
+                  "core_seconds": 0.3394255,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.530425,
-                  "graph_seconds": 3.903511333
+                  "core_seconds": 0.447820459,
+                  "graph_seconds": 3.138786915
                 },
                 "rows": {
-                  "core_seconds": 0.028614581000000014,
-                  "graph_seconds": 0.04999541999999996
+                  "core_seconds": 0.015575962000000006,
+                  "graph_seconds": 0.04295454899999999
                 },
                 "arrangement": {
-                  "core_seconds": 0.04339893799999984,
-                  "graph_seconds": 0.6296207610000008
+                  "core_seconds": 0.00818690900000001,
+                  "graph_seconds": 0.28567329799999985
                 },
                 "export": {
-                  "core_seconds": 0.000375625,
+                  "core_seconds": 0.000338166,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 5,
-                  "seconds": 3.903511333
+                  "seconds": 3.138786915
                 },
                 "r2_commit": {
-                  "calls": 1262,
-                  "seconds": 0.57623388
+                  "calls": 631,
+                  "seconds": 0.26053444100000006
                 },
                 "r2_predict": {
-                  "calls": 1264,
-                  "seconds": 0.04877862700000001
+                  "calls": 632,
+                  "seconds": 0.02204435399999997
                 },
                 "r2_release": {
-                  "calls": 65,
-                  "seconds": 0.004608254000000001
+                  "calls": 56,
+                  "seconds": 0.0030945030000000006
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.02688425
+                  "seconds": 0.021754042
                 },
                 "rows_step": {
                   "calls": 200,
-                  "seconds": 0.023111169999999993
+                  "seconds": 0.021200506999999993
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 252,
-              "timing": 304,
-              "rows": 1319,
-              "arrangement": 1331,
-              "export": 1333,
-              "done": 1333
+              "loading": 244,
+              "timing": 266,
+              "rows": 1284,
+              "arrangement": 1284,
+              "export": 1286,
+              "done": 1286
             }
           },
           {
-            "wall_seconds": 6.083895083,
+            "wall_seconds": 4.191928875,
             "stages": {
-              "pcm": 0.88031175,
-              "spectrogram": 0.094952,
-              "beatthis": 3.9408664169999996,
-              "mel": 0.3045214160000005,
-              "grid": 0.11814750000000003,
-              "rows": 0.0776967910000003,
-              "prior": 0.00008908299999984592,
-              "arrangement": 0.6616320000000006,
-              "export": 0.00033729199999925184,
-              "total": 6.082383
+              "pcm": 0.32129770800000007,
+              "spectrogram": 0.09464758399999999,
+              "beatthis": 3.052028417,
+              "mel": 0.26617008399999986,
+              "grid": 0.10292212500000004,
+              "rows": 0.060032707999999275,
+              "prior": 0.00006941699999970297,
+              "arrangement": 0.2930935410000002,
+              "export": 0.0003075830000007045,
+              "total": 4.190608666999999
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.001459208,
+                  "core_seconds": 0.001275875,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 0.884105959,
+                  "core_seconds": 0.321299166,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.517896043,
-                  "graph_seconds": 3.940590415
+                  "core_seconds": 0.464114751,
+                  "graph_seconds": 3.051655625
                 },
                 "rows": {
-                  "core_seconds": 0.028471744999999996,
-                  "graph_seconds": 0.04920903700000003
+                  "core_seconds": 0.016436793000000005,
+                  "graph_seconds": 0.04358395
                 },
                 "arrangement": {
-                  "core_seconds": 0.04240926900000004,
-                  "graph_seconds": 0.619141651999999
+                  "core_seconds": 0.008654391000000004,
+                  "graph_seconds": 0.28443629000000015
                 },
                 "export": {
-                  "core_seconds": 0.000372,
+                  "core_seconds": 0.000335208,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 5,
-                  "seconds": 3.940590415
+                  "seconds": 3.051655625
                 },
                 "r2_commit": {
-                  "calls": 1262,
-                  "seconds": 0.5672461680000006
+                  "calls": 631,
+                  "seconds": 0.25989302900000005
                 },
                 "r2_predict": {
-                  "calls": 1264,
-                  "seconds": 0.04742293900000002
+                  "calls": 632,
+                  "seconds": 0.021615803000000017
                 },
                 "r2_release": {
-                  "calls": 65,
-                  "seconds": 0.004472545
+                  "calls": 56,
+                  "seconds": 0.002927458000000001
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.025936375
+                  "seconds": 0.023153292
                 },
                 "rows_step": {
                   "calls": 200,
-                  "seconds": 0.023272662000000003
+                  "seconds": 0.02043065799999999
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 1333,
-              "timing": 1333,
-              "rows": 1342,
-              "arrangement": 1342,
-              "export": 1342,
-              "done": 1342
+              "loading": 1286,
+              "timing": 1286,
+              "rows": 1286,
+              "arrangement": 1286,
+              "export": 1286,
+              "done": 1286
             }
           }
         ],
-        "objects": 911,
-        "footprint_after_load_bytes": 225903408,
-        "peak_footprint_before_generation_bytes": 544392224,
-        "peak_footprint_bytes": 1407878896,
+        "objects": 976,
+        "footprint_after_load_bytes": 203768624,
+        "peak_footprint_before_generation_bytes": 522634248,
+        "peak_footprint_bytes": 1348781688,
         "sample_rate": 44100.0,
         "request": {
           "star": 3.5,
@@ -1913,167 +1913,167 @@
       },
       "adventure": {
         "config": "Config { coreml_graphs: [], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: false }",
-        "load_seconds": 0.218977708,
+        "load_seconds": 0.213747875,
         "runs": [
           {
-            "wall_seconds": 11.004942333,
+            "wall_seconds": 7.118758208,
             "stages": {
-              "pcm": 3.1403630839999996,
-              "spectrogram": 0.16107958400000008,
-              "beatthis": 5.499923792,
-              "mel": 0.4730557919999992,
-              "grid": 0.24423991700000078,
-              "rows": 0.14126075000000127,
-              "prior": 0.00009720799999922747,
-              "arrangement": 1.3195205830000014,
-              "export": 0.00065479200000118,
-              "total": 10.999631625
+              "pcm": 1.1414786250000002,
+              "spectrogram": 0.16034966699999995,
+              "beatthis": 4.390202250000001,
+              "mel": 0.4345582920000006,
+              "grid": 0.2081697090000007,
+              "rows": 0.11928275000000031,
+              "prior": 0.00006974999999965803,
+              "arrangement": 0.6591920829999999,
+              "export": 0.0005494580000004135,
+              "total": 7.113897
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.005255,
+                  "core_seconds": 0.004818958,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 3.159756917,
+                  "core_seconds": 1.141480083,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.878790958,
-                  "graph_seconds": 5.499504833
+                  "core_seconds": 0.803647958,
+                  "graph_seconds": 4.389636083999999
                 },
                 "rows": {
-                  "core_seconds": 0.05466650499999999,
-                  "graph_seconds": 0.08656725599999994
+                  "core_seconds": 0.033297638000000004,
+                  "graph_seconds": 0.08595454700000002
                 },
                 "arrangement": {
-                  "core_seconds": 0.08617485899999923,
-                  "graph_seconds": 1.2330764829999992
+                  "core_seconds": 0.017304077999999945,
+                  "graph_seconds": 0.6418085169999992
                 },
                 "export": {
-                  "core_seconds": 0.000689708,
+                  "core_seconds": 0.000577625,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 7,
-                  "seconds": 5.499504833
+                  "seconds": 4.389636083999999
                 },
                 "r2_commit": {
-                  "calls": 2812,
-                  "seconds": 1.1177068620000001
+                  "calls": 1406,
+                  "seconds": 0.585962631
                 },
                 "r2_predict": {
-                  "calls": 2814,
-                  "seconds": 0.0957652079999999
+                  "calls": 1407,
+                  "seconds": 0.0494876790000001
                 },
                 "r2_release": {
-                  "calls": 357,
-                  "seconds": 0.019604413000000022
+                  "calls": 99,
+                  "seconds": 0.006358207
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.045413666
+                  "seconds": 0.040376042
                 },
                 "rows_step": {
                   "calls": 427,
-                  "seconds": 0.04115359000000003
+                  "seconds": 0.04557850499999998
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 375,
-              "timing": 559,
-              "rows": 1611,
-              "arrangement": 1641,
-              "export": 1643,
-              "done": 1643
+              "loading": 374,
+              "timing": 412,
+              "rows": 1464,
+              "arrangement": 1464,
+              "export": 1467,
+              "done": 1467
             }
           },
           {
-            "wall_seconds": 11.584636875,
+            "wall_seconds": 7.051171625,
             "stages": {
-              "pcm": 4.030838209000001,
-              "spectrogram": 0.15272245900000006,
-              "beatthis": 5.273769790999999,
-              "mel": 0.46638550000000034,
-              "grid": 0.23753995800000122,
-              "rows": 0.13839012500000172,
-              "prior": 0.0000963339999998425,
-              "arrangement": 1.2662053749999995,
-              "export": 0.0006347079999995913,
-              "total": 11.579538249999999
+              "pcm": 1.137881875,
+              "spectrogram": 0.15941116699999996,
+              "beatthis": 4.3191784580000006,
+              "mel": 0.43269304099999956,
+              "grid": 0.21399708299999928,
+              "rows": 0.11809395799999947,
+              "prior": 0.00006849999999940338,
+              "arrangement": 0.6645052500000002,
+              "export": 0.0005458329999992202,
+              "total": 7.046419708
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.005042792,
+                  "core_seconds": 0.004708375,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 4.043749292,
+                  "core_seconds": 1.137884375,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.8570332079999999,
-                  "graph_seconds": 5.273381166
+                  "core_seconds": 0.806722709,
+                  "graph_seconds": 4.318558209
                 },
                 "rows": {
-                  "core_seconds": 0.053649421999999974,
-                  "graph_seconds": 0.0847166669999999
+                  "core_seconds": 0.03310027800000001,
+                  "graph_seconds": 0.08496483400000009
                 },
                 "arrangement": {
-                  "core_seconds": 0.08427297399999939,
-                  "graph_seconds": 1.1816726379999969
+                  "core_seconds": 0.01718549299999997,
+                  "graph_seconds": 0.6472341830000018
                 },
                 "export": {
-                  "core_seconds": 0.00067025,
+                  "core_seconds": 0.000573833,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 7,
-                  "seconds": 5.273381166
+                  "seconds": 4.318558209
                 },
                 "r2_commit": {
-                  "calls": 2812,
-                  "seconds": 1.0699687599999985
+                  "calls": 1406,
+                  "seconds": 0.5918994630000017
                 },
                 "r2_predict": {
-                  "calls": 2814,
-                  "seconds": 0.09260821400000005
+                  "calls": 1407,
+                  "seconds": 0.04914480000000005
                 },
                 "r2_release": {
-                  "calls": 357,
-                  "seconds": 0.01909566399999999
+                  "calls": 99,
+                  "seconds": 0.006189919999999999
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.043866875
+                  "seconds": 0.040053625
                 },
                 "rows_step": {
                   "calls": 427,
-                  "seconds": 0.040849792000000024
+                  "seconds": 0.04491120899999998
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 1643,
-              "timing": 1643,
-              "rows": 1478,
-              "arrangement": 1488,
-              "export": 1488,
-              "done": 1488
+              "loading": 1467,
+              "timing": 1467,
+              "rows": 1467,
+              "arrangement": 1467,
+              "export": 1467,
+              "done": 1467
             }
           }
         ],
-        "objects": 2225,
-        "footprint_after_load_bytes": 204604184,
-        "peak_footprint_before_generation_bytes": 1071072648,
-        "peak_footprint_bytes": 1723680712,
+        "objects": 2048,
+        "footprint_after_load_bytes": 204014360,
+        "peak_footprint_before_generation_bytes": 1070941576,
+        "peak_footprint_bytes": 1538705232,
         "sample_rate": 96000.0,
         "request": {
           "star": 4.5,
@@ -2088,167 +2088,167 @@
     "coreml-beatthis": {
       "hesitation-snow": {
         "config": "Config { coreml_graphs: [\"beatthis\"], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: true }",
-        "load_seconds": 10.608667625,
+        "load_seconds": 10.0396735,
         "runs": [
           {
-            "wall_seconds": 17.950789291,
+            "wall_seconds": 14.892702917,
             "stages": {
-              "pcm": 1.2652815,
-              "spectrogram": 0.13050904100000002,
-              "beatthis": 15.482206291,
-              "mel": 0.38724216700000036,
-              "grid": 0.18610941600000297,
-              "rows": 0.12643754199999965,
-              "prior": 0.00013537499999802095,
-              "arrangement": 0.36276541700000237,
-              "export": 0.00038087499999892314,
-              "total": 17.948698292000003
+              "pcm": 0.477797167,
+              "spectrogram": 0.12247629200000006,
+              "beatthis": 13.318020833,
+              "mel": 0.35263762500000123,
+              "grid": 0.1595948329999992,
+              "rows": 0.10323541699999987,
+              "prior": 0.00012162499999976717,
+              "arrangement": 0.3563713749999988,
+              "export": 0.0003457090000010794,
+              "total": 14.890676292
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.002027042,
+                  "core_seconds": 0.001972542,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 1.27287175,
+                  "core_seconds": 0.477799333,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.704886542,
-                  "graph_seconds": 15.481177206
+                  "core_seconds": 0.635529706,
+                  "graph_seconds": 13.317208625
                 },
                 "rows": {
-                  "core_seconds": 0.047656165000000014,
-                  "graph_seconds": 0.078756835
+                  "core_seconds": 0.028310041999999983,
+                  "graph_seconds": 0.07490108500000006
                 },
                 "arrangement": {
-                  "core_seconds": 0.024114417000000107,
-                  "graph_seconds": 0.3386887089999997
+                  "core_seconds": 0.00971850899999997,
+                  "graph_seconds": 0.3466967079999993
                 },
                 "export": {
-                  "core_seconds": 0.000427042,
+                  "core_seconds": 0.000380833,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 6,
-                  "seconds": 15.481177206
+                  "seconds": 13.317208625
                 },
                 "r2_commit": {
                   "calls": 767,
-                  "seconds": 0.31109828899999975
+                  "seconds": 0.31901346999999963
                 },
                 "r2_predict": {
                   "calls": 768,
-                  "seconds": 0.026593125999999957
+                  "seconds": 0.026666652999999988
                 },
                 "r2_release": {
                   "calls": 11,
-                  "seconds": 0.0009972940000000001
+                  "seconds": 0.0010165849999999998
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.040499792
+                  "seconds": 0.034423791
                 },
                 "rows_step": {
                   "calls": 374,
-                  "seconds": 0.03825704299999999
+                  "seconds": 0.040477294000000004
                 }
               }
             },
             "footprint_mib_at_phase": {
               "loading": 178,
-              "timing": 269,
-              "rows": 11689,
-              "arrangement": 11720,
-              "export": 11721,
-              "done": 11721
+              "timing": 208,
+              "rows": 11645,
+              "arrangement": 11655,
+              "export": 11656,
+              "done": 11657
             }
           },
           {
-            "wall_seconds": 11.627516708,
+            "wall_seconds": 9.19928275,
             "stages": {
-              "pcm": 1.287014291,
-              "spectrogram": 0.12729491700000017,
-              "beatthis": 9.148348624999999,
-              "mel": 0.3871123750000006,
-              "grid": 0.1828546669999996,
-              "rows": 0.1196880000000001,
-              "prior": 0.00011241700000027776,
-              "arrangement": 0.35700541599999996,
-              "export": 0.000375,
-              "total": 11.623758917
+              "pcm": 0.476804167,
+              "spectrogram": 0.12214399999999995,
+              "beatthis": 7.630612084,
+              "mel": 0.35468862499999887,
+              "grid": 0.15590250000000014,
+              "rows": 0.09978641700000117,
+              "prior": 0.00009683299999778683,
+              "arrangement": 0.35658095800000045,
+              "export": 0.0003294580000001588,
+              "total": 9.197002125000001
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.003707208,
+                  "core_seconds": 0.002234583,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 1.300923375,
+                  "core_seconds": 0.476805834,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.697724708,
-                  "graph_seconds": 9.14788325
+                  "core_seconds": 0.633147416,
+                  "graph_seconds": 7.630200793
                 },
                 "rows": {
-                  "core_seconds": 0.04594058599999999,
-                  "graph_seconds": 0.0737237259999999
+                  "core_seconds": 0.02759757500000003,
+                  "graph_seconds": 0.07216520199999997
                 },
                 "arrangement": {
-                  "core_seconds": 0.02384095400000012,
-                  "graph_seconds": 0.33317916799999986
+                  "core_seconds": 0.00963158299999997,
+                  "graph_seconds": 0.34695982599999986
                 },
                 "export": {
-                  "core_seconds": 0.000407333,
+                  "core_seconds": 0.000358416,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 6,
-                  "seconds": 9.14788325
+                  "seconds": 7.630200793
                 },
                 "r2_commit": {
                   "calls": 767,
-                  "seconds": 0.30635548100000004
+                  "seconds": 0.319153585
                 },
                 "r2_predict": {
                   "calls": 768,
-                  "seconds": 0.02597447799999998
+                  "seconds": 0.026926575000000032
                 },
                 "r2_release": {
                   "calls": 11,
-                  "seconds": 0.0008492090000000001
+                  "seconds": 0.0008796660000000001
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.036385833
+                  "seconds": 0.032610334
                 },
                 "rows_step": {
                   "calls": 374,
-                  "seconds": 0.037337893
+                  "seconds": 0.03955486799999998
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 11752,
-              "timing": 11785,
-              "rows": 11826,
-              "arrangement": 11826,
-              "export": 11826,
-              "done": 11826
+              "loading": 11687,
+              "timing": 11675,
+              "rows": 11704,
+              "arrangement": 11704,
+              "export": 11704,
+              "done": 11704
             }
           }
         ],
         "objects": 1059,
-        "footprint_after_load_bytes": 207881152,
-        "peak_footprint_before_generation_bytes": 597230816,
-        "peak_footprint_bytes": 12401372152,
+        "footprint_after_load_bytes": 206898112,
+        "peak_footprint_before_generation_bytes": 596165856,
+        "peak_footprint_bytes": 12273019800,
         "sample_rate": 48000.0,
         "request": {
           "star": 2.5,
@@ -2261,167 +2261,167 @@
       },
       "saigetsu": {
         "config": "Config { coreml_graphs: [\"beatthis\"], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: true }",
-        "load_seconds": 10.436499791,
+        "load_seconds": 9.993903417,
         "runs": [
           {
-            "wall_seconds": 13.867046333,
+            "wall_seconds": 13.930304042,
             "stages": {
-              "pcm": 0.920810292,
-              "spectrogram": 0.10548229200000003,
-              "beatthis": 11.530322,
-              "mel": 0.313580833,
-              "grid": 0.08025995799999873,
-              "rows": 0.09023383400000057,
-              "prior": 0.00008487499999864667,
-              "arrangement": 0.81862975,
-              "export": 0.0004225830000013957,
-              "total": 13.865500041999999
+              "pcm": 0.3557325,
+              "spectrogram": 0.09666541599999999,
+              "beatthis": 12.677574209000001,
+              "mel": 0.2809625410000008,
+              "grid": 0.07173737500000062,
+              "rows": 0.0661134579999998,
+              "prior": 0.00008641700000043784,
+              "arrangement": 0.379492166,
+              "export": 0.00041125000000101866,
+              "total": 13.928850791
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.0014925,
+                  "core_seconds": 0.001407833,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 0.926434291,
+                  "core_seconds": 0.355735041,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.49961891599999997,
-                  "graph_seconds": 11.530024418
+                  "core_seconds": 0.449945748,
+                  "graph_seconds": 12.677002334
                 },
                 "rows": {
-                  "core_seconds": 0.032335128,
-                  "graph_seconds": 0.05788288600000003
+                  "core_seconds": 0.017440331999999996,
+                  "graph_seconds": 0.048660278999999966
                 },
                 "arrangement": {
-                  "core_seconds": 0.05146450000000005,
-                  "graph_seconds": 0.7670381929999988
+                  "core_seconds": 0.010039184000000003,
+                  "graph_seconds": 0.36945242099999964
                 },
                 "export": {
-                  "core_seconds": 0.00045625,
+                  "core_seconds": 0.000438958,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 5,
-                  "seconds": 11.530024418
+                  "seconds": 12.677002334
                 },
                 "r2_commit": {
-                  "calls": 1610,
-                  "seconds": 0.7061063749999998
+                  "calls": 805,
+                  "seconds": 0.3401708830000006
                 },
                 "r2_predict": {
-                  "calls": 1612,
-                  "seconds": 0.05955598500000001
+                  "calls": 806,
+                  "seconds": 0.028494747999999986
                 },
                 "r2_release": {
-                  "calls": 19,
-                  "seconds": 0.0013758329999999997
+                  "calls": 10,
+                  "seconds": 0.0007867900000000001
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.031116583
+                  "seconds": 0.026029833
                 },
                 "rows_step": {
                   "calls": 228,
-                  "seconds": 0.026766303000000005
+                  "seconds": 0.02263044600000001
                 }
               }
             },
             "footprint_mib_at_phase": {
               "loading": 202,
-              "timing": 259,
-              "rows": 11684,
-              "arrangement": 11709,
-              "export": 11683,
-              "done": 11683
+              "timing": 225,
+              "rows": 11653,
+              "arrangement": 11655,
+              "export": 11656,
+              "done": 11656
             }
           },
           {
-            "wall_seconds": 10.015505542,
+            "wall_seconds": 7.581104917,
             "stages": {
-              "pcm": 0.944328625,
-              "spectrogram": 0.10168112500000007,
-              "beatthis": 7.652918375000001,
-              "mel": 0.3145941249999996,
-              "grid": 0.07986925000000156,
-              "rows": 0.08749749999999949,
-              "prior": 0.00008975000000100408,
-              "arrangement": 0.8258613749999986,
-              "export": 0.0004023749999996653,
-              "total": 10.013849708000002
+              "pcm": 0.35615008299999995,
+              "spectrogram": 0.097791834,
+              "beatthis": 6.337247458000001,
+              "mel": 0.2782767909999993,
+              "grid": 0.07023962499999925,
+              "rows": 0.06703812500000003,
+              "prior": 0.00006770800000049348,
+              "arrangement": 0.3723981659999999,
+              "export": 0.0003671250000006694,
+              "total": 7.579630249999999
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.001607375,
+                  "core_seconds": 0.001423375,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 0.950891209,
+                  "core_seconds": 0.356151833,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.496473206,
-                  "graph_seconds": 7.652588793
+                  "core_seconds": 0.446665333,
+                  "graph_seconds": 6.3368917510000005
                 },
                 "rows": {
-                  "core_seconds": 0.031843248,
-                  "graph_seconds": 0.05563850100000002
+                  "core_seconds": 0.018066538999999993,
+                  "graph_seconds": 0.048957162999999984
                 },
                 "arrangement": {
-                  "core_seconds": 0.05184335499999999,
-                  "graph_seconds": 0.7738962370000017
+                  "core_seconds": 0.010373436000000005,
+                  "graph_seconds": 0.3620067669999998
                 },
                 "export": {
-                  "core_seconds": 0.000433,
+                  "core_seconds": 0.000395583,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 5,
-                  "seconds": 7.652588793
+                  "seconds": 6.3368917510000005
                 },
                 "r2_commit": {
-                  "calls": 1610,
-                  "seconds": 0.7129655540000004
+                  "calls": 805,
+                  "seconds": 0.3330216739999997
                 },
                 "r2_predict": {
-                  "calls": 1612,
-                  "seconds": 0.059600808000000026
+                  "calls": 806,
+                  "seconds": 0.028282425000000014
                 },
                 "r2_release": {
-                  "calls": 19,
-                  "seconds": 0.0013298750000000003
+                  "calls": 10,
+                  "seconds": 0.0007026679999999999
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.028970416
+                  "seconds": 0.025511542
                 },
                 "rows_step": {
                   "calls": 228,
-                  "seconds": 0.026668084999999977
+                  "seconds": 0.02344562100000001
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 11683,
-              "timing": 11727,
-              "rows": 11759,
-              "arrangement": 11759,
-              "export": 11731,
-              "done": 11731
+              "loading": 11656,
+              "timing": 11680,
+              "rows": 11686,
+              "arrangement": 11686,
+              "export": 11686,
+              "done": 11686
             }
           }
         ],
-        "objects": 1295,
-        "footprint_after_load_bytes": 207815616,
-        "peak_footprint_before_generation_bytes": 548357296,
-        "peak_footprint_bytes": 12331166688,
+        "objects": 1131,
+        "footprint_after_load_bytes": 207537064,
+        "peak_footprint_before_generation_bytes": 548684976,
+        "peak_footprint_bytes": 12254112736,
         "sample_rate": 44100.0,
         "request": {
           "star": 3.5,
@@ -2434,167 +2434,167 @@
       },
       "catch-the-moment": {
         "config": "Config { coreml_graphs: [\"beatthis\"], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: true }",
-        "load_seconds": 10.389757667,
+        "load_seconds": 9.888525125,
         "runs": [
           {
-            "wall_seconds": 13.572139417,
+            "wall_seconds": 13.428394292,
             "stages": {
-              "pcm": 0.845430333,
-              "spectrogram": 0.09618133399999988,
-              "beatthis": 11.489562208,
-              "mel": 0.2858525419999987,
-              "grid": 0.11466612499999974,
-              "rows": 0.07984445799999958,
-              "prior": 0.00009600000000136789,
-              "arrangement": 0.6533517499999998,
-              "export": 0.00033937499999956344,
-              "total": 13.570616375000002
+              "pcm": 0.322570458,
+              "spectrogram": 0.08819683400000003,
+              "beatthis": 12.302329584,
+              "mel": 0.25701916699999855,
+              "grid": 0.09889587500000016,
+              "rows": 0.06029904200000055,
+              "prior": 0.00008825000000069849,
+              "arrangement": 0.2972909579999996,
+              "export": 0.00033087499999783176,
+              "total": 13.427089957999998
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.001466584,
+                  "core_seconds": 0.001262,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 0.8506745,
+                  "core_seconds": 0.322571875,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.497000999,
-                  "graph_seconds": 11.489260208000001
+                  "core_seconds": 0.444768999,
+                  "graph_seconds": 12.301686999
                 },
                 "rows": {
-                  "core_seconds": 0.028667657999999985,
-                  "graph_seconds": 0.051162905000000015
+                  "core_seconds": 0.015446465000000003,
+                  "graph_seconds": 0.04484100599999996
                 },
                 "arrangement": {
-                  "core_seconds": 0.042635866999999994,
-                  "graph_seconds": 0.6106372019999992
+                  "core_seconds": 0.008534488999999989,
+                  "graph_seconds": 0.28877143099999975
                 },
                 "export": {
-                  "core_seconds": 0.000376958,
+                  "core_seconds": 0.000358833,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 5,
-                  "seconds": 11.489260208000001
+                  "seconds": 12.301686999
                 },
                 "r2_commit": {
-                  "calls": 1262,
-                  "seconds": 0.559390839999999
+                  "calls": 631,
+                  "seconds": 0.2630662869999998
                 },
                 "r2_predict": {
-                  "calls": 1264,
-                  "seconds": 0.04670498600000001
+                  "calls": 632,
+                  "seconds": 0.022411354000000015
                 },
                 "r2_release": {
-                  "calls": 65,
-                  "seconds": 0.004541376000000001
+                  "calls": 56,
+                  "seconds": 0.003293790000000001
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.027811875
+                  "seconds": 0.023172917
                 },
                 "rows_step": {
                   "calls": 200,
-                  "seconds": 0.023351030000000002
+                  "seconds": 0.021668089000000005
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 194,
-              "timing": 246,
-              "rows": 11671,
-              "arrangement": 11695,
-              "export": 11668,
-              "done": 11668
+              "loading": 195,
+              "timing": 216,
+              "rows": 11643,
+              "arrangement": 11646,
+              "export": 11647,
+              "done": 11647
             }
           },
           {
-            "wall_seconds": 9.829594708,
+            "wall_seconds": 7.5836971250000005,
             "stages": {
-              "pcm": 0.865598542,
-              "spectrogram": 0.09387250000000005,
-              "beatthis": 7.727130915999999,
-              "mel": 0.28557695799999966,
-              "grid": 0.1154556250000005,
-              "rows": 0.07726366600000074,
-              "prior": 0.00008445899999969696,
-              "arrangement": 0.6564714999999997,
-              "export": 0.00032716699999946284,
-              "total": 9.828070709
+              "pcm": 0.32414245799999997,
+              "spectrogram": 0.092010333,
+              "beatthis": 6.455382791,
+              "mel": 0.25309145800000077,
+              "grid": 0.1008032090000006,
+              "rows": 0.059022082999999836,
+              "prior": 0.00007008399999995163,
+              "arrangement": 0.2974774580000003,
+              "export": 0.00033595900000000253,
+              "total": 7.5823810830000005
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.001472875,
+                  "core_seconds": 0.001270333,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 0.871844583,
+                  "core_seconds": 0.324144792,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.49518804,
-                  "graph_seconds": 7.726846875
+                  "core_seconds": 0.446225624,
+                  "graph_seconds": 6.455063207
                 },
                 "rows": {
-                  "core_seconds": 0.02782603799999998,
-                  "graph_seconds": 0.049422448000000035
+                  "core_seconds": 0.015665206000000004,
+                  "graph_seconds": 0.043344959
                 },
                 "arrangement": {
-                  "core_seconds": 0.04221348899999987,
-                  "graph_seconds": 0.614156158000001
+                  "core_seconds": 0.008492403999999993,
+                  "graph_seconds": 0.288978443
                 },
                 "export": {
-                  "core_seconds": 0.000360541,
+                  "core_seconds": 0.000365042,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 5,
-                  "seconds": 7.726846875
+                  "seconds": 6.455063207
                 },
                 "r2_commit": {
-                  "calls": 1262,
-                  "seconds": 0.5628985000000011
+                  "calls": 631,
+                  "seconds": 0.2635463310000001
                 },
                 "r2_predict": {
-                  "calls": 1264,
-                  "seconds": 0.04686886499999995
+                  "calls": 632,
+                  "seconds": 0.022336653999999987
                 },
                 "r2_release": {
-                  "calls": 65,
-                  "seconds": 0.004388793
+                  "calls": 56,
+                  "seconds": 0.0030954579999999993
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.026094208
+                  "seconds": 0.022774375
                 },
                 "rows_step": {
                   "calls": 200,
-                  "seconds": 0.023328239999999976
+                  "seconds": 0.020570584
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 11669,
-              "timing": 11709,
-              "rows": 11743,
-              "arrangement": 11743,
-              "export": 11743,
-              "done": 11743
+              "loading": 11647,
+              "timing": 11668,
+              "rows": 11675,
+              "arrangement": 11675,
+              "export": 11675,
+              "done": 11675
             }
           }
         ],
-        "objects": 911,
-        "footprint_after_load_bytes": 206881728,
-        "peak_footprint_before_generation_bytes": 526533808,
-        "peak_footprint_bytes": 12314258376,
+        "objects": 976,
+        "footprint_after_load_bytes": 207012800,
+        "peak_footprint_before_generation_bytes": 526550192,
+        "peak_footprint_bytes": 12243069848,
         "sample_rate": 44100.0,
         "request": {
           "star": 3.5,
@@ -2607,167 +2607,167 @@
       },
       "adventure": {
         "config": "Config { coreml_graphs: [\"beatthis\"], coreml_units: \"ALL\", coreml_format: \"MLProgram\", threads: 1, reuse_memory: true }",
-        "load_seconds": 10.472070584,
+        "load_seconds": 9.998761,
         "runs": [
           {
-            "wall_seconds": 20.728080124999998,
+            "wall_seconds": 17.167263041,
             "stages": {
-              "pcm": 3.147403333,
-              "spectrogram": 0.15978520900000012,
-              "beatthis": 15.214524583000003,
-              "mel": 0.47684208299999953,
-              "grid": 0.24281662499999948,
-              "rows": 0.15108766700000342,
-              "prior": 0.00010195799999928568,
-              "arrangement": 1.3109503750000004,
-              "export": 0.0006958340000019234,
-              "total": 20.723141959
+              "pcm": 1.1376957090000002,
+              "spectrogram": 0.14635825,
+              "beatthis": 14.479946750000002,
+              "mel": 0.41180216700000166,
+              "grid": 0.2067064590000009,
+              "rows": 0.12016025000000082,
+              "prior": 0.0000992919999989681,
+              "arrangement": 0.6591155839999993,
+              "export": 0.0005555830000012065,
+              "total": 17.162530959
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.004879417,
+                  "core_seconds": 0.004686417,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 3.166292,
+                  "core_seconds": 1.137698208,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.879858126,
-                  "graph_seconds": 15.214107752
+                  "core_seconds": 0.765984167,
+                  "graph_seconds": 14.478846749999999
                 },
                 "rows": {
-                  "core_seconds": 0.05667996799999999,
-                  "graph_seconds": 0.09437658099999996
+                  "core_seconds": 0.03279432900000004,
+                  "graph_seconds": 0.08734024399999998
                 },
                 "arrangement": {
-                  "core_seconds": 0.08592343299999938,
-                  "graph_seconds": 1.2247655990000013
+                  "core_seconds": 0.017590513000000026,
+                  "graph_seconds": 0.6414743709999982
                 },
                 "export": {
-                  "core_seconds": 0.00073425,
+                  "core_seconds": 0.000584792,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 7,
-                  "seconds": 15.214107752
+                  "seconds": 14.478846749999999
                 },
                 "r2_commit": {
-                  "calls": 2812,
-                  "seconds": 1.1115937459999996
+                  "calls": 1406,
+                  "seconds": 0.5854561509999996
                 },
                 "r2_predict": {
-                  "calls": 2814,
-                  "seconds": 0.09382972099999971
+                  "calls": 1407,
+                  "seconds": 0.049359471000000106
                 },
                 "r2_release": {
-                  "calls": 357,
-                  "seconds": 0.019342132000000012
+                  "calls": 99,
+                  "seconds": 0.006658749
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.0461765
+                  "seconds": 0.041344
                 },
                 "rows_step": {
                   "calls": 427,
-                  "seconds": 0.048200081000000006
+                  "seconds": 0.04599624400000002
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 326,
-              "timing": 510,
-              "rows": 11835,
-              "arrangement": 11866,
-              "export": 11840,
-              "done": 11840
+              "loading": 325,
+              "timing": 363,
+              "rows": 11808,
+              "arrangement": 11819,
+              "export": 11793,
+              "done": 11793
             }
           },
           {
-            "wall_seconds": 16.34065175,
+            "wall_seconds": 11.57260575,
             "stages": {
-              "pcm": 3.088020458,
-              "spectrogram": 0.15072491700000046,
-              "beatthis": 10.898457665999999,
-              "mel": 0.4719193340000002,
-              "grid": 0.24854320799999913,
-              "rows": 0.14735924999999953,
-              "prior": 0.00009575000000040745,
-              "arrangement": 1.316581792000001,
-              "export": 0.0006856250000037107,
-              "total": 16.335342417
+              "pcm": 1.135860791,
+              "spectrogram": 0.14614541699999994,
+              "beatthis": 8.888107250000001,
+              "mel": 0.41245654099999773,
+              "grid": 0.20936754199999996,
+              "rows": 0.1156942080000008,
+              "prior": 0.00006733300000087183,
+              "arrangement": 0.658925333000001,
+              "export": 0.0005534999999999854,
+              "total": 11.567235041999998
             },
             "timings": {
               "by_phase": {
                 "validate": {
-                  "core_seconds": 0.005249167,
+                  "core_seconds": 0.005324042,
                   "graph_seconds": 0.0
                 },
                 "loading": {
-                  "core_seconds": 3.100930292,
+                  "core_seconds": 1.135863292,
                   "graph_seconds": 0.0
                 },
                 "timing": {
-                  "core_seconds": 0.871629999,
-                  "graph_seconds": 10.898011957000001
+                  "core_seconds": 0.768847874,
+                  "graph_seconds": 8.887230085999999
                 },
                 "rows": {
-                  "core_seconds": 0.05515148499999996,
-                  "graph_seconds": 0.09217746799999996
+                  "core_seconds": 0.031848624999999964,
+                  "graph_seconds": 0.08381556599999994
                 },
                 "arrangement": {
-                  "core_seconds": 0.08559850999999934,
-                  "graph_seconds": 1.2307137509999986
+                  "core_seconds": 0.017478791000000004,
+                  "graph_seconds": 0.6413642169999987
                 },
                 "export": {
-                  "core_seconds": 0.000722666,
+                  "core_seconds": 0.000581791,
                   "graph_seconds": 0.0
                 }
               },
               "by_graph": {
                 "beatthis": {
                   "calls": 7,
-                  "seconds": 10.898011957000001
+                  "seconds": 8.887230085999999
                 },
                 "r2_commit": {
-                  "calls": 2812,
-                  "seconds": 1.1170837840000003
+                  "calls": 1406,
+                  "seconds": 0.5855569139999993
                 },
                 "r2_predict": {
-                  "calls": 2814,
-                  "seconds": 0.09435559999999986
+                  "calls": 1407,
+                  "seconds": 0.04934079700000018
                 },
                 "r2_release": {
-                  "calls": 357,
-                  "seconds": 0.019274366999999994
+                  "calls": 99,
+                  "seconds": 0.006466506
                 },
                 "rows_encoder": {
                   "calls": 1,
-                  "seconds": 0.045270459
+                  "seconds": 0.0387255
                 },
                 "rows_step": {
                   "calls": 427,
-                  "seconds": 0.046907009000000055
+                  "seconds": 0.04509006600000002
                 }
               }
             },
             "footprint_mib_at_phase": {
-              "loading": 11842,
-              "timing": 11845,
-              "rows": 11918,
-              "arrangement": 11918,
-              "export": 11889,
-              "done": 11889
+              "loading": 11795,
+              "timing": 11797,
+              "rows": 11876,
+              "arrangement": 11876,
+              "export": 11848,
+              "done": 11848
             }
           }
         ],
-        "objects": 2225,
-        "footprint_after_load_bytes": 207307712,
-        "peak_footprint_before_generation_bytes": 1074234928,
-        "peak_footprint_bytes": 12497267800,
+        "objects": 2048,
+        "footprint_after_load_bytes": 207111104,
+        "peak_footprint_before_generation_bytes": 1074366000,
+        "peak_footprint_bytes": 12453702696,
         "sample_rate": 96000.0,
         "request": {
           "star": 4.5,
@@ -2781,16 +2781,16 @@
     },
     "coreml": {
       "hesitation-snow": {
-        "failed": "Context leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\n\nthread 'main' (72541952) panicked at crates/generate-ort/examples/providers.rs:123:10:\ncalled `Result::unwrap()` on an `Err` value: \"Non-zero status code returned while running 16942845269555023860_CoreML_16942845269555023860_2 node. Name:'CoreMLExecutionProvider_16942845269555023860_CoreML_16942845269555023860_2_2' Status Message: Error executing model: Error in dynamically resizing for sequence length (error: -7).\"\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+        "failed": "Context leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\n\nthread 'main' (74695615) panicked at crates/generate-ort/examples/providers.rs:124:10:\ncalled `Result::unwrap()` on an `Err` value: \"Non-zero status code returned while running 16942845269555023860_CoreML_16942845269555023860_2 node. Name:'CoreMLExecutionProvider_16942845269555023860_CoreML_16942845269555023860_2_2' Status Message: Error executing model: Error in dynamically resizing for sequence length (error: -7).\"\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
       },
       "saigetsu": {
-        "failed": "Context leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\n\nthread 'main' (72543986) panicked at crates/generate-ort/examples/providers.rs:123:10:\ncalled `Result::unwrap()` on an `Err` value: \"Non-zero status code returned while running 16942845269555023860_CoreML_16942845269555023860_2 node. Name:'CoreMLExecutionProvider_16942845269555023860_CoreML_16942845269555023860_2_2' Status Message: Error executing model: Error in dynamically resizing for sequence length (error: -7).\"\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+        "failed": "Context leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\n\nthread 'main' (74697606) panicked at crates/generate-ort/examples/providers.rs:124:10:\ncalled `Result::unwrap()` on an `Err` value: \"Non-zero status code returned while running 16942845269555023860_CoreML_16942845269555023860_2 node. Name:'CoreMLExecutionProvider_16942845269555023860_CoreML_16942845269555023860_2_2' Status Message: Error executing model: Error in dynamically resizing for sequence length (error: -7).\"\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
       },
       "catch-the-moment": {
-        "failed": "Context leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\n\nthread 'main' (72545942) panicked at crates/generate-ort/examples/providers.rs:123:10:\ncalled `Result::unwrap()` on an `Err` value: \"Non-zero status code returned while running 16942845269555023860_CoreML_16942845269555023860_2 node. Name:'CoreMLExecutionProvider_16942845269555023860_CoreML_16942845269555023860_2_2' Status Message: Error executing model: Error in dynamically resizing for sequence length (error: -7).\"\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+        "failed": "Context leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\n\nthread 'main' (74699243) panicked at crates/generate-ort/examples/providers.rs:124:10:\ncalled `Result::unwrap()` on an `Err` value: \"Non-zero status code returned while running 16942845269555023860_CoreML_16942845269555023860_2 node. Name:'CoreMLExecutionProvider_16942845269555023860_CoreML_16942845269555023860_2_2' Status Message: Error executing model: Error in dynamically resizing for sequence length (error: -7).\"\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
       },
       "adventure": {
-        "failed": "Context leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\n\nthread 'main' (72547881) panicked at crates/generate-ort/examples/providers.rs:123:10:\ncalled `Result::unwrap()` on an `Err` value: \"Non-zero status code returned while running 16942845269555023860_CoreML_16942845269555023860_2 node. Name:'CoreMLExecutionProvider_16942845269555023860_CoreML_16942845269555023860_2_2' Status Message: Error executing model: Error in dynamically resizing for sequence length (error: -7).\"\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+        "failed": "Context leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\nContext leak detected, CoreAnalytics returned false\n\nthread 'main' (74700919) panicked at crates/generate-ort/examples/providers.rs:124:10:\ncalled `Result::unwrap()` on an `Err` value: \"Non-zero status code returned while running 16942845269555023860_CoreML_16942845269555023860_2 node. Name:'CoreMLExecutionProvider_16942845269555023860_CoreML_16942845269555023860_2_2' Status Message: Error executing model: Error in dynamically resizing for sequence length (error: -7).\"\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
       }
     }
   }

@@ -5,7 +5,7 @@ macOS 14 and iOS 17. The manifest is [`Package.swift`](../Package.swift) at the 
 looks for it. An app pins a release:
 
 ```swift
-.package(url: "https://github.com/ensomi-labs/runtime", from: "0.1.0")
+.package(url: "https://github.com/ensomi-labs/runtime", from: "0.2.0")
 // target dependency: .product(name: "EnsomiRuntime", package: "runtime")
 ```
 
@@ -79,6 +79,9 @@ result.receipt                                      // EnsomiProtocol Generation
   `result.receipt.receiptJson` (`crates/osz`): `generated.osu`, the audio under the name the `.osu` gives it
   (`audio.<extension>`) and `receipt.json`, the layout of the web runtime's `.osz`. The app reads the song and saves
   the archive.
+- R2 arranges the song once. The published Python R2 (`r2-1.0`) arranged it a second time when the first
+  arrangement missed the star's difficulty target by more than the difficulty fit's seed spread, so its chart
+  differs wherever it did; the receipt's `controls.difficulty` records the miss.
 - The same model, PCM, request and seed give the same chart. `generate(pcm:sampleRate:request:progress:)` runs
   on a thread of its own; cancelling its task stops it at the next graph run or phase with
   `GeneratorError.Cancelled`. Refusals carry EnsomiProtocol's error code in `GeneratorError.Generation`; so
@@ -88,32 +91,77 @@ result.receipt                                      // EnsomiProtocol Generation
 - No call aborts the app on a panic in the core: the gameplay methods that do not throw return an empty or
   default value instead, which the core's tests show it never needs (`crates/gameplay/tests/no_panic.rs`).
 
+### Stored audio stages and play while generating
+
+`prepare(pcm:sampleRate:)` runs the stages that read only the audio (PCM preparation, the spectrogram, BeatThis,
+the features and the beat grid), which take most of a generation; any request and seed generate from its result.
+Start it when the song is chosen. `Prepared.bytes()` is the runtime's stored form (safetensors layout, valid for this
+runtime version and model) for a cache keyed by the audio file's hash; `Prepared(bytes:)` reads it back and throws
+`GeneratorError.Model` for bytes it cannot use.
+
+`ChartScheduler` generates for play, from PCM (`fromPcm`) or a `Prepared` (`fromPrepared`), and appends the chart
+to a `GameplaySession` page by page inside Rust:
+
+```swift
+let lead = LeadPolicy(ruleset: Ruleset(judge: .c), renderLeadMs: scrollTimeMs, marginMs: 0)
+let scheduler = try ChartScheduler.fromPrepared(
+    generator: generator, prepared: prepared, request: request, mode: .aheadOfPlay, lead: lead
+)
+let session = GameplaySession.streaming(ruleset: Ruleset(judge: .c))
+scheduler.start(atMs: 0, session: session)
+if case .ready(let joinMs) = try await scheduler.work() { /* start audio at 0; judging from joinMs */ }
+Task { _ = try await scheduler.work() }             // keeps generating ahead of play, then returns .done
+// each frame: scheduler.heard(chartMs: heard, wallMs: now); session.advance(watermarkMs: heard)
+scheduler.result()                                  // the whole chart, .osu and receipt once done
+```
+
+- `.aheadOfPlay` commits a page after each head row of R2's arrangement; `.wholeChart` commits the chart in one page
+  at the end. Both make the same chart.
+- `.ready(joinMs:)` comes once play from there stays behind the chart to the end:
+  c₀ − t₀ ≥ L + max(0, (E − c₀)(p/r − 1)), with the chart committed through c₀, the lead L = max(the ruleset's settle
+  lead, `renderLeadMs`) + `marginMs`, the song's end E, the playback rate p from `heard` and the generation's
+  throughput r measured as it runs (`rate()`). A slower device starts later instead of stalling.
+- `start(atMs:session:)` at a position other than 0 joins at the first time at or after `atMs` + L where no hold is
+  open, and leaves the earlier objects out of the session; generation still runs from the song's start. Each start
+  takes a new streaming session.
+- `work()` runs on a thread of its own, returns at `.ready` and `.done`, and waits while play is far enough ahead. If
+  the chart falls behind play (`session.decidedThroughMs()` below the watermark), pause; the next `.ready` says
+  where to resume. `stop()`, or cancelling the task, ends it.
+- `prepared()` gives the `Prepared` a `fromPcm` scheduler made, to store.
+- `request(request:)` changes `star` and `controls` for the chart in progress; the seed, title, artist and audio name
+  stay. It is for requests from game events during play (multiplayer attacks, players coordinating), which a pipeline
+  that resumes from a committed prefix will apply. R2 takes one until the first page is committed, from `fromPcm` or
+  `fromPrepared`, and the chart is then the one a fresh generation with it makes (with `.wholeChart`, which commits at
+  the end, a request during the arrangement restarts it); later it throws `GeneratorError.Generation` with
+  `unsupported_control` and the generation goes on unchanged.
+
 ### Execution provider
 
 Use `.cpu`. Measured on bings-mac (M5) with `crates/generate-ort/examples/providers.rs`
-([`conformance/generate/apple-providers.json`](../conformance/generate/apple-providers.json)): seconds of the
-second generation in a process, and the process's peak physical footprint. When generation starts the
-footprint is 0.3 to 0.55 GiB: the opened model (0.2 GiB) and the recording the measurement reads.
+([`conformance/generate/apple-providers.json`](../conformance/generate/apple-providers.json), runtime 0.2.0, with no
+other job on the machine): seconds of the second generation in a process, and the process's peak physical
+footprint. When generation starts the footprint is 0.25 to 0.4 GiB: the opened model (0.2 GiB) and the recording
+the measurement reads.
 
 | Song | CPU seconds (BeatThis) | Core ML seconds (BeatThis) | CPU peak footprint | Core ML peak footprint |
 | --- | --- | --- | --- | --- |
-| hesitation-snow | 6.0 (3.7) | 11.6 (9.2) | 2.0 GiB | 11.5 GiB |
-| saigetsu | 5.2 (3.0) | 10.0 (7.7) | 2.0 GiB | 11.5 GiB |
-| catch-the-moment | 4.9 (3.0) | 9.8 (7.7) | 2.0 GiB | 11.5 GiB |
-| adventure | 9.5 (4.2) | 16.3 (10.9) | 2.3 GiB | 11.6 GiB |
+| hesitation-snow | 5.2 (3.7) | 9.2 (7.6) | 1.9 GiB | 11.4 GiB |
+| saigetsu | 4.3 (3.0) | 7.6 (6.3) | 1.9 GiB | 11.4 GiB |
+| catch-the-moment | 4.2 (3.1) | 7.6 (6.5) | 1.9 GiB | 11.4 GiB |
+| adventure | 6.9 (4.2) | 11.6 (8.9) | 2.1 GiB | 11.6 GiB |
 
 `.coreMl` gives BeatThis to Core ML and leaves the other graphs on the CPU. Opening the model then takes 10 s
-instead of 0.2 s, BeatThis runs two to three times slower and the process needs 11.5 GiB: Core ML takes BeatThis's
-dynamic frame axis in 180 partitions. Its charts have the CPU's hit objects on all four songs. Core ML for every
-graph fails on the rows graphs' dynamic sequence length. No compute unit or model format helped (exploratory,
-hesitation-snow). The Core ML rows overlapped a browser timing run on the same machine; the CPU rows did not.
+instead of 0.2 s, BeatThis runs about two times slower and the process needs 11.4 to 11.6 GiB: Core ML takes
+BeatThis's dynamic frame axis in 180 partitions. Its charts have the CPU's hit objects on all four songs. Core ML
+for every graph fails on the rows graphs' dynamic sequence length. No compute unit or model format helped
+(exploratory, hesitation-snow).
 
 Most of the CPU footprint is BeatThis's working memory, which ONNX Runtime keeps after the first run: the
 footprint grows by 1.6 GiB during the timing phase on every song. The `providers` configuration `cpu-lean`
-(no CPU arena and no memory patterns), `lowMemory` here, brings the peak to 1.3 to 1.6 GiB with the same
-charts; its times overlapped the browser run. `cpu-threads` is not exposed (ONNX Runtime picks the
-thread count), which took hesitation-snow from 6.0 to 5.1 s with the same chart; sessions run on one thread,
-as the parity recordings were checked.
+(no CPU arena and no memory patterns), `lowMemory` here, brings the peak to 1.25 to 1.45 GiB with the same
+charts and times within 0.2 s of `.cpu`. `cpu-threads` is not exposed (ONNX Runtime picks the thread count),
+which took the four songs from 4.2 to 6.9 s down to 3.4 to 6.0 s with the same charts; sessions run on one
+thread, as the parity recordings were checked.
 
 ### Size
 

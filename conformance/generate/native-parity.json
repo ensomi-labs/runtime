@@ -9,6 +9,7 @@
   "grid_tolerance_ms": 0.0001,
   "timing_tolerance_ms": 1e-6,
   "scope": "recorded graph inputs, PCM frontends, full Rust decode with carried state and replayed random draws, exact exports, own PRNG",
+  "commit": "the whole chart at the end",
   "songs": {
     "hesitation-snow": {
       "stage1": {
@@ -16,7 +17,7 @@
         "networks": {
           "beatthis": {
             "calls": 6,
-            "seconds": 3.682643501,
+            "seconds": 4.031052251999999,
             "max_abs": 0.00007224082946777344,
             "outputs": {
               "beat_logits": {
@@ -45,7 +46,7 @@
           },
           "rows_encoder": {
             "calls": 1,
-            "seconds": 0.031621959,
+            "seconds": 0.036317166,
             "max_abs": 0.000026941299438476562,
             "outputs": {
               "pos": {
@@ -96,7 +97,7 @@
           },
           "rows_step": {
             "calls": 374,
-            "seconds": 0.03881186399999999,
+            "seconds": 0.038383244,
             "max_abs": 0.000030517578125,
             "outputs": {
               "hidden_out": {
@@ -180,7 +181,7 @@
           },
           "r2_predict": {
             "calls": 898,
-            "seconds": 0.036913055000000035,
+            "seconds": 0.035203269999999995,
             "max_abs": 0.00001430511474609375,
             "outputs": {
               "hands": {
@@ -209,7 +210,7 @@
           },
           "r2_commit": {
             "calls": 897,
-            "seconds": 0.3919555780000004,
+            "seconds": 0.3622627169999996,
             "max_abs": 5.7220458984375e-6,
             "outputs": {
               "next_last": {
@@ -326,7 +327,7 @@
           },
           "r2_release": {
             "calls": 2,
-            "seconds": 0.00031079100000000004,
+            "seconds": 0.00031237500000000004,
             "max_abs": 9.5367431640625e-6,
             "outputs": {
               "release_scores": {
@@ -407,21 +408,22 @@
             "multiplier": 1.0115911606943524,
             "achieved": 1.3455830579580628,
             "fallback_count": 0,
-            "wall_seconds": 0.4505392919999995
+            "wall_seconds": 0.4266632500000005
           }
-        ]
+        ],
+        "release_passes": 1
       },
       "replay_seconds": {
-        "pcm": 1.207310209,
-        "spectrogram": 0.12159475000000021,
-        "beatthis": 3.608254125,
-        "mel": 0.3454389170000004,
-        "grid": 0.15933837500000028,
-        "rows": 0.09308100000000104,
-        "prior": 0.0000722089999999298,
-        "arrangement": 0.450589500000001,
-        "export": 0.0003432910000001357,
-        "total": 5.9962807499999995
+        "pcm": 0.6013054579999999,
+        "spectrogram": 0.140313042,
+        "beatthis": 4.0044235839999995,
+        "mel": 0.3788165419999996,
+        "grid": 0.1749657500000003,
+        "rows": 0.0959788750000007,
+        "prior": 0.00007820799999990414,
+        "arrangement": 0.4266632500000005,
+        "export": 0.000392666000000645,
+        "total": 5.8266845
       },
       "stage5": {
         "passed": true,
@@ -440,72 +442,73 @@
         "heads": 767,
         "fallbacks": 0,
         "seconds": {
-          "pcm": 1.2066608339999998,
-          "spectrogram": 0.12057133400000021,
-          "beatthis": 3.583310833,
-          "mel": 0.34023229100000024,
-          "grid": 0.15431095800000003,
-          "rows": 0.10030333299999984,
-          "prior": 0.00007008300000052259,
-          "arrangement": 0.3784929579999998,
-          "export": 0.0003089590000008684,
-          "total": 5.8901755
+          "pcm": 0.5949313749999999,
+          "spectrogram": 0.13548412499999996,
+          "beatthis": 4.0050500840000005,
+          "mel": 0.3736550420000003,
+          "grid": 0.17492362500000036,
+          "rows": 0.10309062500000073,
+          "prior": 0.00008174999999937426,
+          "arrangement": 0.35531837499999985,
+          "export": 0.00036004199999933916,
+          "total": 5.742904125000001
         },
-        "wall_seconds": 5.895016,
+        "wall_seconds": 5.7482735,
         "timings": {
           "by_phase": {
             "validate": {
-              "core_seconds": 0.004813583,
+              "core_seconds": 0.005334291,
               "graph_seconds": 0.0
             },
             "loading": {
-              "core_seconds": 1.212571542,
+              "core_seconds": 0.594932584,
               "graph_seconds": 0.0
             },
             "timing": {
-              "core_seconds": 0.615674502,
-              "graph_seconds": 3.5827495830000005
+              "core_seconds": 0.6844489589999999,
+              "graph_seconds": 4.004666626
             },
             "rows": {
-              "core_seconds": 0.028495206999999988,
-              "graph_seconds": 0.07178466800000001
+              "core_seconds": 0.029462326000000007,
+              "graph_seconds": 0.07360566599999999
             },
             "arrangement": {
-              "core_seconds": 0.010762862000000045,
-              "graph_seconds": 0.36769641999999986
+              "core_seconds": 0.011167600000000052,
+              "graph_seconds": 0.3441359019999995
             },
             "export": {
-              "core_seconds": 0.000336375,
+              "core_seconds": 0.000391583,
               "graph_seconds": 0.0
             }
           },
           "by_graph": {
             "beatthis": {
               "calls": 6,
-              "seconds": 3.5827495830000005
+              "seconds": 4.004666626
             },
             "r2_commit": {
               "calls": 767,
-              "seconds": 0.3384589589999997
+              "seconds": 0.3169668730000003
             },
             "r2_predict": {
               "calls": 768,
-              "seconds": 0.02833654300000001
+              "seconds": 0.026293364
             },
             "r2_release": {
               "calls": 11,
-              "seconds": 0.0009009179999999999
+              "seconds": 0.0008756649999999999
             },
             "rows_encoder": {
               "calls": 1,
-              "seconds": 0.032246083
+              "seconds": 0.035643958
             },
             "rows_step": {
               "calls": 374,
-              "seconds": 0.03953858499999997
+              "seconds": 0.037961708
             }
           }
-        }
+        },
+        "pages": null
       }
     },
     "saigetsu": {
@@ -514,7 +517,7 @@
         "networks": {
           "beatthis": {
             "calls": 5,
-            "seconds": 3.0054792919999995,
+            "seconds": 3.308186375,
             "max_abs": 0.0000858306884765625,
             "outputs": {
               "beat_logits": {
@@ -543,7 +546,7 @@
           },
           "rows_encoder": {
             "calls": 1,
-            "seconds": 0.023185958,
+            "seconds": 0.027271083,
             "max_abs": 0.000019490718841552734,
             "outputs": {
               "pos": {
@@ -594,7 +597,7 @@
           },
           "rows_step": {
             "calls": 228,
-            "seconds": 0.023505117,
+            "seconds": 0.022829588999999987,
             "max_abs": 0.0000152587890625,
             "outputs": {
               "hidden_out": {
@@ -678,7 +681,7 @@
           },
           "r2_predict": {
             "calls": 1572,
-            "seconds": 0.06359006800000008,
+            "seconds": 0.06181799800000002,
             "max_abs": 0.00001430511474609375,
             "outputs": {
               "hands": {
@@ -707,7 +710,7 @@
           },
           "r2_commit": {
             "calls": 1570,
-            "seconds": 0.6806991459999986,
+            "seconds": 0.6392801080000002,
             "max_abs": 6.794929504394531e-6,
             "outputs": {
               "next_last": {
@@ -824,7 +827,7 @@
           },
           "r2_release": {
             "calls": 8,
-            "seconds": 0.0006770840000000001,
+            "seconds": 0.0007258750000000001,
             "max_abs": 0.000011444091796875,
             "outputs": {
               "release_scores": {
@@ -897,119 +900,112 @@
       "stage4": {
         "passed": true,
         "prior_max_error": 0.0,
-        "decisions": 1572,
-        "draws_consumed": 3380,
+        "decisions": 786,
+        "draws_consumed": 1805,
         "draws_recorded": 3380,
         "passes": [
           {
             "multiplier": 0.9365579816442061,
             "achieved": 1.4391102764195374,
             "fallback_count": 0,
-            "wall_seconds": 0.3959979999999996
-          },
-          {
-            "multiplier": 0.9773466733743711,
-            "achieved": 1.5459112333555236,
-            "fallback_count": 0,
-            "wall_seconds": 0.39574891599999956
+            "wall_seconds": 0.39119554100000004
           }
-        ]
+        ],
+        "release_passes": 2
       },
       "replay_seconds": {
-        "pcm": 0.883762666,
-        "spectrogram": 0.09724366599999996,
-        "beatthis": 2.986982958,
-        "mel": 0.2765303330000006,
-        "grid": 0.06810045799999989,
-        "rows": 0.062294582999999876,
-        "prior": 0.00006333300000005693,
-        "arrangement": 0.7917825419999999,
-        "export": 0.00032679099999950267,
-        "total": 5.176347666
+        "pcm": 0.434617416,
+        "spectrogram": 0.10866979099999997,
+        "beatthis": 3.4444155,
+        "mel": 0.30394879199999925,
+        "grid": 0.0731630839999998,
+        "rows": 0.061925666000001,
+        "prior": 0.00007099999999991269,
+        "arrangement": 0.39119554100000004,
+        "export": 0.0003579999999992651,
+        "total": 4.821696541000001
       },
       "stage5": {
         "passed": true,
-        "hitobjects_identical": true,
-        "objects": 1215,
-        "timing_points": 1,
-        "timing_max_abs_ms": 0.0,
-        "rest_identical": true,
-        "osu_identical_except_generator": true,
-        "first_text_difference": null
+        "compared": false,
+        "reason": "the release ran pass 2",
+        "objects": 1131,
+        "same_as_release": false
       },
       "prng": {
         "passed": true,
         "algorithm": "mulberry32-u53-v1",
-        "objects": 1295,
+        "objects": 1131,
         "heads": 805,
         "fallbacks": 0,
         "seconds": {
-          "pcm": 0.8808627920000001,
-          "spectrogram": 0.09669587499999989,
-          "beatthis": 3.082617459,
-          "mel": 0.2965135420000006,
-          "grid": 0.07194608300000073,
-          "rows": 0.06797012499999983,
-          "prior": 0.00006950000000051659,
-          "arrangement": 0.7484154580000004,
-          "export": 0.00037183300000015153,
-          "total": 5.249829374999999
+          "pcm": 0.451919958,
+          "spectrogram": 0.11023941700000006,
+          "beatthis": 3.417460375,
+          "mel": 0.30724116600000023,
+          "grid": 0.07784208299999955,
+          "rows": 0.06672970799999985,
+          "prior": 0.00007058299999971496,
+          "arrangement": 0.36617162500000083,
+          "export": 0.000360250000000633,
+          "total": 4.798042375
         },
-        "wall_seconds": 5.253505541,
+        "wall_seconds": 4.8020320420000004,
         "timings": {
           "by_phase": {
             "validate": {
-              "core_seconds": 0.003647292,
+              "core_seconds": 0.003956042,
               "graph_seconds": 0.0
             },
             "loading": {
-              "core_seconds": 0.885226958,
+              "core_seconds": 0.451921375,
               "graph_seconds": 0.0
             },
             "timing": {
-              "core_seconds": 0.465548709,
-              "graph_seconds": 3.08222171
+              "core_seconds": 0.495717502,
+              "graph_seconds": 3.417066042
             },
             "rows": {
-              "core_seconds": 0.019035744000000004,
-              "graph_seconds": 0.04892049699999998
+              "core_seconds": 0.018132849000000017,
+              "graph_seconds": 0.04858392599999999
             },
             "arrangement": {
-              "core_seconds": 0.022472869000000065,
-              "graph_seconds": 0.7257901399999998
+              "core_seconds": 0.011318031000000036,
+              "graph_seconds": 0.35482494099999934
             },
             "export": {
-              "core_seconds": 0.000400667,
+              "core_seconds": 0.0003895,
               "graph_seconds": 0.0
             }
           },
           "by_graph": {
             "beatthis": {
               "calls": 5,
-              "seconds": 3.08222171
+              "seconds": 3.417066042
             },
             "r2_commit": {
-              "calls": 1610,
-              "seconds": 0.6687752519999995
+              "calls": 805,
+              "seconds": 0.32661970299999965
             },
             "r2_predict": {
-              "calls": 1612,
-              "seconds": 0.05583851400000003
+              "calls": 806,
+              "seconds": 0.027530653999999974
             },
             "r2_release": {
-              "calls": 19,
-              "seconds": 0.0011763740000000002
+              "calls": 10,
+              "seconds": 0.000674584
             },
             "rows_encoder": {
               "calls": 1,
-              "seconds": 0.026880125
+              "seconds": 0.02649625
             },
             "rows_step": {
               "calls": 228,
-              "seconds": 0.022040371999999996
+              "seconds": 0.022087675999999997
             }
           }
-        }
+        },
+        "pages": null
       }
     },
     "catch-the-moment": {
@@ -1018,7 +1014,7 @@
         "networks": {
           "beatthis": {
             "calls": 5,
-            "seconds": 2.993311416,
+            "seconds": 3.3162259160000005,
             "max_abs": 0.00013494491577148438,
             "outputs": {
               "beat_logits": {
@@ -1047,7 +1043,7 @@
           },
           "rows_encoder": {
             "calls": 1,
-            "seconds": 0.020894083,
+            "seconds": 0.023723083,
             "max_abs": 0.00001811981201171875,
             "outputs": {
               "pos": {
@@ -1098,7 +1094,7 @@
           },
           "rows_step": {
             "calls": 200,
-            "seconds": 0.020246958999999978,
+            "seconds": 0.020407582000000004,
             "max_abs": 0.0000152587890625,
             "outputs": {
               "hidden_out": {
@@ -1182,7 +1178,7 @@
           },
           "r2_predict": {
             "calls": 1548,
-            "seconds": 0.061110318000000025,
+            "seconds": 0.060169438999999984,
             "max_abs": 0.0000133514404296875,
             "outputs": {
               "hands": {
@@ -1211,7 +1207,7 @@
           },
           "r2_commit": {
             "calls": 1546,
-            "seconds": 0.662415339,
+            "seconds": 0.6294805510000002,
             "max_abs": 6.67572021484375e-6,
             "outputs": {
               "next_last": {
@@ -1328,7 +1324,7 @@
           },
           "r2_release": {
             "calls": 35,
-            "seconds": 0.003655748,
+            "seconds": 0.0038645420000000008,
             "max_abs": 0.0000762939453125,
             "outputs": {
               "release_scores": {
@@ -1409,123 +1405,112 @@
       "stage4": {
         "passed": true,
         "prior_max_error": 0.0,
-        "decisions": 1548,
-        "draws_consumed": 3331,
+        "decisions": 774,
+        "draws_consumed": 1767,
         "draws_recorded": 3331,
         "passes": [
           {
             "multiplier": 0.9864209795304626,
             "achieved": 1.437874697048943,
             "fallback_count": 0,
-            "wall_seconds": 0.36338558400000054
-          },
-          {
-            "multiplier": 1.0305045271308024,
-            "achieved": 1.5244714389179483,
-            "fallback_count": 0,
-            "wall_seconds": 0.3620614169999999
+            "wall_seconds": 0.3915787499999997
           }
-        ]
+        ],
+        "release_passes": 2
       },
       "replay_seconds": {
-        "pcm": 0.804607541,
-        "spectrogram": 0.08896787499999993,
-        "beatthis": 3.1194427919999996,
-        "mel": 0.28070004100000007,
-        "grid": 0.10716150000000016,
-        "rows": 0.05562341699999979,
-        "prior": 0.00007270799999878363,
-        "arrangement": 0.7254869579999995,
-        "export": 0.00035345800000050076,
-        "total": 5.19021225
+        "pcm": 0.38477187500000004,
+        "spectrogram": 0.11115608399999996,
+        "beatthis": 3.45102275,
+        "mel": 0.27796999999999933,
+        "grid": 0.10396399999999995,
+        "rows": 0.055187458000001244,
+        "prior": 0.00007645799999954761,
+        "arrangement": 0.3915787499999997,
+        "export": 0.0003666670000002341,
+        "total": 4.7788189999999995
       },
       "stage5": {
         "passed": true,
-        "hitobjects_identical": true,
-        "objects": 1192,
-        "timing_points": 3,
-        "timing_max_abs_ms": 1.1690417522913776e-8,
-        "rest_identical": true,
-        "osu_identical_except_generator": false,
-        "first_text_difference": {
-          "line": 15,
-          "actual": "1659,631.3408705352042,4,2,0,100,1,0",
-          "reference": "1659,631.3408705468946,4,2,0,100,1,0"
-        }
+        "compared": false,
+        "reason": "the release ran pass 2",
+        "objects": 1126,
+        "same_as_release": false
       },
       "prng": {
         "passed": true,
         "algorithm": "mulberry32-u53-v1",
-        "objects": 911,
+        "objects": 976,
         "heads": 631,
         "fallbacks": 0,
         "seconds": {
-          "pcm": 0.816353458,
-          "spectrogram": 0.08874583299999983,
-          "beatthis": 3.2508969160000003,
-          "mel": 0.2887135829999997,
-          "grid": 0.10793479200000002,
-          "rows": 0.05921516599999995,
-          "prior": 0.00007112499999948341,
-          "arrangement": 0.57897325,
-          "export": 0.0003033749999995052,
-          "total": 5.195635708
+          "pcm": 0.3983385,
+          "spectrogram": 0.099739958,
+          "beatthis": 3.3950624159999996,
+          "mel": 0.2993961670000003,
+          "grid": 0.11262779200000023,
+          "rows": 0.06358600000000024,
+          "prior": 0.00007354099999975006,
+          "arrangement": 0.30499824999999964,
+          "export": 0.0003384999999998399,
+          "total": 4.674168291
         },
-        "wall_seconds": 5.1993325,
+        "wall_seconds": 4.678010125,
         "timings": {
           "by_phase": {
             "validate": {
-              "core_seconds": 0.003665417,
+              "core_seconds": 0.003803792,
               "graph_seconds": 0.0
             },
             "loading": {
-              "core_seconds": 0.820778416,
+              "core_seconds": 0.3983395,
               "graph_seconds": 0.0
             },
             "timing": {
-              "core_seconds": 0.48577621,
-              "graph_seconds": 3.2505143340000004
+              "core_seconds": 0.51206871,
+              "graph_seconds": 3.394758375
             },
             "rows": {
-              "core_seconds": 0.016634124000000004,
-              "graph_seconds": 0.042568956
+              "core_seconds": 0.016908671,
+              "graph_seconds": 0.04666358399999997
             },
             "arrangement": {
-              "core_seconds": 0.01787375199999994,
-              "graph_seconds": 0.5609856110000002
+              "core_seconds": 0.010026968000000002,
+              "graph_seconds": 0.29495814600000053
             },
             "export": {
-              "core_seconds": 0.000334667,
+              "core_seconds": 0.000370458,
               "graph_seconds": 0.0
             }
           },
           "by_graph": {
             "beatthis": {
               "calls": 5,
-              "seconds": 3.2505143340000004
+              "seconds": 3.394758375
             },
             "r2_commit": {
-              "calls": 1262,
-              "seconds": 0.51376059
+              "calls": 631,
+              "seconds": 0.26925238100000004
             },
             "r2_predict": {
-              "calls": 1264,
-              "seconds": 0.04323501999999999
+              "calls": 632,
+              "seconds": 0.02270506199999999
             },
             "r2_release": {
-              "calls": 65,
-              "seconds": 0.003990001
+              "calls": 56,
+              "seconds": 0.003000703
             },
             "rows_encoder": {
               "calls": 1,
-              "seconds": 0.023339584
+              "seconds": 0.024588875
             },
             "rows_step": {
               "calls": 200,
-              "seconds": 0.019229372000000005
+              "seconds": 0.022074709
             }
           }
-        }
+        },
+        "pages": null
       }
     },
     "adventure": {
@@ -1534,7 +1519,7 @@
         "networks": {
           "beatthis": {
             "calls": 7,
-            "seconds": 4.1836590430000005,
+            "seconds": 4.654828209,
             "max_abs": 0.00008869171142578125,
             "outputs": {
               "beat_logits": {
@@ -1563,7 +1548,7 @@
           },
           "rows_encoder": {
             "calls": 1,
-            "seconds": 0.038123917,
+            "seconds": 0.042579291,
             "max_abs": 0.00002193450927734375,
             "outputs": {
               "pos": {
@@ -1614,7 +1599,7 @@
           },
           "rows_step": {
             "calls": 427,
-            "seconds": 0.04353612799999998,
+            "seconds": 0.04333658900000003,
             "max_abs": 0.000019073486328125,
             "outputs": {
               "hidden_out": {
@@ -1698,7 +1683,7 @@
           },
           "r2_predict": {
             "calls": 1704,
-            "seconds": 0.06873580199999997,
+            "seconds": 0.07066596300000004,
             "max_abs": 0.0000133514404296875,
             "outputs": {
               "hands": {
@@ -1727,7 +1712,7 @@
           },
           "r2_commit": {
             "calls": 1703,
-            "seconds": 0.7400874550000003,
+            "seconds": 0.7382328189999985,
             "max_abs": 7.62939453125e-6,
             "outputs": {
               "next_last": {
@@ -1844,7 +1829,7 @@
           },
           "r2_release": {
             "calls": 15,
-            "seconds": 0.001356044,
+            "seconds": 0.001424375,
             "max_abs": 0.000019073486328125,
             "outputs": {
               "release_scores": {
@@ -1925,21 +1910,22 @@
             "multiplier": 1.0227338165214293,
             "achieved": 1.502286623823186,
             "fallback_count": 0,
-            "wall_seconds": 0.8487914999999994
+            "wall_seconds": 0.7969889999999996
           }
-        ]
+        ],
+        "release_passes": 1
       },
       "replay_seconds": {
-        "pcm": 3.0067531250000004,
-        "spectrogram": 0.14546216700000014,
-        "beatthis": 4.669757667,
-        "mel": 0.4663845000000001,
-        "grid": 0.22680225000000065,
-        "rows": 0.11045716699999866,
-        "prior": 0.00008233299999847077,
-        "arrangement": 0.8488245419999985,
-        "export": 0.000606207999999242,
-        "total": 9.494930916
+        "pcm": 1.517141792,
+        "spectrogram": 0.16783695799999987,
+        "beatthis": 4.817402625,
+        "mel": 0.4534148749999995,
+        "grid": 0.2631920409999993,
+        "rows": 0.12132862499999919,
+        "prior": 0.00008100000000013096,
+        "arrangement": 0.7969889999999996,
+        "export": 0.0006921670000010635,
+        "total": 8.144342
       },
       "stage5": {
         "passed": true,
@@ -1954,76 +1940,77 @@
       "prng": {
         "passed": true,
         "algorithm": "mulberry32-u53-v1",
-        "objects": 2210,
+        "objects": 2022,
         "heads": 1399,
-        "fallbacks": 0,
+        "fallbacks": 1,
         "seconds": {
-          "pcm": 3.005276167,
-          "spectrogram": 0.14630754199999957,
-          "beatthis": 4.989888917,
-          "mel": 0.4542652500000004,
-          "grid": 0.22857350000000223,
-          "rows": 0.12031991600000037,
-          "prior": 0.00007333400000061374,
-          "arrangement": 1.3799454590000004,
-          "export": 0.0005970830000005663,
-          "total": 10.340038166000001
+          "pcm": 1.493950459,
+          "spectrogram": 0.17310858399999984,
+          "beatthis": 4.779909083,
+          "mel": 0.4646631670000006,
+          "grid": 0.24654308300000047,
+          "rows": 0.1300479580000001,
+          "prior": 0.00007704199999989215,
+          "arrangement": 0.6621975840000005,
+          "export": 0.0006325409999999465,
+          "total": 7.951136459
         },
-        "wall_seconds": 10.350873875,
+        "wall_seconds": 7.962810875,
         "timings": {
           "by_phase": {
             "validate": {
-              "core_seconds": 0.010804458,
+              "core_seconds": 0.011631667,
               "graph_seconds": 0.0
             },
             "loading": {
-              "core_seconds": 3.020062917,
+              "core_seconds": 1.493951583,
               "graph_seconds": 0.0
             },
             "timing": {
-              "core_seconds": 0.829883502,
-              "graph_seconds": 4.989149793
+              "core_seconds": 0.884758418,
+              "graph_seconds": 4.7794658320000005
             },
             "rows": {
-              "core_seconds": 0.03592388100000004,
-              "graph_seconds": 0.0843643770000001
+              "core_seconds": 0.03630062200000001,
+              "graph_seconds": 0.09371837900000009
             },
             "arrangement": {
-              "core_seconds": 0.0414166430000001,
-              "graph_seconds": 1.3381648820000027
+              "core_seconds": 0.02104524200000005,
+              "graph_seconds": 0.6410346409999989
             },
             "export": {
-              "core_seconds": 0.000628292,
+              "core_seconds": 0.000669917,
               "graph_seconds": 0.0
             }
           },
           "by_graph": {
             "beatthis": {
               "calls": 7,
-              "seconds": 4.989149793
+              "seconds": 4.7794658320000005
             },
             "r2_commit": {
-              "calls": 2798,
-              "seconds": 1.219391394000005
+              "calls": 1399,
+              "seconds": 0.5803285819999991
             },
             "r2_predict": {
-              "calls": 2800,
-              "seconds": 0.09961923900000037
+              "calls": 1400,
+              "seconds": 0.048198617000000034
             },
             "r2_release": {
-              "calls": 321,
-              "seconds": 0.019154249
+              "calls": 203,
+              "seconds": 0.012507441999999995
             },
             "rows_encoder": {
               "calls": 1,
-              "seconds": 0.043445583
+              "seconds": 0.046543167
             },
             "rows_step": {
               "calls": 427,
-              "seconds": 0.04091879399999999
+              "seconds": 0.04717521200000001
             }
           }
-        }
+        },
+        "pages": null
       }
     }
   },

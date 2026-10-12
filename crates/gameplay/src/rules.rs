@@ -136,4 +136,10 @@ impl Ruleset {
     pub fn windows(&self) -> Windows {
         Windows::new(self.judge)
     }
+
+    /// How far a streamed chart must reach past an input before a session can settle it: `1.5 g`, the miss window
+    /// of a hold's tail, the widest the session waits for. A scheduler keeps the chart at least this far ahead of play.
+    pub fn settle_lead_ms(&self) -> f64 {
+        self.windows().g * TAIL_LENIENCE
+    }
 }

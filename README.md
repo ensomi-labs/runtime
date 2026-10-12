@@ -40,8 +40,26 @@ versions are the first with it.
 Both packages carry the soxr tables in [`assets/resampler`](assets/resampler), with which the generator resamples PCM at
 rates other than 22050 Hz. Releases: [`RELEASING.md`](RELEASING.md).
 
-The TypeScript runtime in `ensomi-web/packages/runtime` retires once the Wasm build of this
-core reproduces its charts.
+Both also run the audio stages alone (`prepare`, whose result is stored as bytes per song) and a scheduler that
+generates for play: R2's arrangement committed per head row, and play allowed to start once it cannot overtake the
+chart ([`swift/README.md`](swift/README.md), [`js/README.md`](js/README.md)). The scheduler is in the core without IO
+(`crates/generate/src/schedule.rs`); natively its pages go into the gameplay session inside Rust.
+
+Requests during generation: the scheduler takes a new request for the chart in progress (`Event::Request`), for play
+in which game events change the coming chart, with or without Sonalign: a multiplayer attack on another player's
+chart, players coordinating. Only `star` and `controls` may change, from the first uncommitted head row on; committed
+pages never do. A pipeline that resumes from a committed prefix will apply such requests. R2 cannot yet: it takes a
+request until it commits the first page, starting the chart stages again from the song's `Prepared` if they have begun,
+so the chart is the one a fresh generation with the request makes. Once a page is committed it refuses one, leaving the
+generation unchanged.
+
+The generator arranges a song once, whether it commits per head row or the whole chart at the end, so both give the
+same chart. The published Python R2 (`r2-1.0`) arranged a song a second time when the first arrangement missed the
+star's difficulty target by more than the difficulty fit's seed spread; where it did, its chart differs from this
+runtime's. The receipt's `controls.difficulty` records the miss.
+
+The TypeScript runtime in `ensomi-web/packages/runtime` is retired: ensomi-web serves the Wasm build of this core.
+A comparison with its charts holds only where it arranged the song once, as this runtime always does.
 
 ## Licence
 

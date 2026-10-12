@@ -1,5 +1,5 @@
 //! generate.ts: the whole pipeline from PCM and a request to the chart, `.osu` text and receipt.
-use crate::arrange::{arrange, Arrange, Arrangement};
+use crate::arrange::{arrange, Arrange};
 use crate::audio::{beat_activations, features, load_resampler, mel_pcm, mono, resample, resampler_files, sinc_resample, spectrogram, Samples, Spectrogram};
 use crate::capabilities::{MODEL_NAME, MODEL_VERSION};
 use crate::controls::{load_scopes, number, resolve_requests, Scope};
@@ -10,6 +10,7 @@ use crate::json::{number_string, stringify};
 use crate::machine::{Generator, Io, Phase};
 use crate::math::{clip, quantile};
 use crate::models::Models;
+use crate::prepared::Prepared;
 use crate::prior::{kappa_targets, predict_prior, rows_features, Prediction};
 use crate::random::{RandomSource, SeededRandom};
 use crate::rows::{decode_rows, RowsSection};
@@ -32,11 +33,13 @@ pub struct Audio {
     pub resampler: Option<[Vec<u8>; 3]>,
 }
 
+#[derive(Clone)]
 pub struct Pattern {
     pub kind: i64,
     pub strength: f64,
 }
 
+#[derive(Clone)]
 pub struct Section {
     pub start_ms: f64,
     pub end_ms: f64,
@@ -46,12 +49,13 @@ pub struct Section {
     pub raw: Map<String, Value>,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Controls {
     pub long_notes: i64,
     pub sections: Vec<Section>,
 }
 
+#[derive(Clone)]
 pub struct Request {
     /// The audio asset reference, recorded in the receipt as given.
     pub audio: Option<Value>,
@@ -124,6 +128,16 @@ pub enum Trace<'a> {
 
 pub type TraceFn = Box<dyn for<'a> FnMut(Trace<'a>) -> Result<(), String>>;
 
+/// When a generation publishes its chart. Either way R2 arranges the song once, so the chart is the same.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Commit {
+    /// The whole chart at the end.
+    #[default]
+    AtEnd,
+    /// A page after each head row ([`crate::Step::Commit`]), then the whole chart at the end.
+    HeadRow,
+}
+
 pub struct Options {
     /// Replaces the seeded generator, e.g. to replay recorded draws.
     pub random: Option<Box<dyn RandomSource>>,
@@ -134,6 +148,14 @@ pub struct Options {
     pub trace: Option<TraceFn>,
     /// Milliseconds from any fixed origin; the core reads time only through this.
     pub clock: Rc<dyn Fn() -> f64>,
+    pub commit: Commit,
+}
+
+impl Options {
+    /// The seeded generator, no trace, the whole chart at the end.
+    pub fn new(clock: Rc<dyn Fn() -> f64>) -> Options {
+        Options { random: None, setting: None, audio_name: None, trace: None, clock, commit: Commit::AtEnd }
+    }
 }
 
 fn all_finite_f32(a: &[f32]) -> bool {
@@ -148,7 +170,8 @@ fn sample_count(audio: &Audio) -> usize {
     }
 }
 
-fn validate(audio: &Audio, request: &Request) -> Result<f64, String> {
+/// Checks the PCM and returns the song's length in milliseconds.
+fn validate_audio(audio: &Audio) -> Result<f64, String> {
     let len = sample_count(audio);
     if !audio.sample_rate.is_finite() || audio.sample_rate <= 0.0 || audio.channels < 1 || len == 0 || !len.is_multiple_of(audio.channels) {
         return Err("PCM needs nonempty interleaved samples, a positive sample rate and a channel count".to_string());
@@ -172,6 +195,10 @@ fn validate(audio: &Audio, request: &Request) -> Result<f64, String> {
     if duration < 3000.0 {
         return Err("Audio must be at least three seconds long to fit a beat grid".to_string());
     }
+    Ok(duration)
+}
+
+fn validate_request(request: &Request, duration: f64) -> Result<(), String> {
     if !(request.star >= 2.0 && request.star < 6.0) {
         return Err("star_out_of_range: star must be in [2, 6)".to_string());
     }
@@ -198,14 +225,44 @@ fn validate(audio: &Audio, request: &Request) -> Result<f64, String> {
     if ordered.windows(2).any(|w| w[1].start_ms < w[0].end_ms) {
         return Err("unsupported_control: sections must not overlap".to_string());
     }
-    Ok(duration)
+    Ok(())
 }
 
-/// Starts a generation. Drive the returned [`Generator`] with [`Generator::step`].
+/// Starts a generation. Drive the returned [`Generator`] with [`Generator::step`]. The same as [`prepare`]
+/// followed by [`generate_prepared`], with the timings of both stages in one receipt.
+///
+/// R2 arranges the song once, with the multiplier the difficulty fit gives for the star's target; the receipt's
+/// `controls.difficulty` records how far the chart missed the target. The published Python R2 (`r2-1.0`) arranged
+/// the song a second time when the first arrangement missed by more than the fit's seed spread, so its chart differs
+/// from this one wherever it did.
 pub fn generate(models: Arc<Models>, audio: Audio, request: Request, options: Options) -> Generator {
     let io = Io::default();
     let future = run(io.clone(), models, audio, request, options);
     Generator::new(io, future)
+}
+
+/// Starts the stages that read only the audio: PCM preparation, the spectrogram, BeatThis, the Log-Mel features
+/// and the beat grid. Reads `options.clock` and the `Listener` trace only.
+pub fn prepare(models: Arc<Models>, audio: Audio, mut options: Options) -> Generator<Prepared> {
+    let io = Io::default();
+    let stages = io.clone();
+    Generator::new(io, async move {
+        validate_audio(&audio)?;
+        let clock = options.clock.clone();
+        Ok::<_, String>(prepare_stages(&stages, &models, audio, &mut options.trace, &*clock).await?.0)
+    })
+}
+
+/// Starts a generation from what [`prepare`] kept, for any request and seed, committed as `options.commit` asks.
+/// Its receipt times only the stages it runs.
+pub fn generate_prepared(models: Arc<Models>, prepared: Arc<Prepared>, request: Request, options: Options) -> Generator {
+    let io = Io::default();
+    let stages = io.clone();
+    Generator::new(io, async move {
+        validate_request(&request, prepared.song_ms)?;
+        let start = (options.clock)();
+        chart_stages(stages, models, prepared, request, options, Vec::new(), start).await
+    })
 }
 
 fn seconds_since(clock: &dyn Fn() -> f64, start: f64) -> f64 {
@@ -236,14 +293,18 @@ where
 }
 
 async fn run(io: Io, models: Arc<Models>, audio: Audio, request: Request, mut options: Options) -> Result<GenerationResult, String> {
-    validate(&audio, &request)?;
+    let duration = validate_audio(&audio)?;
+    validate_request(&request, duration)?;
     let clock = options.clock.clone();
     let all_start = clock();
+    let (prepared, seconds) = prepare_stages(&io, &models, audio, &mut options.trace, &*clock).await?;
+    chart_stages(io, models, Arc::new(prepared), request, options, seconds, all_start).await
+}
+
+/// The audio stages, and the seconds each took.
+async fn prepare_stages(io: &Io, models: &Models, audio: Audio, trace: &mut Option<TraceFn>, clock: &dyn Fn() -> f64) -> Result<(Prepared, Vec<(&'static str, f64)>), String> {
     let rate = audio.sample_rate;
     let song_ms = 1000.0 * sample_count(&audio) as f64 / audio.channels as f64 / rate;
-    let seed32 = (request.seed & 0xffff_ffff) as u32;
-    let r2_seed32 = (request.seed.wrapping_add(954) & 0xffff_ffff) as u32;
-    let mut random: Box<dyn RandomSource> = options.random.take().unwrap_or_else(|| Box::new(SeededRandom::new(seed32)));
     let mut seconds: Vec<(&str, f64)> = Vec::new();
     io.progress(Phase::Loading).await;
     let mut start = clock();
@@ -264,42 +325,52 @@ async fn run(io: Io, models: Arc<Models>, audio: Audio, request: Request, mut op
             }
         },
     };
-    seconds.push(("pcm", seconds_since(&*clock, start)));
+    seconds.push(("pcm", seconds_since(clock, start)));
     io.progress(Phase::Timing).await;
     start = clock();
     let spect = spectrogram(beat_pcm, models.f32s(&models.beatthis_window)?, &models.f32s(&models.beatthis_filter)?, true);
-    seconds.push(("spectrogram", seconds_since(&*clock, start)));
+    seconds.push(("spectrogram", seconds_since(clock, start)));
     start = clock();
     // The Log-Mel spectrogram needs nothing from BeatThis, so a caller that runs graphs asynchronously
     // computes it while BeatThis runs (`Generator::work`); otherwise it is computed after.
     let log_mel = Rc::new(RefCell::new(Spectrogram::new(rows_pcm, models.f32s(&models.rows_window)?, &models.f32s(&models.rows_filter)?, false)));
     let slices = log_mel.clone();
     io.background(move || slices.borrow_mut().advance(64));
-    let acts = beat_activations(&io, &spect).await?;
+    let acts = beat_activations(io, &spect).await?;
     io.end_background();
-    seconds.push(("beatthis", seconds_since(&*clock, start)));
+    seconds.push(("beatthis", seconds_since(clock, start)));
     start = clock();
     // `end_background` dropped the other reference, which the background work held.
     let log_mel = Rc::try_unwrap(log_mel).ok().expect("the background work has ended").into_inner().finish();
     let feats = features(&log_mel, &acts.beat_probability, &acts.downbeat_probability);
-    seconds.push(("mel", seconds_since(&*clock, start)));
+    seconds.push(("mel", seconds_since(clock, start)));
     start = clock();
     let segments = fit_grid(&acts.beat, &acts.downbeat, &log_mel, song_ms, &models.fitter);
     let corrected = corrected_grid(&segments, song_ms);
-    let grid = Rc::new(Grid::new(&corrected));
-    seconds.push(("grid", seconds_since(&*clock, start)));
-    if let Some(t) = options.trace.as_mut() {
+    let grid = Grid::new(&corrected);
+    seconds.push(("grid", seconds_since(clock, start)));
+    if let Some(t) = trace.as_mut() {
         t(Trace::Listener { spectrogram: &spect, log_mel: &log_mel, beat_logits: &acts.beat, downbeat_logits: &acts.downbeat, segments: &segments, grid: &grid, song_ms })?;
     }
-    // From here on only the row features are read.
-    drop((spect, log_mel));
+    Ok((Prepared { features: feats, segments: corrected, song_ms }, seconds))
+}
+
+/// The stages that read the request: rows, prior, arrangement and export. `seconds` holds the audio stages' timings
+/// when they ran in the same generation, which started at `all_start`.
+async fn chart_stages(io: Io, models: Arc<Models>, prepared: Arc<Prepared>, request: Request, mut options: Options, mut seconds: Vec<(&'static str, f64)>, all_start: f64) -> Result<GenerationResult, String> {
+    let clock = options.clock.clone();
+    let song_ms = prepared.song_ms;
+    let corrected = &prepared.segments;
+    let grid = Rc::new(Grid::new(corrected));
+    let seed32 = (request.seed & 0xffff_ffff) as u32;
+    let r2_seed32 = (request.seed.wrapping_add(954) & 0xffff_ffff) as u32;
+    let mut random: Box<dyn RandomSource> = options.random.take().unwrap_or_else(|| Box::new(SeededRandom::new(seed32)));
     io.progress(Phase::Rows).await;
     random.reset(seed32);
-    start = clock();
+    let mut start = clock();
     let sections = &request.controls.sections;
     let star_sections: Vec<RowsSection> = sections.iter().filter_map(|s| s.star.map(|star| RowsSection { start_ms: s.start_ms, end_ms: s.end_ms, star })).collect();
-    let rows = decode_rows(&io, &models, &feats, &grid, song_ms, request.star, &mut *random, &star_sections).await?;
-    drop(feats);
+    let rows = decode_rows(&io, &models, &prepared.features, &grid, song_ms, request.star, &mut *random, &star_sections).await?;
     seconds.push(("rows", seconds_since(&*clock, start)));
     if rows.head_ms.len() < 2 {
         return Err("generation_failed: the rows model placed fewer than two heads".to_string());
@@ -349,43 +420,26 @@ async fn run(io: Io, models: Arc<Models>, audio: Audio, request: Request, mut op
     let domain = &models.calibration.difficulty_fit.domain;
     let (lo, hi) = (domain[0], f64::min(domain[1], 1.2));
     let raw = libm::exp((libm::log(target_r) - alpha - gamma * libm::log(base_r)) / beta);
-    let mut multiplier = clip(raw, lo, hi);
-    let mut passes: Vec<Value> = Vec::new();
-    let mut result: Option<Arrangement> = None;
-    for attempt in 0..2 {
-        let pass_start = clock();
-        random.reset(r2_seed32);
-        let pass = attempt + 1;
-        let arrangement = arrange(Arrange {
-            io: &io,
-            models: &models,
-            head_ms: &rows.head_ms,
-            song_ms,
-            grid: grid.clone(),
-            random: &mut *random,
-            target: kappa_targets(&prediction, ln_fraction, multiplier),
-            ln_fraction,
-            requests: &requests,
-            masks: masks.clone(),
-            prefix: format!("r2_pass_{pass}"),
-            trace: &mut options.trace,
-        })
-        .await?;
-        passes.push(json!({"multiplier": number(multiplier), "achieved": number(arrangement.r), "fallback_count": arrangement.fallback_count, "wall_seconds": number(seconds_since(&*clock, pass_start))}));
-        let achieved = arrangement.r;
-        result = Some(arrangement);
-        if attempt > 0 || (achieved - target_r).abs() <= seed_sd {
-            break;
-        }
-        let corrected_multiplier = clip(multiplier * libm::exp((libm::log(target_r) - libm::log(achieved)) / beta), lo, hi);
-        if corrected_multiplier == multiplier {
-            break;
-        }
-        multiplier = corrected_multiplier;
-    }
-    // The loop ran at least once.
-    let result = result.unwrap();
-    seconds.push(("arrangement", seconds_since(&*clock, start)));
+    let multiplier = clip(raw, lo, hi);
+    random.reset(r2_seed32);
+    let result = arrange(Arrange {
+        io: &io,
+        models: &models,
+        head_ms: &rows.head_ms,
+        song_ms,
+        grid,
+        random: &mut *random,
+        target: kappa_targets(&prediction, ln_fraction, multiplier),
+        ln_fraction,
+        requests: &requests,
+        masks,
+        prefix: "r2_pass_1".to_string(),
+        trace: &mut options.trace,
+        commit: options.commit == Commit::HeadRow,
+    })
+    .await?;
+    let arrangement_seconds = seconds_since(&*clock, start);
+    seconds.push(("arrangement", arrangement_seconds));
     io.progress(Phase::Export).await;
     start = clock();
     let chart = chart_from_decisions(&rows.head_ms, song_ms, &result.chart.actions, &result.chart.gap);
@@ -397,7 +451,7 @@ async fn run(io: Io, models: Arc<Models>, audio: Audio, request: Request, mut op
     let name = audio_filename(&options.audio_name.clone().or_else(|| audio_ref("local_path")).or_else(|| audio_ref("uri")).unwrap_or_else(|| "audio.wav".to_string()));
     let bookmarks: Vec<f64> = requests.iter().flat_map(|r| [crate::controls::get(r, "a_ms"), crate::controls::get(r, "b_ms")]).collect();
     let seed_text = request.seed.to_string();
-    let osu = osu_text(&chart, &corrected, &OsuOptions { title: &title, artist: &artist, setting: &setting, seed: seed_text.clone(), audio_name: &name, bookmarks: &bookmarks, random_algorithm: random.algorithm() });
+    let osu = osu_text(&chart, corrected, &OsuOptions { title: &title, artist: &artist, setting: &setting, seed: seed_text.clone(), audio_name: &name, bookmarks: &bookmarks, random_algorithm: random.algorithm() });
     let k_rows = rows.head_ms.len();
     let held_sum: i32 = result.chart.held[..k_rows].iter().flatten().sum();
     let heads_sum: i32 = result.chart.attack[..k_rows].iter().flatten().sum();
@@ -442,7 +496,7 @@ async fn run(io: Io, models: Arc<Models>, audio: Audio, request: Request, mut op
     difficulty.insert("achieved_r".into(), number(result.r));
     difficulty.insert("error".into(), number(result.r - target_r));
     difficulty.insert("within_seed_sd".into(), json!((result.r - target_r).abs() <= seed_sd));
-    difficulty.insert("passes".into(), Value::Array(passes));
+    difficulty.insert("passes".into(), json!([{"multiplier": number(multiplier), "achieved": number(result.r), "fallback_count": result.fallback_count, "wall_seconds": number(arrangement_seconds)}]));
     difficulty.insert("tested_band_q".into(), json!([0.1, 0.75]));
     difficulty.insert("above_tested_band".into(), json!(default_q > 0.75));
     difficulty.insert("default".into(), json!(true));

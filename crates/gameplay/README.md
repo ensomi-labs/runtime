@@ -110,7 +110,8 @@ until the delivered objects settle it: its time must be covered, a press in a la
 the coverage `g` past it (a note could still arrive in reach), and the release of a hold whose end has not
 arrived needs the coverage `1.5 g` past it (only then is the release known to be early) or the end. Inputs keep
 their order; one that waits holds back those after it. Events come out of `input`, `advance` or `append`,
-whichever call settles them, each with the time it was decided at as for a complete chart.
+whichever call settles them, each with the time it was decided at as for a complete chart. The widest of these
+waits, `1.5 g`, is `Ruleset::settle_lead_ms()`, the least lead a scheduler keeps the chart ahead of play.
 
 So for given objects, inputs and advances, the events and score are those of the complete chart, whatever the
 page schedule and advance cadence (the property test checks this for both forms).

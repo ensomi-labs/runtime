@@ -40,6 +40,88 @@ final class GeneratorTests: XCTestCase {
         }
     }
 
+    /// The audio stages kept and stored, the whole chart from them, and play while generating: the scheduler puts the
+    /// chart into a session page by page and is ready at 0 before the chart is done.
+    func testTheSchedulerGeneratesFromStoredAudioStagesAndForPlay() async throws {
+        let paths = try Paths()
+        let song = "hesitation-snow"
+        let fixture = try JSONSerialization.jsonObject(
+            with: Data(contentsOf: paths.charts.appendingPathComponent("\(song).json"))
+        ) as! [String: Any]
+        let expected = try String(contentsOf: paths.charts.appendingPathComponent("\(song).osu"), encoding: .utf8)
+        let recorded = fixture["request"] as! [String: Any]
+        let request = GenerateChartRequest(
+            star: (recorded["star"] as! NSNumber).doubleValue,
+            seed: (fixture["seed"] as! NSNumber).uint64Value,
+            title: recorded["title"] as? String,
+            artist: recorded["artist"] as? String
+        )
+        let (pcm, sampleRate) = try recordedPCM(paths.recordings.appendingPathComponent(song))
+        let generator = try paths.open(.cpu)
+        let lead = LeadPolicy(ruleset: Ruleset(judge: .c), renderLeadMs: 11_485 / 25, marginMs: 0)
+
+        let bytes = try await generator.prepare(pcm: pcm, sampleRate: sampleRate).bytes()
+        XCTAssertThrowsError(try Prepared(bytes: bytes.prefix(64)))
+        let whole = try ChartScheduler.fromPrepared(
+            generator: generator, prepared: Prepared(bytes: bytes), request: request, mode: .wholeChart, lead: lead
+        )
+        whole.start(atMs: 0, session: GameplaySession.streaming(ruleset: Ruleset(judge: .c)))
+        let wholeReady = try await whole.work()
+        XCTAssertEqual(wholeReady, .ready(joinMs: 0))
+        let wholeDone = try await whole.work()
+        XCTAssertEqual(wholeDone, .done)
+        let wholeResult = try XCTUnwrap(whole.result())
+        XCTAssertNil(firstDifference(wholeResult.osu, expected), "the whole chart from the stored audio stages differs from the native chart")
+
+        let streamed = try ChartScheduler.fromPcm(
+            generator: generator, pcm: pcm, sampleRate: sampleRate, request: request, mode: .aheadOfPlay, lead: lead
+        )
+        let session = GameplaySession.streaming(ruleset: Ruleset(judge: .c))
+        streamed.start(atMs: 0, session: session)
+        let ready = try await streamed.work()
+        XCTAssertEqual(ready, .ready(joinMs: 0))
+        XCTAssertLessThan(session.coverageMs(), Double(wholeResult.chart.durationMs))
+        let done = try await streamed.work()
+        XCTAssertEqual(done, .done)
+        let result = try XCTUnwrap(streamed.result())
+        XCTAssertEqual(session.coverageMs(), .infinity)
+        XCTAssertEqual(session.visibleObjects(lowerMs: -.infinity, upperMs: .infinity).count, result.chart.objects.count)
+        XCTAssertEqual(streamed.prepared()?.bytes(), bytes)
+        // One arrangement in either mode: the streamed chart is the whole one.
+        let receipt = try JSONSerialization.jsonObject(with: Data(result.receipt.receiptJson.utf8)) as! [String: Any]
+        let difficulty = (receipt["controls"] as! [String: Any])["difficulty"] as! [String: Any]
+        XCTAssertEqual((difficulty["passes"] as! [Any]).count, 1)
+        XCTAssertEqual(result.osu, wholeResult.osu)
+    }
+
+    /// A request before the first committed page replaces the scheduler's, and the chart is the one a fresh generation
+    /// with it makes; once pages are committed, R2 refuses one and the chart goes on unchanged.
+    func testARequestChangesTheChartOnlyBeforeTheFirstCommittedPage() async throws {
+        let generator = try Paths().open(.cpu)
+        let pcm = noise(seconds: 30)
+        let changed = GenerateChartRequest(star: 4.5)
+        let scheduler = try ChartScheduler.fromPcm(
+            generator: generator, pcm: pcm, sampleRate: 22_050, request: GenerateChartRequest(star: 3), mode: .aheadOfPlay,
+            lead: LeadPolicy(ruleset: Ruleset(judge: .c), renderLeadMs: 500, marginMs: 0)
+        )
+        func assertRefused(_ request: GenerateChartRequest) {
+            XCTAssertThrowsError(try scheduler.request(request: request)) { error in
+                guard case .Generation(let code, _) = error as? GeneratorError else { return XCTFail("\(error)") }
+                XCTAssertEqual(code, "unsupported_control")
+            }
+        }
+        assertRefused(GenerateChartRequest(star: 4.5, seed: 1))
+        try scheduler.request(request: changed)
+        scheduler.start(atMs: 0, session: GameplaySession.streaming(ruleset: Ruleset(judge: .c)))
+        let ready = try await scheduler.work()
+        XCTAssertEqual(ready, .ready(joinMs: 0))
+        assertRefused(GenerateChartRequest(star: 3))
+        let done = try await scheduler.work()
+        XCTAssertEqual(done, .done)
+        let fresh = try await generator.generate(pcm: pcm, sampleRate: 22_050, request: changed)
+        XCTAssertEqual(scheduler.result()?.osu, fresh.osu)
+    }
+
     func testModelFilesAreTheGraphsAndArraysTheConfigNames() throws {
         let paths = try Paths()
         let files = try modelFiles(runtimeConfig: String(contentsOf: paths.model.appendingPathComponent("runtime.json"), encoding: .utf8))

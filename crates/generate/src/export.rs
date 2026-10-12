@@ -15,6 +15,71 @@ pub struct Chart {
     pub objects: Vec<ChartObject>,
 }
 
+/// What a page of a streamed chart carries: a tap, or a hold as its start and, possibly in a later page, its end.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TokenKind {
+    Tap,
+    HoldStart,
+    HoldEnd,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Token {
+    pub lane: usize,
+    pub time_ms: f64,
+    pub kind: TokenKind,
+}
+
+/// Part of a chart that will not change, for `Session::append_tokens` of the gameplay crate: tokens in time order, a
+/// hold's end before a start at the same time, then by lane, each after the coverage of the previous page.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Page {
+    pub tokens: Vec<Token>,
+    /// Every token at or before this time has been delivered.
+    pub coverage_ms: f64,
+    /// Every token has been delivered.
+    pub end_of_stream: bool,
+}
+
+/// The release of a hold that row `k` closes with `code`: on the row (1), or at the gap release `gap`, rounded and
+/// kept inside the gap before the row.
+fn hold_end(head_ms: &[f64], song_ms: f64, k: usize, code: i32, gap: f64) -> f64 {
+    let time = if k < head_ms.len() { head_ms[k] } else { song_ms };
+    let upper = (if k < head_ms.len() { head_ms[k] } else { song_ms.ceil() }) - 1.0;
+    if code == 1 { time } else { clip(round(gap), head_ms[k - 1] + 1.0, upper) }
+}
+
+/// What row `k` adds to the chart, given the lanes held on entry to it: the ends of the holds it closes, which lie in
+/// the gap before the row or on it, then its taps and hold starts. The tokens of every row, in order, are those of
+/// [`chart_tokens`] for [`chart_from_decisions`].
+pub fn row_tokens(head_ms: &[f64], song_ms: f64, k: usize, codes: [i32; 4], gap: [f64; 4], held: [i32; 4]) -> Vec<Token> {
+    let time = if k < head_ms.len() { head_ms[k] } else { song_ms };
+    let mut tokens: Vec<Token> = (0..4).filter(|&lane| held[lane] != 0 && codes[lane] != 0).map(|lane| Token { lane, time_ms: hold_end(head_ms, song_ms, k, codes[lane], gap[lane]), kind: TokenKind::HoldEnd }).collect();
+    tokens.sort_by(|a, b| a.time_ms.total_cmp(&b.time_ms).then(a.lane.cmp(&b.lane)));
+    for lane in 0..4 {
+        let (code, was_held) = (codes[lane], held[lane] != 0);
+        let tap = if was_held { code == 3 } else { code == 1 };
+        let hold = if was_held { code == 4 } else { code == 2 };
+        if tap || hold {
+            tokens.push(Token { lane, time_ms: time, kind: if hold { TokenKind::HoldStart } else { TokenKind::Tap } });
+        }
+    }
+    tokens
+}
+
+/// A chart as tokens, in a page's order.
+pub fn chart_tokens(chart: &Chart) -> Vec<Token> {
+    let mut tokens = Vec::new();
+    for o in &chart.objects {
+        tokens.push(Token { lane: o.lane, time_ms: o.start_ms, kind: if o.end_ms.is_some() { TokenKind::HoldStart } else { TokenKind::Tap } });
+        if let Some(end) = o.end_ms {
+            tokens.push(Token { lane: o.lane, time_ms: end, kind: TokenKind::HoldEnd });
+        }
+    }
+    tokens.sort_by(|a, b| a.time_ms.total_cmp(&b.time_ms).then((a.kind != TokenKind::HoldEnd).cmp(&(b.kind != TokenKind::HoldEnd))).then(a.lane.cmp(&b.lane)));
+    tokens
+}
+
 pub fn chart_from_decisions(head_ms: &[f64], song_ms: f64, actions: &[[i32; 4]], gap: &[[f64; 4]]) -> Chart {
     let mut objects: Vec<ChartObject> = Vec::new();
     let mut open: [Option<usize>; 4] = [None; 4];
@@ -26,9 +91,7 @@ pub fn chart_from_decisions(head_ms: &[f64], song_ms: f64, actions: &[[i32; 4]],
             if let Some(hold) = open[lane]
                 && code != 0
             {
-                let upper = (if k < head_ms.len() { head_ms[k] } else { song_ms.ceil() }) - 1.0;
-                let end = if code == 1 { time } else { clip(round(gap[k][lane]), head_ms[k - 1] + 1.0, upper) };
-                objects[hold].end_ms = Some(end);
+                objects[hold].end_ms = Some(hold_end(head_ms, song_ms, k, code, gap[k][lane]));
                 open[lane] = None;
             }
             let tap = if was_held { code == 3 } else { code == 1 };

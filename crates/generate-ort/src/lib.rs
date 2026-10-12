@@ -1,5 +1,5 @@
 //! Runs the Ensomi chart generator's graphs with ONNX Runtime and drives its state machine.
-use ensomi_generate::{Data, GenerationResult, Generator, Models, Phase, Step, Tensor, Tensors};
+use ensomi_generate::{Data, Generator, Models, Phase, Step, Tensor, Tensors};
 use ort::session::Session;
 use ort::tensor::TensorElementType;
 use ort::value::{DynValue, Tensor as OrtTensor};
@@ -114,14 +114,15 @@ pub struct Timings {
     pub graphs: BTreeMap<String, (u32, f64)>,
 }
 
-/// Runs the generator to the end with `sessions`, timing the core and the graph runs.
-pub fn drive(generator: &mut Generator, sessions: &mut Sessions) -> Result<(GenerationResult, Timings), String> {
+/// Runs the generator to the end with `sessions`, timing the core and the graph runs. Committed pages are
+/// left out; the result holds the whole chart.
+pub fn drive<T>(generator: &mut Generator<T>, sessions: &mut Sessions) -> Result<(T, Timings), String> {
     drive_observed(generator, sessions, |_| Ok(()))
 }
 
 /// [`drive`], calling `observe` with each phase the generator enters and with `None` before each graph
 /// run. An error from `observe` stops the generation with that error.
-pub fn drive_observed(generator: &mut Generator, sessions: &mut Sessions, mut observe: impl FnMut(Option<Phase>) -> Result<(), String>) -> Result<(GenerationResult, Timings), String> {
+pub fn drive_observed<T>(generator: &mut Generator<T>, sessions: &mut Sessions, mut observe: impl FnMut(Option<Phase>) -> Result<(), String>) -> Result<(T, Timings), String> {
     let mut timings = Timings::default();
     let mut phase = 0usize;
     let mut outputs: Option<Tensors> = None;
@@ -144,6 +145,7 @@ pub fn drive_observed(generator: &mut Generator, sessions: &mut Sessions, mut ob
                 observe(Some(p))?;
                 phase = p as usize;
             }
+            Step::Commit(_) => {}
             Step::Done(result) => return Ok((*result, timings)),
         }
     }

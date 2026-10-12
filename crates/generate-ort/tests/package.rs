@@ -1,4 +1,4 @@
-use ensomi_generate::Models;
+use ensomi_generate::{Models, RUNTIME_VERSION};
 use ensomi_generate_ort::package::read_manifest;
 use serde_json::{json, Value};
 use std::path::PathBuf;
@@ -46,10 +46,13 @@ fn accepts_proto_field_names() {
 
 #[test]
 fn refuses_a_package_for_a_later_runtime() {
-    let error = read_manifest(&package("later", manifest("0.2.0", json!("3")))).err().unwrap();
-    assert!(error.contains("needs runtime 0.2.0"), "{error}");
+    let major: u64 = RUNTIME_VERSION.split('.').next().unwrap().parse().unwrap();
+    let later = format!("{}.0.0", major + 1);
+    let error = read_manifest(&package("later", manifest(&later, json!("3")))).err().unwrap();
+    assert!(error.contains(&format!("needs runtime {later}")), "{error}");
+    // The maximum is exclusive.
     let mut capped = manifest("0.0.1", json!("3"));
-    capped["runtimeVersions"]["maxVersionExclusive"] = json!("0.1.0");
+    capped["runtimeVersions"]["maxVersionExclusive"] = json!(RUNTIME_VERSION);
     assert!(read_manifest(&package("capped", capped)).is_err());
 }
 

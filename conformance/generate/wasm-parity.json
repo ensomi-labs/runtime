@@ -8,6 +8,7 @@
   },
   "timing_tolerance_ms": 0.000001,
   "scope": "recorded graph inputs, PCM frontends, full Wasm decode with carried state and replayed random draws, exact exports, own PRNG",
+  "commit": "the whole chart at the end",
   "songs": {
     "hesitation-snow": {
       "stage1": {
@@ -15,7 +16,7 @@
         "networks": {
           "beatthis": {
             "calls": 6,
-            "seconds": 20.241007831999998,
+            "seconds": 17.975974959,
             "max_abs": 0.00007724761962890625,
             "outputs": {
               "beat_logits": {
@@ -44,7 +45,7 @@
           },
           "rows_encoder": {
             "calls": 1,
-            "seconds": 0.08903316700000141,
+            "seconds": 0.07631208299999707,
             "max_abs": 0.00002765655517578125,
             "outputs": {
               "pos": {
@@ -95,7 +96,7 @@
           },
           "rows_step": {
             "calls": 374,
-            "seconds": 0.06089979100000348,
+            "seconds": 0.05231079600004159,
             "max_abs": 0.00002288818359375,
             "outputs": {
               "hidden_out": {
@@ -179,7 +180,7 @@
           },
           "r2_predict": {
             "calls": 898,
-            "seconds": 0.05090120799998849,
+            "seconds": 0.048258937000067836,
             "max_abs": 0.00001239776611328125,
             "outputs": {
               "hands": {
@@ -208,7 +209,7 @@
           },
           "r2_commit": {
             "calls": 897,
-            "seconds": 1.2517965470000287,
+            "seconds": 1.0126649960000504,
             "max_abs": 0.00000667572021484375,
             "outputs": {
               "next_last": {
@@ -325,7 +326,7 @@
           },
           "r2_release": {
             "calls": 2,
-            "seconds": 0.0012575010000000475,
+            "seconds": 0.0009889580000017305,
             "max_abs": 0.000011444091796875,
             "outputs": {
               "release_scores": {
@@ -369,21 +370,22 @@
             "multiplier": 1.0115911606943524,
             "achieved": 1.3455830579580628,
             "fallback_count": 0,
-            "wall_seconds": 1.485309208999999
+            "wall_seconds": 1.2042339159999975
           }
-        ]
+        ],
+        "release_passes": 1
       },
       "replay_seconds": {
-        "pcm": 3.373566999999999,
-        "spectrogram": 0.3975335419999974,
-        "beatthis": 20.765133958000003,
-        "mel": 0.43318516600000295,
-        "grid": 0.22623162500000035,
-        "rows": 0.19500104199999624,
-        "prior": 0.000573792000002868,
-        "arrangement": 1.4855081250000004,
-        "export": 0.0019124580000061543,
-        "total": 26.927997709000003
+        "pcm": 0.8394236669999992,
+        "spectrogram": 0.19275887499999952,
+        "beatthis": 17.604458166999997,
+        "mel": 0.37846050000000103,
+        "grid": 0.19823591699999815,
+        "rows": 0.15830537499999628,
+        "prior": 0.000456333000001905,
+        "arrangement": 1.2042339159999975,
+        "export": 0.0015496250000069268,
+        "total": 20.579087166
       },
       "phases": [
         1,
@@ -401,7 +403,7 @@
         "rest_identical": true,
         "osu_identical_except_generator": true,
         "first_text_difference": null,
-        "osz_bytes": 5897
+        "osz_bytes": 5885
       },
       "prng": {
         "passed": true,
@@ -411,18 +413,18 @@
         "heads": 767,
         "fallbacks": 0,
         "seconds": {
-          "pcm": 1.422107708000003,
-          "spectrogram": 0.1432607910000006,
-          "beatthis": 20.645511917000004,
-          "mel": 0.4196561250000086,
-          "grid": 0.21159908300000824,
-          "rows": 0.19009237500000745,
-          "prior": 0.00021970800000417512,
-          "arrangement": 1.2058992080000026,
-          "export": 0.0008528330000117421,
-          "total": 24.25336675
+          "pcm": 0.29189266700000005,
+          "spectrogram": 0.13935958399999798,
+          "beatthis": 17.531459958,
+          "mel": 0.3663605420000022,
+          "grid": 0.17659941600000456,
+          "rows": 0.1535199169999978,
+          "prior": 0.00017095800000242888,
+          "arrangement": 1.0056515839999993,
+          "export": 0.0007345829999976559,
+          "total": 19.66661975
         },
-        "wall_seconds": 24.264375541
+        "wall_seconds": 19.676037166999993
       }
     },
     "saigetsu": {
@@ -431,7 +433,7 @@
         "networks": {
           "beatthis": {
             "calls": 5,
-            "seconds": 17.062305085000013,
+            "seconds": 14.593334875999972,
             "max_abs": 0.00011157989501953125,
             "outputs": {
               "beat_logits": {
@@ -460,7 +462,7 @@
           },
           "rows_encoder": {
             "calls": 1,
-            "seconds": 0.06039366599998903,
+            "seconds": 0.04966433400000096,
             "max_abs": 0.000018477439880371094,
             "outputs": {
               "pos": {
@@ -511,7 +513,7 @@
           },
           "rows_step": {
             "calls": 228,
-            "seconds": 0.03181034299974273,
+            "seconds": 0.026104498000087902,
             "max_abs": 0.000019073486328125,
             "outputs": {
               "hidden_out": {
@@ -595,7 +597,7 @@
           },
           "r2_predict": {
             "calls": 1572,
-            "seconds": 0.08229676000017219,
+            "seconds": 0.07421104600022964,
             "max_abs": 0.00001239776611328125,
             "outputs": {
               "hands": {
@@ -624,7 +626,7 @@
           },
           "r2_commit": {
             "calls": 1570,
-            "seconds": 2.1580191700000286,
+            "seconds": 1.7271388910001262,
             "max_abs": 0.000007152557373046875,
             "outputs": {
               "next_last": {
@@ -741,7 +743,7 @@
           },
           "r2_release": {
             "calls": 8,
-            "seconds": 0.0020377499999885912,
+            "seconds": 0.001697165999983554,
             "max_abs": 0.0000133514404296875,
             "outputs": {
               "release_scores": {
@@ -778,34 +780,29 @@
       "stage4": {
         "passed": true,
         "prior_max_error": 0,
-        "draws_consumed": 3380,
+        "draws_consumed": 1805,
         "draws_recorded": 3380,
         "passes": [
           {
             "multiplier": 0.9365579816442061,
             "achieved": 1.4391102764195374,
             "fallback_count": 0,
-            "wall_seconds": 1.8038068340000026
-          },
-          {
-            "multiplier": 0.9773466733743711,
-            "achieved": 1.5459112333555236,
-            "fallback_count": 0,
-            "wall_seconds": 1.5341558749999968
+            "wall_seconds": 1.0081845830000093
           }
-        ]
+        ],
+        "release_passes": 2
       },
       "replay_seconds": {
-        "pcm": 1.015831833999997,
-        "spectrogram": 0.1157208329999994,
-        "beatthis": 18.170786083,
-        "mel": 0.4372752079999918,
-        "grid": 0.12254249999999592,
-        "rows": 0.1706486670000013,
-        "prior": 0.00027474999999685677,
-        "arrangement": 3.338044416999997,
-        "export": 0.0009202499999955762,
-        "total": 23.380607124999994
+        "pcm": 0.18950987500000338,
+        "spectrogram": 0.11252537499999744,
+        "beatthis": 14.605796791000001,
+        "mel": 0.29999645800000874,
+        "grid": 0.0771172499999957,
+        "rows": 0.10012458299999707,
+        "prior": 0.00015491699999256524,
+        "arrangement": 1.0081845830000093,
+        "export": 0.0005349580000038259,
+        "total": 16.394115583999998
       },
       "phases": [
         1,
@@ -816,35 +813,30 @@
       ],
       "stage5": {
         "passed": true,
-        "hitobjects_identical": true,
-        "objects": 1215,
-        "timing_points": 1,
-        "timing_max_abs_ms": 0,
-        "rest_identical": true,
-        "osu_identical_except_generator": true,
-        "first_text_difference": null,
-        "osz_bytes": 6228
+        "compared": "with the chart of the recorded pass-1 decisions",
+        "objects": 1131,
+        "same_as_release": false
       },
       "prng": {
         "passed": true,
         "algorithm": "mulberry32-u53-v1",
         "seed": 0,
-        "objects": 1295,
+        "objects": 1131,
         "heads": 805,
         "fallbacks": 0,
         "seconds": {
-          "pcm": 1.428476375000013,
-          "spectrogram": 0.15999354199999652,
-          "beatthis": 32.659641957999995,
-          "mel": 0.34539716699998824,
-          "grid": 0.09040100000001257,
-          "rows": 0.13103299999999582,
-          "prior": 0.0001708329999819398,
-          "arrangement": 2.6837617500000053,
-          "export": 0.0007467920000199229,
-          "total": 37.510887000000004
+          "pcm": 0.20095245799999975,
+          "spectrogram": 0.11140991699999722,
+          "beatthis": 14.932671541999996,
+          "mel": 0.2940394579999993,
+          "grid": 0.07863966700001038,
+          "rows": 0.10895245899999281,
+          "prior": 0.00012937500000407453,
+          "arrangement": 1.0528097500000004,
+          "export": 0.0005654169999907026,
+          "total": 16.780262875000002
         },
-        "wall_seconds": 37.52091608299999
+        "wall_seconds": 16.78714300000001
       }
     },
     "catch-the-moment": {
@@ -853,7 +845,7 @@
         "networks": {
           "beatthis": {
             "calls": 5,
-            "seconds": 22.45101775,
+            "seconds": 14.467905374000038,
             "max_abs": 0.00010585784912109375,
             "outputs": {
               "beat_logits": {
@@ -882,7 +874,7 @@
           },
           "rows_encoder": {
             "calls": 1,
-            "seconds": 0.07647329199998057,
+            "seconds": 0.04493229199999769,
             "max_abs": 0.00001811981201171875,
             "outputs": {
               "pos": {
@@ -933,7 +925,7 @@
           },
           "rows_step": {
             "calls": 200,
-            "seconds": 0.0361583719998598,
+            "seconds": 0.022740719000095853,
             "max_abs": 0.0000152587890625,
             "outputs": {
               "hidden_out": {
@@ -1017,7 +1009,7 @@
           },
           "r2_predict": {
             "calls": 1548,
-            "seconds": 0.11595087499954383,
+            "seconds": 0.07185442399991739,
             "max_abs": 0.0000133514404296875,
             "outputs": {
               "hands": {
@@ -1046,7 +1038,7 @@
           },
           "r2_commit": {
             "calls": 1546,
-            "seconds": 3.0027523380004864,
+            "seconds": 1.6997193999999576,
             "max_abs": 0.000006198883056640625,
             "outputs": {
               "next_last": {
@@ -1163,7 +1155,7 @@
           },
           "r2_release": {
             "calls": 35,
-            "seconds": 0.019764206999883762,
+            "seconds": 0.011451334999990652,
             "max_abs": 0.000091552734375,
             "outputs": {
               "release_scores": {
@@ -1210,34 +1202,29 @@
       "stage4": {
         "passed": true,
         "prior_max_error": 0,
-        "draws_consumed": 3331,
+        "draws_consumed": 1767,
         "draws_recorded": 3331,
         "passes": [
           {
             "multiplier": 0.9864209795304626,
             "achieved": 1.437874697048943,
             "fallback_count": 0,
-            "wall_seconds": 1.366262541999982
-          },
-          {
-            "multiplier": 1.0305045271308024,
-            "achieved": 1.5244714389179483,
-            "fallback_count": 0,
-            "wall_seconds": 1.3200395000000136
+            "wall_seconds": 1.0140478749999893
           }
-        ]
+        ],
+        "release_passes": 2
       },
       "replay_seconds": {
-        "pcm": 1.2722676250000078,
-        "spectrogram": 0.1316966249999823,
-        "beatthis": 24.110944749999994,
-        "mel": 0.5073979159999872,
-        "grid": 0.16555695800000103,
-        "rows": 0.13593158400000538,
-        "prior": 0.00021441700001014396,
-        "arrangement": 2.686375541000016,
-        "export": 0.0007378749999916181,
-        "total": 29.02259820800001
+        "pcm": 0.22967091700001038,
+        "spectrogram": 0.09902429100000881,
+        "beatthis": 14.539410042000004,
+        "mel": 0.26264962500002004,
+        "grid": 0.0992996249999851,
+        "rows": 0.08800404199998593,
+        "prior": 0.0001375420000113081,
+        "arrangement": 1.0140478749999893,
+        "export": 0.0005397079999966081,
+        "total": 16.333013042000005
       },
       "phases": [
         1,
@@ -1248,39 +1235,30 @@
       ],
       "stage5": {
         "passed": true,
-        "hitobjects_identical": true,
-        "objects": 1192,
-        "timing_points": 3,
-        "timing_max_abs_ms": 1.1690531209751498e-8,
-        "rest_identical": true,
-        "osu_identical_except_generator": false,
-        "first_text_difference": {
-          "line": 15,
-          "actual": "1659,631.3408705352041,4,2,0,100,1,0",
-          "reference": "1659,631.3408705468946,4,2,0,100,1,0"
-        },
-        "osz_bytes": 7181
+        "compared": "with the chart of the recorded pass-1 decisions",
+        "objects": 1126,
+        "same_as_release": false
       },
       "prng": {
         "passed": true,
         "algorithm": "mulberry32-u53-v1",
         "seed": 0,
-        "objects": 911,
+        "objects": 976,
         "heads": 631,
         "fallbacks": 0,
         "seconds": {
-          "pcm": 0.998999582999997,
-          "spectrogram": 0.11373016700000153,
-          "beatthis": 18.573553583000002,
-          "mel": 0.32558283299999313,
-          "grid": 0.12469337500000256,
-          "rows": 0.11542841600000975,
-          "prior": 0.00014083300001220778,
-          "arrangement": 2.082443082999991,
-          "export": 0.0005699999999778811,
-          "total": 22.34394879200001
+          "pcm": 0.18029454100001022,
+          "spectrogram": 0.10377212499998859,
+          "beatthis": 14.545533750000002,
+          "mel": 0.26776445799999055,
+          "grid": 0.10626175000000512,
+          "rows": 0.0951817920000176,
+          "prior": 0.0001052919999929145,
+          "arrangement": 0.8327944579999894,
+          "export": 0.0005236659999936819,
+          "total": 16.132408166999987
         },
-        "wall_seconds": 22.35722350000002
+        "wall_seconds": 16.138777207999986
       }
     },
     "adventure": {
@@ -1289,7 +1267,7 @@
         "networks": {
           "beatthis": {
             "calls": 7,
-            "seconds": 26.50473396000001,
+            "seconds": 20.371589875999987,
             "max_abs": 0.00011730194091796875,
             "outputs": {
               "beat_logits": {
@@ -1318,7 +1296,7 @@
           },
           "rows_encoder": {
             "calls": 1,
-            "seconds": 0.10599870900000678,
+            "seconds": 0.08294683299999452,
             "max_abs": 0.000022411346435546875,
             "outputs": {
               "pos": {
@@ -1369,7 +1347,7 @@
           },
           "rows_step": {
             "calls": 427,
-            "seconds": 0.059194122000481034,
+            "seconds": 0.04637366299994755,
             "max_abs": 0.0000152587890625,
             "outputs": {
               "hidden_out": {
@@ -1453,7 +1431,7 @@
           },
           "r2_predict": {
             "calls": 1704,
-            "seconds": 0.0899855039991671,
+            "seconds": 0.07772941799968258,
             "max_abs": 0.0000152587890625,
             "outputs": {
               "hands": {
@@ -1482,7 +1460,7 @@
           },
           "r2_commit": {
             "calls": 1703,
-            "seconds": 2.394848011999044,
+            "seconds": 1.8642829210005314,
             "max_abs": 0.0000069141387939453125,
             "outputs": {
               "next_last": {
@@ -1599,7 +1577,7 @@
           },
           "r2_release": {
             "calls": 15,
-            "seconds": 0.005039290999993682,
+            "seconds": 0.0037489160000113773,
             "max_abs": 0.00002288818359375,
             "outputs": {
               "release_scores": {
@@ -1643,21 +1621,22 @@
             "multiplier": 1.0227338165214293,
             "achieved": 1.502286623823186,
             "fallback_count": 0,
-            "wall_seconds": 2.7612272080000255
+            "wall_seconds": 2.2288942079999834
           }
-        ]
+        ],
+        "release_passes": 1
       },
       "replay_seconds": {
-        "pcm": 3.436333749999991,
-        "spectrogram": 0.17829674999997952,
-        "beatthis": 24.95466204200004,
-        "mel": 0.5152867499999702,
-        "grid": 0.27940416599996387,
-        "rows": 0.2112811669999501,
-        "prior": 0.00012350000004516916,
-        "arrangement": 2.761273958000005,
-        "export": 0.0012909160000272096,
-        "total": 32.372945917
+        "pcm": 0.7471039159999927,
+        "spectrogram": 0.1654751249999972,
+        "beatthis": 20.446567291000015,
+        "mel": 0.44355904200000806,
+        "grid": 0.23690087499999207,
+        "rows": 0.1706740840000275,
+        "prior": 0.00011225000000558794,
+        "arrangement": 2.2288942079999834,
+        "export": 0.0009896669999870937,
+        "total": 24.44060366600001
       },
       "phases": [
         1,
@@ -1675,31 +1654,31 @@
         "rest_identical": true,
         "osu_identical_except_generator": true,
         "first_text_difference": null,
-        "osz_bytes": 11246
+        "osz_bytes": 11244
       },
       "prng": {
         "passed": true,
         "algorithm": "mulberry32-u53-v1",
         "seed": 0,
-        "objects": 2210,
+        "objects": 2022,
         "heads": 1399,
-        "fallbacks": 0,
+        "fallbacks": 1,
         "seconds": {
-          "pcm": 3.4004542919999805,
-          "spectrogram": 0.172210374999966,
-          "beatthis": 24.337180249999975,
-          "mel": 0.5099157089999644,
-          "grid": 0.27411304199998265,
-          "rows": 0.21828383400000168,
-          "prior": 0.00012495800002943725,
-          "arrangement": 4.508139625000011,
-          "export": 0.001087208000011742,
-          "total": 33.452886750000005
+          "pcm": 0.7372415829999954,
+          "spectrogram": 0.16743966699999874,
+          "beatthis": 20.381048416999985,
+          "mel": 0.4445311670000083,
+          "grid": 0.22927941600000487,
+          "rows": 0.17893966700002784,
+          "prior": 0.00009208400000352413,
+          "arrangement": 1.877610000000015,
+          "export": 0.0008927919999987353,
+          "total": 24.01717616599999
         },
-        "wall_seconds": 33.476466457999955
+        "wall_seconds": 24.03738158299998
       }
     }
   },
   "passed": true,
-  "load_seconds": 0.5580112500000001
+  "load_seconds": 0.715461791
 }
