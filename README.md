@@ -32,9 +32,12 @@ Rules that keep the boundary:
 | Clients | Package | Built by |
 | --- | --- | --- |
 | macOS 14, iOS 17 | Swift package `EnsomiRuntime` ([`Package.swift`](Package.swift), [`swift/`](swift)); the xcframework is a release asset | `scripts/build-apple.sh` |
-| Web, Node | npm `@ensomi/runtime` ([`js/`](js)) | `scripts/wasm-build.sh` |
+| Web (Chrome 91, Firefox 89, Safari 16.4), Node | npm `@ensomi/runtime` ([`js/`](js)) | `scripts/wasm-build.sh` |
 
-Both carry the soxr tables in [`assets/resampler`](assets/resampler), with which the generator resamples PCM at
+The Wasm core is built with WebAssembly SIMD (`simd128`), which onnxruntime-web's own Wasm needs as well; the browser
+versions are the first with it.
+
+Both packages carry the soxr tables in [`assets/resampler`](assets/resampler), with which the generator resamples PCM at
 rates other than 22050 Hz. Releases: [`RELEASING.md`](RELEASING.md).
 
 The TypeScript runtime in `ensomi-web/packages/runtime` retires once the Wasm build of this

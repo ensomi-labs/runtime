@@ -111,8 +111,9 @@ These need data CI does not have. Run them in `~/ensomi/ensomi-runtime` on the c
 
 8. For a version other than the current one: on bings-mac set `version` under `[workspace.package]` in
    `Cargo.toml`, run `cargo update --workspace` (`Cargo.lock`) and `cd js && npm version X.Y.Z
-   --no-git-tag-version` (`package.json`, `package-lock.json`); commit and push `main` from the control plane.
-   0.1.0 is already set.
+   --no-git-tag-version` (`package.json`, `package-lock.json`), and change the version in the generator comment of
+   `conformance/generate/native-charts/hesitation-snow.osu`, which `swift test` compares line by line; commit and push
+   `main` from the control plane. Do this before steps 5 to 7.
 
 9. On the control plane, tag `main`'s head and push the tag:
 
