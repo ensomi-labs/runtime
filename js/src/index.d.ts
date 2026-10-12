@@ -118,6 +118,7 @@ export interface EncodedAudio {
 
 export type Ort = typeof ORT;
 export type FileSource = (relativePath: string) => Promise<Uint8Array>;
+/** Reads files relative to a base URL, with `fetch` or, for a `file:` URL in Node, from the file system. */
 export declare function urlSource(baseUrl: string): FileSource;
 export declare function localFilesSource(files: Iterable<File>): FileSource;
 
@@ -133,9 +134,10 @@ export interface LoadModelsOptions {
     backend?: 'webgpu' | 'wasm';
     /** ORT WebAssembly settings applied before sessions are created, e.g. wasmPaths and numThreads. */
     wasm?: Partial<ORT.Env.WebAssemblyFlags>;
-    /** Reads the `resample-*` tables, needed for raw PCM at a rate other than 22050 Hz without a `beatthis` stream. */
+    /** Reads the `resample-*` tables, needed for raw PCM at a rate other than 22050 Hz without a `beatthis` stream.
+     * Default: the package's `resampler/` directory. */
     runtimeSource?: FileSource;
-    /** The Wasm core: bytes, a `WebAssembly.Module` or a URL. Node cannot fetch the default, the file beside the bindings. */
+    /** The Wasm core: bytes, a `WebAssembly.Module` or a URL. Default: the package's `pkg/ensomi_generate_wasm_bg.wasm`. */
     core?: BufferSource | WebAssembly.Module | URL | string;
 }
 export declare function loadModels(source: FileSource | string, options?: LoadModelsOptions): Promise<Models>;

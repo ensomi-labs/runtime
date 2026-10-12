@@ -19,7 +19,7 @@ Large intermediate files go under `bulk/`, which is never mirrored.
 CARGO_TARGET_DIR=target/generate cargo run --release -p ensomi-generate-ort --bin parity -- \
   --model-dir ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 \
   --reference ../ensomi-model/artifacts/runtime-ref \
-  --assets ../ensomi-web/packages/runtime/assets \
+  --assets assets/resampler \
   --out conformance/generate/native-parity.json
 ```
 
@@ -33,7 +33,7 @@ text identical.
 ```sh
 CARGO_TARGET_DIR=target/apple cargo build --release -p ensomi-generate-ort --features coreml --example providers
 target/apple/release/examples/providers --model-dir ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 \
-  --reference ../ensomi-model/artifacts/runtime-ref --assets ../ensomi-web/packages/runtime/assets \
+  --reference ../ensomi-model/artifacts/runtime-ref --assets assets/resampler \
   --out conformance/generate/apple-providers.json --charts conformance/generate/bulk/charts
 cp conformance/generate/bulk/charts/hesitation-snow.* conformance/generate/native-charts/
 ```
@@ -48,7 +48,7 @@ and song runs in a process of its own, which generates twice.
 scripts/wasm-build.sh
 cd js && npm install && cd ..
 node js/checks/replay.mjs --model-dir ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 \
-  --reference ../ensomi-model/artifacts/runtime-ref --assets ../ensomi-web/packages/runtime/assets \
+  --reference ../ensomi-model/artifacts/runtime-ref --assets assets/resampler \
   --core js/pkg/ensomi_generate_wasm_bg.wasm --out conformance/generate/wasm-parity.json
 cd ../ensomi-web/packages/runtime && node --import tsx ../../../ensomi-runtime/js/checks/same-as-ts.mjs \
   --model-dir ../../../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 \

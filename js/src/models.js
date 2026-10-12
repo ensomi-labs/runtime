@@ -1,9 +1,13 @@
-import { loadCore } from './core.js';
+import { loadCore, readFile } from './core.js';
 
+/** Reads files relative to a base URL: with `fetch`, or from the file system for a `file:` URL in Node. */
 export function urlSource(baseUrl) {
     const base = baseUrl.replace(/\/$/, '') + '/';
     return async (path) => {
-        const response = await fetch(new URL(path, base));
+        const url = new URL(path, base);
+        if (url.protocol === 'file:')
+            return readFile(url);
+        const response = await fetch(url);
         if (!response.ok)
             throw new Error(`Model download failed: ${path} (${response.status})`);
         return new Uint8Array(await response.arrayBuffer());
@@ -41,9 +45,9 @@ export class Models {
     }
 }
 
-/** Where the soxr tables for raw PCM at other rates than 22050 Hz are read from: `assets/` beside `src/`. */
+/** Where the soxr tables for raw PCM at other rates than 22050 Hz are read from: the package's `resampler/`. */
 function defaultRuntimeSource(path) {
-    return urlSource(new URL('../assets/', import.meta.url).href)(path);
+    return urlSource(new URL('../resampler/', import.meta.url).href)(path);
 }
 
 /**
