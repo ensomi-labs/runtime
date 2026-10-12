@@ -1,0 +1,21 @@
+[package]
+name = "ensomi-generate-ort"
+description = "Native driver for the Ensomi chart generator: runs its graphs with ONNX Runtime"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+default = []
+# Core ML execution provider (Apple platforms).
+coreml = ["ort/coreml"]
+
+[dependencies]
+ensomi-generate = { path = "../generate" }
+ort = { version = "=2.0.0-rc.11" }
+serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
+
+[dev-dependencies]
+libc = "0.2"

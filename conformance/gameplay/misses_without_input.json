@@ -1,0 +1,30 @@
+{
+  "description": "No input at all: every note is missed at its own time, tap and hold heads at the end of their windows.",
+  "chart": {
+    "duration_ms": 3500,
+    "objects": [
+      {"lane": 0, "start_ms": 1000},
+      {"lane": 1, "start_ms": 1100},
+      {"lane": 2, "start_ms": 2000, "end_ms": 2500},
+      {"lane": 3, "start_ms": 2000}
+    ]
+  },
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"advance": 500},
+    {"advance": 1150},
+    {"advance": 1250},
+    {"advance": 3000},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 0, "lane": 0, "part": "head", "tier": "m", "offset_ms": null, "time_ms": 1200},
+      {"object": 1, "lane": 1, "part": "head", "tier": "m", "offset_ms": null, "time_ms": 1300},
+      {"object": 2, "lane": 2, "part": "head", "tier": "m", "offset_ms": null, "time_ms": 2200},
+      {"object": 3, "lane": 3, "part": "head", "tier": "m", "offset_ms": null, "time_ms": 2200}
+    ],
+    "score": {"tier_counts": {"bigP": 0, "p1": 0, "p2": 0, "p3": 0, "g": 0, "m": 4}, "accuracy": 0.0, "combo": 0, "max_combo": 0, "suggested_audio_offset_ms": null},
+    "late_inputs": 0
+  }
+}

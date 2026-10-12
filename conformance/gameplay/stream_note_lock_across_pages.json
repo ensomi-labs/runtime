@@ -1,0 +1,27 @@
+{
+  "description": "Play advances to 1150 with coverage 1050. The page that brings the lane's next note at 1100 misses the note at 1000 by note lock, stamped 1100, before the press at 1160 hits the new note.",
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"page": {"objects": [{"lane": 0, "start_ms": 1000}], "coverage_ms": 1050, "end_of_stream": false}},
+    {"advance": 1150},
+    {"decided_through_ms": 1050},
+    {"page": {"objects": [{"lane": 0, "start_ms": 1100}], "coverage_ms": 1300, "end_of_stream": false}},
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1160}},
+    {"page": {"objects": [], "coverage_ms": 1300, "end_of_stream": true}},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 0, "lane": 0, "part": "head", "tier": "m", "offset_ms": null, "time_ms": 1100, "step": 3},
+      {"object": 1, "lane": 0, "part": "head", "tier": "p2", "offset_ms": 60, "time_ms": 1160, "step": 4}
+    ],
+    "score": {
+      "tier_counts": {"bigP": 0, "p1": 0, "p2": 1, "p3": 0, "g": 0, "m": 1},
+      "accuracy": 0.425,
+      "combo": 1,
+      "max_combo": 1,
+      "suggested_audio_offset_ms": -60
+    },
+    "late_inputs": 0
+  }
+}

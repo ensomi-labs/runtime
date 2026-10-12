@@ -1,0 +1,4 @@
+{
+  "description": "A slider (type bit 2) is not a mania note; the error carries the line.",
+  "expected": {"error": {"kind": "unsupported_hit_object", "line": "256,192,1500,2,0,B|300:100,1,100"}}
+}

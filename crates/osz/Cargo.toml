@@ -1,0 +1,15 @@
+[package]
+name = "ensomi-osz"
+description = "The .osz archive of a generated chart: its .osu, the song's audio and the receipt, from bytes to bytes"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+crc32fast = "1"
+miniz_oxide = "0.9"
+
+[dev-dependencies]
+zip = { version = "9", default-features = false, features = ["deflate-flate2-zlib-rs"] }

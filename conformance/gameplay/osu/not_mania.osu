@@ -1,0 +1,10 @@
+osu file format v14
+
+[General]
+Mode: 0
+
+[Difficulty]
+CircleSize:4
+
+[HitObjects]
+64,192,1000,1,0,0:0:0:0:

@@ -1,0 +1,10 @@
+osu file format v14
+
+[General]
+Mode: 3
+
+[Difficulty]
+OverallDifficulty:8
+
+[HitObjects]
+64,192,1000,1,0,0:0:0:0:

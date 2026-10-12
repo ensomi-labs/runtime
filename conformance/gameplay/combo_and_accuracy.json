@@ -1,0 +1,35 @@
+{
+  "description": "Six taps: bigP, p1 (50 late), missed, p3 (100 early), g (150 late), bigP. Combo breaks on the miss; accuracy weights are 1, .9, .85, .8, .4, 0; the suggested offset is minus the mean of the five hit errors.",
+  "chart": {
+    "duration_ms": 4500,
+    "objects": [
+      {"lane": 0, "start_ms": 1000},
+      {"lane": 0, "start_ms": 1500},
+      {"lane": 0, "start_ms": 2000},
+      {"lane": 0, "start_ms": 2500},
+      {"lane": 0, "start_ms": 3000},
+      {"lane": 0, "start_ms": 3500}
+    ]
+  },
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1000}},
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1550}},
+    {"input": {"lane": 0, "phase": "press", "time_ms": 2400}},
+    {"input": {"lane": 0, "phase": "press", "time_ms": 3150}},
+    {"input": {"lane": 0, "phase": "press", "time_ms": 3500}},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 0, "lane": 0, "part": "head", "tier": "bigP", "offset_ms": 0, "time_ms": 1000},
+      {"object": 1, "lane": 0, "part": "head", "tier": "p1", "offset_ms": 50, "time_ms": 1550},
+      {"object": 2, "lane": 0, "part": "head", "tier": "m", "offset_ms": null, "time_ms": 2200},
+      {"object": 3, "lane": 0, "part": "head", "tier": "p3", "offset_ms": -100, "time_ms": 2400},
+      {"object": 4, "lane": 0, "part": "head", "tier": "g", "offset_ms": 150, "time_ms": 3150},
+      {"object": 5, "lane": 0, "part": "head", "tier": "bigP", "offset_ms": 0, "time_ms": 3500}
+    ],
+    "score": {"tier_counts": {"bigP": 2, "p1": 1, "p2": 0, "p3": 1, "g": 1, "m": 1}, "accuracy": 0.6833333333333332, "combo": 3, "max_combo": 3, "suggested_audio_offset_ms": -20.0},
+    "late_inputs": 0
+  }
+}

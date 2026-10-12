@@ -1,0 +1,23 @@
+{
+  "description": "A release with nothing held is ignored; a tap needs no release.",
+  "chart": {
+    "duration_ms": 2000,
+    "objects": [
+      {"lane": 0, "start_ms": 1000}
+    ]
+  },
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"input": {"lane": 0, "phase": "release", "time_ms": 900}},
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1000}},
+    {"input": {"lane": 0, "phase": "release", "time_ms": 1050}},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 0, "lane": 0, "part": "head", "tier": "bigP", "offset_ms": 0, "time_ms": 1000}
+    ],
+    "score": {"tier_counts": {"bigP": 1, "p1": 0, "p2": 0, "p3": 0, "g": 0, "m": 0}, "accuracy": 1.0, "combo": 1, "max_combo": 1, "suggested_audio_offset_ms": 0},
+    "late_inputs": 0
+  }
+}

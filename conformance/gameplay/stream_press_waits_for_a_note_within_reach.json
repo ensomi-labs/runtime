@@ -1,0 +1,26 @@
+{
+  "description": "A press at 1000 finds no note in its lane, but the coverage 1000 does not rule out one starting up to g later, so it waits. The next page brings a note at 1100, which the press hits 100 ms early.",
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"page": {"objects": [], "coverage_ms": 1000, "end_of_stream": false}},
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1000}},
+    {"decided_through_ms": 1000},
+    {"page": {"objects": [{"lane": 0, "start_ms": 1100}], "coverage_ms": 1150, "end_of_stream": false}},
+    {"input": {"lane": 0, "phase": "release", "time_ms": 1120}},
+    {"page": {"objects": [], "coverage_ms": 3000, "end_of_stream": true}},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 0, "lane": 0, "part": "head", "tier": "p3", "offset_ms": -100, "time_ms": 1000, "step": 3}
+    ],
+    "score": {
+      "tier_counts": {"bigP": 0, "p1": 0, "p2": 0, "p3": 1, "g": 0, "m": 0},
+      "accuracy": 0.8,
+      "combo": 1,
+      "max_combo": 1,
+      "suggested_audio_offset_ms": 100
+    },
+    "late_inputs": 0
+  }
+}

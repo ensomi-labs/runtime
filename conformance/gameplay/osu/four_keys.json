@@ -1,0 +1,19 @@
+{
+  "description": "CRLF line ends, skipped sections and a comment, hit objects out of order. x 64, 192, 320, 448 are lanes 0 to 3; x 128 is exactly lane 1; x 600 and -20 clamp to lanes 3 and 0. Type 5 is a note with the new-combo bit. A hold ending before its start (1750, end 1700) and one without an end field (2250) are zero-length holds. The title prefers TitleUnicode; there is no ArtistUnicode.",
+  "expected": {
+    "chart": {
+      "duration_ms": 2250,
+      "objects": [
+        {"lane": 0, "start_ms": 1000},
+        {"lane": 1, "start_ms": 1000, "end_ms": 1500},
+        {"lane": 2, "start_ms": 1000},
+        {"lane": 1, "start_ms": 1500},
+        {"lane": 3, "start_ms": 1750, "end_ms": 1750},
+        {"lane": 3, "start_ms": 2000},
+        {"lane": 0, "start_ms": 2250, "end_ms": 2250}
+      ]
+    },
+    "title": "Unicode Title",
+    "artist": "Romanised Artist"
+  }
+}

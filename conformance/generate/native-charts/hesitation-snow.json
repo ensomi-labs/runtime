@@ -1,0 +1,11 @@
+{
+  "input": "recorded audio PCM, channels averaged in float64 and rounded to float32, at the recorded rate; no frontend streams",
+  "sample_rate": 48000.0,
+  "request": {
+    "star": 2.5,
+    "title": "Hesitation Snow -version 2024- (Cut Ver.)",
+    "artist": "fripSide"
+  },
+  "seed": 0,
+  "objects": 1059
+}

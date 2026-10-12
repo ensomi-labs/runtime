@@ -27,6 +27,16 @@ Rules that keep the boundary:
 - **Each platform draws the playfield natively** from the core's note layout.
 - **Models stay ONNX.** A compute backend is an execution-provider choice, not code here.
 
+## Packages
+
+| Clients | Package | Built by |
+| --- | --- | --- |
+| macOS 14, iOS 17 | Swift package `EnsomiRuntime` ([`Package.swift`](Package.swift), [`swift/`](swift)); the xcframework is a release asset | `scripts/build-apple.sh` |
+| Web, Node | npm `@ensomi/runtime` ([`js/`](js)) | `scripts/wasm-build.sh` |
+
+Both carry the soxr tables in [`assets/resampler`](assets/resampler), with which the generator resamples PCM at
+rates other than 22050 Hz. Releases: [`RELEASING.md`](RELEASING.md).
+
 The TypeScript runtime in `ensomi-web/packages/runtime` retires once the Wasm build of this
 core reproduces its charts.
 

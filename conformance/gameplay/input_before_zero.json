@@ -1,0 +1,24 @@
+{
+  "description": "Chart time is audio time plus the audio offset and can be negative: a press at -100 for a note at 50 is 150 early (tier g), and a note at 0 can be hit before time 0.",
+  "chart": {
+    "duration_ms": 1050,
+    "objects": [
+      {"lane": 0, "start_ms": 0},
+      {"lane": 1, "start_ms": 50}
+    ]
+  },
+  "ruleset": {"judge": "C"},
+  "steps": [
+    {"input": {"lane": 1, "phase": "press", "time_ms": -100}},
+    {"input": {"lane": 0, "phase": "press", "time_ms": -30}},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 1, "lane": 1, "part": "head", "tier": "g", "offset_ms": -150, "time_ms": -100},
+      {"object": 0, "lane": 0, "part": "head", "tier": "bigP", "offset_ms": -30, "time_ms": -30}
+    ],
+    "score": {"tier_counts": {"bigP": 1, "p1": 0, "p2": 0, "p3": 0, "g": 1, "m": 0}, "accuracy": 0.7, "combo": 2, "max_combo": 2, "suggested_audio_offset_ms": 90.0},
+    "late_inputs": 0
+  }
+}

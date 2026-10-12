@@ -1,0 +1,4 @@
+{
+  "description": "No CircleSize.",
+  "expected": {"error": {"kind": "unsupported_key_count", "keys": 0}}
+}

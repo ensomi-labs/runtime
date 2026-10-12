@@ -1,0 +1,32 @@
+osu file format v14
+
+[General]
+AudioFilename: audio.mp3
+Mode: 3
+
+[Editor]
+Bookmarks: 1000,2000
+
+[Metadata]
+Title:Romanised Title
+TitleUnicode:Unicode Title
+Artist:Romanised Artist
+Version:4K Test
+
+[Difficulty]
+HPDrainRate:8
+CircleSize:4
+OverallDifficulty:8
+
+[TimingPoints]
+0,500,4,2,0,50,1,0
+
+[HitObjects]
+// Lines out of time order; comments are skipped.
+448,192,2000,1,0,0:0:0:0:
+64,192,1000,1,0,0:0:0:0:
+192,192,1000,128,0,1500:0:0:0:0:
+320,192,1000,5,0,0:0:0:0:
+128,192,1500,1,0,0:0:0:0:
+600,192,1750,128,0,1700:0:0:0:0:
+-20,192,2250,128,0

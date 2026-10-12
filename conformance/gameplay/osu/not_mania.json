@@ -1,0 +1,4 @@
+{
+  "description": "Mode 0 (osu!standard).",
+  "expected": {"error": {"kind": "unsupported_mode"}}
+}

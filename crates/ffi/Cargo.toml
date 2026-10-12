@@ -1,0 +1,33 @@
+[package]
+name = "ensomi-runtime-ffi"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "UniFFI bindings of the Ensomi runtime core."
+
+[lib]
+name = "ensomi_runtime_ffi"
+crate-type = ["staticlib", "cdylib", "lib"]
+
+[dependencies]
+ensomi-gameplay = { path = "../gameplay" }
+ensomi-generate = { path = "../generate" }
+ensomi-generate-ort = { path = "../generate-ort" }
+ensomi-osz = { path = "../osz" }
+serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
+# Minor version pinned: third-party C# and JS generators target a UniFFI release series.
+uniffi = "0.31"
+
+[target.'cfg(target_vendor = "apple")'.dependencies]
+ensomi-generate-ort = { path = "../generate-ort", features = ["coreml"] }
+
+[features]
+# The binding generator, `cargo run --features bindgen --bin uniffi-bindgen`.
+bindgen = ["uniffi/cli"]
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "src/bin/uniffi-bindgen.rs"
+required-features = ["bindgen"]
