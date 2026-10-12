@@ -82,7 +82,7 @@ pub fn resample<T: Copy>(pcm: &[T], kernel: &Resampler) -> Vec<f32>
 where
     f64: From<T>,
 {
-    let (p, q, r, bf, bs) = (kernel.numerator, kernel.phases, kernel.radius as i64, kernel.boundary_frames, kernel.boundary_samples);
+    let (p, q, r, bf, bs) = (kernel.numerator, kernel.phases, kernel.radius, kernel.boundary_frames, kernel.boundary_samples);
     let (k, b) = (&kernel.coefficients, &kernel.boundary);
     let len = round(pcm.len() as f64 * q as f64 / p as f64) as usize;
     let width = 2 * r + 1;
@@ -94,18 +94,36 @@ where
                 v += f64::from(pcm[j]) * b[m * bs + j];
             }
         } else {
-            let i = (m * p / q) as i64;
-            let phase = (m * p % q) as i64;
-            let mut j = (-r).max(-i);
-            let end = r.min(pcm.len() as i64 - 1 - i);
-            while j <= end {
-                v += f64::from(pcm[(i + j) as usize]) * k[(phase * width + j + r) as usize];
-                j += 1;
-            }
+            // Output m is centred on input m * p / q, with phase m * p mod q. The product is a u64: a usize has 32 bits
+            // on wasm32, where it wrapped after 304 s of song at 96 kHz.
+            let at = m as u64 * p as u64;
+            let (i, phase) = ((at / q as u64) as usize, (at % q as u64) as usize);
+            let (lo, hi) = (i.saturating_sub(r), (i + r).min(pcm.len() - 1));
+            v = dot(&pcm[lo..=hi], &k[phase * width + r + lo - i..]);
         }
         out[m] = v as f32;
     }
     out
+}
+
+/// The sum of `x[j] * c[j]` over `x`, in four float64 accumulators, so that an addition does not wait for the one
+/// before it.
+fn dot<T: Copy>(x: &[T], c: &[f64]) -> f64
+where
+    f64: From<T>,
+{
+    let ((xs, x_rest), (cs, c_rest)) = (x.as_chunks::<4>(), c[..x.len()].as_chunks::<4>());
+    let mut a = [0.0; 4];
+    for (x, c) in xs.iter().zip(cs) {
+        for l in 0..4 {
+            a[l] += f64::from(x[l]) * c[l];
+        }
+    }
+    let mut v = (a[0] + a[1]) + (a[2] + a[3]);
+    for (&x, c) in x_rest.iter().zip(c_rest) {
+        v += f64::from(x) * c;
+    }
+    v
 }
 
 /// The log spectrogram of one frontend: BeatThis (`beatthis`, reflect-padded 1024-point frames every

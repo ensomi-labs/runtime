@@ -73,6 +73,26 @@ fn resample_with_the_soxr_tables() {
 }
 
 #[test]
+fn resample_reads_the_right_input_past_32_bit_index_products() {
+    // The geometry of the 32 kHz table (output m reads input m * 640 / 441) with one tap, the phase plus one, on input
+    // whose samples are their indices. From output 6710887 (304.4 s) on, m * 640 passes 2^32, where a usize product
+    // wraps on wasm32. Every output is checked against indices computed in float64.
+    let (p, q) = (640, 441);
+    let spec = json!({"numerator": p, "phases": q, "radius": 0, "boundary_frames": 0, "boundary_samples": 0}).to_string();
+    let coefficients = (0..q).flat_map(|phase| (phase as f64 + 1.0).to_le_bytes()).collect();
+    let kernel = load_resampler(&[spec.into_bytes(), coefficients, Vec::new()]).unwrap();
+    let pcm: Vec<f32> = (0..32000 * 305).map(|i| i as f32).collect();
+    let out = resample(&pcm, &kernel);
+    assert!(out.len() as u64 * p as u64 > 1 << 32);
+    let wrong = out.iter().enumerate().position(|(m, &v)| {
+        let at = m as f64 * p as f64;
+        let i = (at / q as f64).floor();
+        v != (i * (at - i * q as f64 + 1.0)) as f32
+    });
+    assert_eq!(wrong, None);
+}
+
+#[test]
 fn mel_pcm_converts_to_24_khz_and_normalizes_the_peak() {
     // From the TypeScript runtime's melPcm() on 1000 samples at 44100 Hz.
     let out = mel_pcm(&signal(1000), 44100.0);
