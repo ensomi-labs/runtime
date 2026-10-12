@@ -172,9 +172,10 @@ impl ChartScheduler {
     /// New controls for the chart from the first uncommitted head row on: `star` and `controls` may change; the seed,
     /// title, artist and audio name stay those the scheduler was made with. For requests from game events during
     /// play, such as multiplayer attacks or players coordinating, which a pipeline that resumes from a committed
-    /// prefix will apply. R2 cannot yet: it takes a request only while the audio stages run (from PCM), and the chart
-    /// is then the one a fresh generation with it makes. Otherwise it fails with `unsupported_control` and the
-    /// generation is unchanged.
+    /// prefix will apply. R2 cannot yet: it takes a request until the first page is committed, from PCM or a
+    /// `Prepared`, and the chart is then the one a fresh generation with it makes (in `WholeChart`, which commits at
+    /// the end, a request during the arrangement restarts it). Once a page is committed it fails with
+    /// `unsupported_control` and the generation is unchanged.
     pub fn request(&self, request: GenerateChartRequest) -> Result<(), GeneratorError> {
         if request.audio_name != self.audio_name {
             return Err(generation_error("unsupported_control: a request during generation may change only star and controls".to_string()));

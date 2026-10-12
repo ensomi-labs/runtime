@@ -140,7 +140,7 @@ fn a_start_at_a_position_joins_where_no_hold_is_open() {
 }
 
 #[test]
-fn a_request_changes_the_chart_only_while_the_audio_stages_run() {
+fn a_request_changes_the_chart_only_before_the_first_committed_page() {
     let Some(model) = model() else { return };
     let generator = open(&model);
     let lead = LeadPolicy { ruleset: Ruleset { judge: Judge::C }, render_lead_ms: 500.0, margin_ms: 0.0 };

@@ -33,11 +33,13 @@ pub struct Audio {
     pub resampler: Option<[Vec<u8>; 3]>,
 }
 
+#[derive(Clone)]
 pub struct Pattern {
     pub kind: i64,
     pub strength: f64,
 }
 
+#[derive(Clone)]
 pub struct Section {
     pub start_ms: f64,
     pub end_ms: f64,
@@ -47,12 +49,13 @@ pub struct Section {
     pub raw: Map<String, Value>,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Controls {
     pub long_notes: i64,
     pub sections: Vec<Section>,
 }
 
+#[derive(Clone)]
 pub struct Request {
     /// The audio asset reference, recorded in the receipt as given.
     pub audio: Option<Value>,

@@ -56,7 +56,9 @@ pub enum Event {
     /// the running request, and committed pages never change. It is for requests that game events send during play,
     /// with or without Sonalign: a multiplayer attack that changes another player's coming chart, players
     /// coordinating. A pipeline that resumes from a committed prefix will apply them there. R2 cannot yet: it takes a
-    /// request only while the audio stages run, and the chart is then the one a fresh generation with it makes.
+    /// request until the first page is committed, and the chart is then the one a fresh generation with it makes.
+    /// During the audio stages it replaces the held request; after them the chart stages start again from the kept
+    /// `Prepared`, so in `WholeChart`, which commits only at the end, a request during the arrangement restarts it.
     Request(Request),
     Stop,
     /// The outputs of the last `Run`.
@@ -216,7 +218,7 @@ impl Stream {
 }
 
 enum Work {
-    Prepare(Generator<Prepared>, Box<(Request, Options)>),
+    Prepare(Generator<Prepared>),
     Chart(Generator),
     Finished,
     Stopped,
@@ -228,10 +230,16 @@ pub struct Scheduler {
     models: Arc<Models>,
     mode: Mode,
     work: Work,
+    /// The request the chart is generated for, held while the audio stages run.
+    request: Request,
+    /// The chart generator's options; the first chart generator takes `random` and `trace`.
+    options: Options,
     clock: Rc<dyn Fn() -> f64>,
     outputs: Option<Tensors>,
     /// A `Run` is out.
     running: bool,
+    /// The `Run` that is out is for a chart generator that a request replaced.
+    stale: bool,
     /// Milliseconds between calls to `next`, except those after a `Ready` or a `Wait` for play.
     busy: f64,
     last: Option<f64>,
@@ -242,30 +250,34 @@ pub struct Scheduler {
 
 impl Scheduler {
     /// `options.commit` is set by the mode; `options.clock` also times the throughput, and `options.trace` sees the
-    /// stages after the audio stages.
+    /// stages after the audio stages. `options.random` and `options.trace` go to the first chart generator only:
+    /// one that a request starts again draws from the seeded generator, without a trace.
     pub fn new(models: Arc<Models>, source: Source, request: Request, mut options: Options, mode: Mode, lead: Lead) -> Scheduler {
         options.commit = if mode == Mode::AheadOfPlay { Commit::HeadRow } else { Commit::AtEnd };
         let clock = options.clock.clone();
-        let mut stream = Stream::new(lead);
-        let (work, prepared) = match source {
-            Source::Audio(audio) => (Work::Prepare(prepare(models.clone(), audio, Options::new(clock.clone())), Box::new((request, options))), None),
-            Source::Prepared(prepared) => {
-                stream.end_ms = Some(prepared.song_ms);
-                (Work::Chart(generate_prepared(models.clone(), prepared.clone(), request, options)), Some(prepared))
-            }
-        };
-        Scheduler { models, mode, work, clock, outputs: None, running: false, busy: 0.0, last: None, prepared, result: None, stream }
+        let mut scheduler = Scheduler { models, mode, work: Work::Finished, request, options, clock, outputs: None, running: false, stale: false, busy: 0.0, last: None, prepared: None, result: None, stream: Stream::new(lead) };
+        match source {
+            Source::Audio(audio) => scheduler.work = Work::Prepare(prepare(scheduler.models.clone(), audio, Options::new(scheduler.clock.clone()))),
+            Source::Prepared(prepared) => scheduler.chart(prepared),
+        }
+        scheduler
     }
 
-    /// Only a `Request` is refused: one that changes more than `star` and `controls`, or one that comes after the
-    /// audio stages, once R2 generates from the running request. The generation is then unchanged.
+    /// Only a `Request` is refused: one that changes more than `star` and `controls`, or one that comes once a page
+    /// is committed, which R2 cannot resume from. The generation is then unchanged.
     pub fn handle(&mut self, event: Event) -> Result<(), String> {
         match event {
             Event::Heard { chart_ms, wall_ms } => self.stream.heard(chart_ms, wall_ms),
             Event::Start { at_ms } => self.stream.start(at_ms),
             Event::Request(request) => return self.request(request),
             Event::Stop => self.work = Work::Stopped,
-            Event::Outputs(outputs) => (self.outputs, self.running) = (Some(outputs), false),
+            Event::Outputs(outputs) => {
+                // Those of a run for a chart generator that a request replaced are dropped.
+                if !std::mem::take(&mut self.stale) {
+                    self.outputs = Some(outputs);
+                }
+                self.running = false;
+            }
         }
         Ok(())
     }
@@ -296,10 +308,10 @@ impl Scheduler {
             }
             let outputs = self.outputs.take();
             match &mut self.work {
-                Work::Prepare(generator, _) => match generator.step(outputs) {
+                Work::Prepare(generator) => match generator.step(outputs) {
                     Err(e) => return Err(self.fail(e)),
                     Ok(Step::Run { graph, inputs }) => return Ok(self.run(graph, inputs)),
-                    Ok(Step::Done(prepared)) => self.audio_done(*prepared),
+                    Ok(Step::Done(prepared)) => self.chart(Arc::new(*prepared)),
                     Ok(_) => {}
                 },
                 Work::Chart(generator) => match generator.step(outputs) {
@@ -317,7 +329,7 @@ impl Scheduler {
     /// While a graph runs, does a slice of the work that needs no outputs ([`Generator::work`]).
     pub fn work(&mut self) -> bool {
         match &mut self.work {
-            Work::Prepare(generator, _) => generator.work(),
+            Work::Prepare(generator) => generator.work(),
             Work::Chart(generator) => generator.work(),
             _ => false,
         }
@@ -338,18 +350,33 @@ impl Scheduler {
         self.stream.rate()
     }
 
-    /// Replaces the request held while the audio stages run. R2 cannot resume from a committed prefix, so it refuses
-    /// a request after them, and from a stored `Prepared` at once.
+    /// Takes a request until the first page is committed: it replaces the request held while the audio stages
+    /// run, and starts the chart stages again after them. R2 cannot resume from a committed prefix, so it refuses
+    /// one later.
     fn request(&mut self, request: Request) -> Result<(), String> {
-        let Work::Prepare(_, pending) = &mut self.work else {
-            return Err("unsupported_control: R2 cannot apply a request after the audio stages; the generation is unchanged".to_string());
-        };
-        let running = &pending.0;
+        let running = &self.request;
         if (&request.audio, request.seed, request.seed_is_bigint, &request.title, &request.artist) != (&running.audio, running.seed, running.seed_is_bigint, &running.title, &running.artist) {
             return Err("unsupported_control: a request during generation may change only star and controls".to_string());
         }
-        pending.0 = request;
+        match (&self.work, self.prepared.clone()) {
+            (Work::Prepare(_), _) => self.request = request,
+            (Work::Chart(_), Some(prepared)) if self.stream.first.is_none() => {
+                self.request = request;
+                (self.outputs, self.stale) = (None, self.running);
+                self.chart(prepared);
+            }
+            _ => return Err("unsupported_control: R2 cannot apply a request once a page is committed or the generation has ended; the generation is unchanged".to_string()),
+        }
         Ok(())
+    }
+
+    /// Starts the chart stages from `prepared` for the request.
+    fn chart(&mut self, prepared: Arc<Prepared>) {
+        self.stream.end_ms = Some(prepared.song_ms);
+        self.prepared = Some(prepared.clone());
+        let o = &mut self.options;
+        let options = Options { random: o.random.take(), trace: o.trace.take(), setting: o.setting.clone(), audio_name: o.audio_name.clone(), clock: o.clock.clone(), commit: o.commit };
+        self.work = Work::Chart(generate_prepared(self.models.clone(), prepared, self.request.clone(), options));
     }
 
     fn run(&mut self, graph: String, inputs: Tensors) -> Action {
@@ -361,16 +388,6 @@ impl Scheduler {
     fn fail(&mut self, error: String) -> String {
         self.work = Work::Stopped;
         error
-    }
-
-    fn audio_done(&mut self, prepared: Prepared) {
-        let prepared = Arc::new(prepared);
-        self.stream.end_ms = Some(prepared.song_ms);
-        self.prepared = Some(prepared.clone());
-        if let Work::Prepare(_, chart) = std::mem::replace(&mut self.work, Work::Finished) {
-            let (request, options) = *chart;
-            self.work = Work::Chart(generate_prepared(self.models.clone(), prepared, request, options));
-        }
     }
 
     fn finished(&mut self, result: GenerationResult) {

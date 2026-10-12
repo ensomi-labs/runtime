@@ -49,7 +49,9 @@ Requests during generation: the scheduler takes a new request for the chart in p
 in which game events change the coming chart, with or without Sonalign: a multiplayer attack on another player's
 chart, players coordinating. Only `star` and `controls` may change, from the first uncommitted head row on; committed
 pages never do. A pipeline that resumes from a committed prefix will apply such requests. R2 cannot yet: it takes a
-request only while the audio stages run, and refuses one after them, leaving the generation unchanged.
+request until it commits the first page, starting the chart stages again from the song's `Prepared` if they have begun,
+so the chart is the one a fresh generation with the request makes. Once a page is committed it refuses one, leaving the
+generation unchanged.
 
 The generator arranges a song once, whether it commits per head row or the whole chart at the end, so both give the
 same chart. The published Python R2 (`r2-1.0`) arranged a song a second time when the first arrangement missed the

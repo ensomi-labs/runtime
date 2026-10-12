@@ -941,9 +941,10 @@ public protocol ChartSchedulerProtocol: AnyObject, Sendable {
      * New controls for the chart from the first uncommitted head row on: `star` and `controls` may change; the seed,
      * title, artist and audio name stay those the scheduler was made with. For requests from game events during
      * play, such as multiplayer attacks or players coordinating, which a pipeline that resumes from a committed
-     * prefix will apply. R2 cannot yet: it takes a request only while the audio stages run (from PCM), and the chart
-     * is then the one a fresh generation with it makes. Otherwise it fails with `unsupported_control` and the
-     * generation is unchanged.
+     * prefix will apply. R2 cannot yet: it takes a request until the first page is committed, from PCM or a
+     * `Prepared`, and the chart is then the one a fresh generation with it makes (in `WholeChart`, which commits at
+     * the end, a request during the arrangement restarts it). Once a page is committed it fails with
+     * `unsupported_control` and the generation is unchanged.
      */
     func request(request: GenerateChartRequest) throws 
     
@@ -1095,9 +1096,10 @@ open func rate() -> Double?  {
      * New controls for the chart from the first uncommitted head row on: `star` and `controls` may change; the seed,
      * title, artist and audio name stay those the scheduler was made with. For requests from game events during
      * play, such as multiplayer attacks or players coordinating, which a pipeline that resumes from a committed
-     * prefix will apply. R2 cannot yet: it takes a request only while the audio stages run (from PCM), and the chart
-     * is then the one a fresh generation with it makes. Otherwise it fails with `unsupported_control` and the
-     * generation is unchanged.
+     * prefix will apply. R2 cannot yet: it takes a request until the first page is committed, from PCM or a
+     * `Prepared`, and the chart is then the one a fresh generation with it makes (in `WholeChart`, which commits at
+     * the end, a request during the arrangement restarts it). Once a page is committed it fails with
+     * `unsupported_control` and the generation is unchanged.
      */
 open func request(request: GenerateChartRequest)throws   {try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
     uniffi_ensomi_runtime_ffi_fn_method_chartscheduler_request(
@@ -6011,7 +6013,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ensomi_runtime_ffi_checksum_method_chartscheduler_rate() != 10157) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_ensomi_runtime_ffi_checksum_method_chartscheduler_request() != 19672) {
+    if (uniffi_ensomi_runtime_ffi_checksum_method_chartscheduler_request() != 45627) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_method_chartscheduler_result() != 5474) {

@@ -59,9 +59,9 @@ export class ChartScheduler {
 
     /**
      * New controls for the chart from the first uncommitted head row on: `star` and `controls` may change; `seed`,
-     * `audio`, `title` and `artist` stay those of `create`. R2 takes a request only while the audio stages run (from
-     * PCM), and the chart is then the one a fresh generation with it makes; otherwise this throws and the generation
-     * is unchanged. A pipeline that resumes from a committed prefix will take requests during play.
+     * `audio`, `title` and `artist` stay those of `create`. R2 takes a request until the first page is committed,
+     * and the chart is then the one a fresh generation with it makes; otherwise this throws and the generation is
+     * unchanged. A pipeline that resumes from a committed prefix will take requests during play.
      */
     request(request) {
         const { seed, json } = coreSeed(request);

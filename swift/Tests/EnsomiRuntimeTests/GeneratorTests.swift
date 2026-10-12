@@ -94,9 +94,9 @@ final class GeneratorTests: XCTestCase {
         XCTAssertEqual(result.osu, wholeResult.osu)
     }
 
-    /// A request replaces the scheduler's while the audio stages run, and the chart is the one a fresh generation with
-    /// it makes; once pages are committed, R2 refuses one and the chart goes on unchanged.
-    func testARequestChangesTheChartOnlyWhileTheAudioStagesRun() async throws {
+    /// A request before the first committed page replaces the scheduler's, and the chart is the one a fresh generation
+    /// with it makes; once pages are committed, R2 refuses one and the chart goes on unchanged.
+    func testARequestChangesTheChartOnlyBeforeTheFirstCommittedPage() async throws {
         let generator = try Paths().open(.cpu)
         let pcm = noise(seconds: 30)
         let changed = GenerateChartRequest(star: 4.5)
