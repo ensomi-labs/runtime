@@ -119,3 +119,23 @@ fn stop_ends_a_scheduler_that_waits_for_play() {
     scheduler.stop();
     assert_eq!(worker.join().unwrap().unwrap(), SchedulerAction::Done);
 }
+
+#[test]
+fn a_start_at_a_position_joins_where_no_hold_is_open() {
+    let Some(model) = model() else { return };
+    let generator = open(&model);
+    let lead = LeadPolicy { ruleset: Ruleset { judge: Judge::C }, render_lead_ms: 500.0, margin_ms: 0.0 };
+    let scheduler = ChartScheduler::from_pcm(generator, noise(30), 22_050.0, request(), ScheduleMode::AheadOfPlay, lead).unwrap();
+    let session = GameplaySession::streaming(Ruleset { judge: Judge::C });
+    scheduler.start(10_000.0, session.clone());
+    let SchedulerAction::Ready { join_ms } = scheduler.work().unwrap() else { panic!("not ready") };
+    assert!(join_ms >= 10_500.0, "{join_ms}");
+    assert_eq!(scheduler.work().unwrap(), SchedulerAction::Done);
+    let chart = scheduler.result().unwrap().chart;
+    // No hold of the chart is open at the join point, and the session holds the chart from there on.
+    assert!(chart.objects.iter().all(|o| o.end_ms.is_none_or(|end| !(f64::from(o.start_ms) < join_ms && join_ms < f64::from(end)))));
+    let expected: Vec<_> = chart.objects.iter().filter(|o| f64::from(o.start_ms) >= join_ms).map(|o| (o.lane, o.start_ms, o.end_ms)).collect();
+    let objects: Vec<_> = session.visible_objects(f64::NEG_INFINITY, f64::INFINITY).iter().map(|o| (o.lane, o.start_time_ms as u32, o.end_time_ms.map(|e| e as u32))).collect();
+    assert!(!expected.is_empty());
+    assert_eq!(objects, expected);
+}
