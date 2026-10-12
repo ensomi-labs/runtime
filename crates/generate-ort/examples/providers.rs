@@ -110,7 +110,7 @@ fn child(paths: &Paths, name: &str, song: &str) -> Value {
         let audio = Audio { samples: Samples::F32(pcm.clone()), channels: 1, sample_rate, mel: None, beatthis: None, resampler: resampler.clone() };
         let request = Request::from_json(&request_json.to_string(), seed, false).unwrap();
         let clock_start = Instant::now();
-        let options = Options { random: None, setting: None, audio_name: None, trace: None, clock: Rc::new(move || clock_start.elapsed().as_secs_f64() * 1000.0) };
+        let options = Options::new(Rc::new(move || clock_start.elapsed().as_secs_f64() * 1000.0));
         let started = Instant::now();
         let mut generator = generate(models.clone(), audio, request, options);
         // The footprint as each phase starts and at the end, in MiB.

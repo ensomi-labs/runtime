@@ -1,9 +1,10 @@
 //! system/arrange.py: legality, playability, restoring force, control tilts, releases and commit.
 use crate::controls::{action_tables, chance, chord_feature, fallback_action, get, log_normalize, logit, number, row_range, scope_statistics, subtype_info, text, tilt, transition, Playability, Scope};
+use crate::export::{row_tokens, Page};
 use crate::generate::{Trace, TraceFn};
 use crate::grid::Grid;
 use crate::machine::Io;
-use crate::math::{clip, f32r, max, mean};
+use crate::math::{clip, f32r, max, mean, round};
 use crate::models::{Masks, Models};
 use crate::r2::{build_candidates, Candidates, ChartState, Placed, R2Stepper};
 use crate::random::RandomSource;
@@ -65,6 +66,8 @@ pub struct Arrange<'a> {
     pub masks: Masks,
     pub prefix: String,
     pub trace: &'a mut Option<TraceFn>,
+    /// Yield each row's page as soon as the row is decided ([`Io::commit`]).
+    pub commit: bool,
 }
 
 pub struct Arrangement {
@@ -81,7 +84,7 @@ fn share_of_extremes(gains: &[f64]) -> Value {
 }
 
 pub async fn arrange(a: Arrange<'_>) -> Result<Arrangement, String> {
-    let Arrange { io, models, head_ms, song_ms, grid, random, target, ln_fraction, requests, masks, prefix, trace } = a;
+    let Arrange { io, models, head_ms, song_ms, grid, random, target, ln_fraction, requests, masks, prefix, trace, commit } = a;
     let k_rows = head_ms.len();
     let actions = &models.actions;
     let tables = action_tables(actions);
@@ -319,6 +322,11 @@ pub async fn arrange(a: Arrange<'_>) -> Result<Arrangement, String> {
             t(Trace::Chosen { name: format!("{prefix}/{k}/chosen"), codes, releases })?;
         }
         chart.append(codes, releases);
+        if commit {
+            // The last page holds the final row's hold ends and covers the song.
+            let last = k == k_rows;
+            io.commit(Page { tokens: row_tokens(head_ms, song_ms, k, codes, releases, held), coverage_ms: if last { round(song_ms) } else { head_ms[k] }, end_of_stream: last }).await;
+        }
         if k < k_rows {
             let actual = chart.attack[k];
             guard.observe(&actual);

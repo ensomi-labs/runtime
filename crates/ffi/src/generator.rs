@@ -1,12 +1,13 @@
 //! The chart generator: a model directory opened into ONNX Runtime sessions, and generation from mono
-//! PCM with progress and cancellation. Graphs run here, so the foreign side makes one call.
+//! PCM with progress and cancellation. Graphs run here, so the foreign side makes one call. `prepare` runs the
+//! stages that read only the audio, into a `Prepared` that a `ChartScheduler` generates from.
 //!
 //! The request and result types follow EnsomiProtocol's `chart.proto`; the protocol's `UNSPECIFIED`
 //! values become `None`.
 
 use ensomi_gameplay::{Chart, ChartObject};
 use ensomi_generate::capabilities::capabilities as core_capabilities;
-use ensomi_generate::{generate, resampler_files, Audio, Models, Options, Phase, Request, Samples};
+use ensomi_generate::{generate, prepare, resampler_files, Audio, Models, Options, Phase, Request, Samples};
 use ensomi_generate_ort::{drive_observed, package, Config, Sessions};
 use serde_json::{json, Value};
 use std::any::Any;
@@ -201,12 +202,12 @@ impl std::fmt::Display for GeneratorError {
 
 impl std::error::Error for GeneratorError {}
 
-fn model_error(message: String) -> GeneratorError {
+pub(crate) fn model_error(message: String) -> GeneratorError {
     GeneratorError::Model { message }
 }
 
 /// The core's errors start with the protocol code when they have one.
-fn generation_error(message: String) -> GeneratorError {
+pub(crate) fn generation_error(message: String) -> GeneratorError {
     let code = ["star_out_of_range", "unsupported_control"].into_iter().find(|code| message.starts_with(&format!("{code}:"))).unwrap_or("generation_failed");
     GeneratorError::Generation { code: code.to_string(), message }
 }
@@ -238,13 +239,32 @@ impl Cancellation {
 }
 
 /// A model directory opened into ONNX Runtime sessions. One generation runs at a time; a second call
-/// waits for the first.
+/// waits for the first. A `ChartScheduler` takes the sessions for one graph run at a time.
 #[derive(uniffi::Object)]
 pub struct ChartGenerator {
     capabilities: ModelCapabilities,
     resampler_directory: Option<PathBuf>,
-    models: Arc<Models>,
-    sessions: Mutex<Sessions>,
+    pub(crate) models: Arc<Models>,
+    pub(crate) sessions: Mutex<Sessions>,
+}
+
+/// What `prepare` keeps of a song: the results of the stages that read only the audio, from which any request and
+/// seed generate. `bytes()` is the runtime's stored form, for a cache keyed by the audio file's hash; `init(bytes:)`
+/// reads it back.
+#[derive(uniffi::Object)]
+pub struct Prepared(pub(crate) Arc<ensomi_generate::Prepared>);
+
+#[uniffi::export]
+impl Prepared {
+    /// Fails with `GeneratorError.Model` for bytes of another format, runtime version or model.
+    #[uniffi::constructor]
+    pub fn new(bytes: Vec<u8>) -> Result<Arc<Self>, GeneratorError> {
+        Ok(Arc::new(Self(Arc::new(ensomi_generate::Prepared::from_bytes(&bytes).map_err(model_error)?))))
+    }
+
+    pub fn bytes(&self) -> Vec<u8> {
+        self.0.to_bytes()
+    }
 }
 
 fn session_config(options: &GeneratorOptions) -> Config {
@@ -299,7 +319,7 @@ fn capabilities(models: &Models, manifest: Option<&package::Manifest>) -> ModelC
 }
 
 /// The request as the core reads it: `chart.proto`'s JSON field names and enum numbers.
-fn core_request(request: &GenerateChartRequest) -> Result<Request, String> {
+pub(crate) fn core_request(request: &GenerateChartRequest) -> Result<Request, String> {
     let sections: Vec<Value> = request
         .controls
         .sections
@@ -333,6 +353,17 @@ fn panic_message(payload: &(dyn Any + Send)) -> &str {
     payload.downcast_ref::<&str>().copied().or_else(|| payload.downcast_ref::<String>().map(String::as_str)).unwrap_or("no message")
 }
 
+/// A panic in the core, the listener or the session, as the generation's error.
+pub(crate) fn panic_error(payload: Box<dyn Any + Send>) -> GeneratorError {
+    GeneratorError::Generation { code: "generation_failed".to_string(), message: format!("internal error: {}", panic_message(&*payload)) }
+}
+
+/// Milliseconds since now, the core's clock.
+pub(crate) fn clock() -> Rc<dyn Fn() -> f64> {
+    let start = Instant::now();
+    Rc::new(move || start.elapsed().as_secs_f64() * 1000.0)
+}
+
 fn chart(chart: &ensomi_generate::Chart) -> Chart {
     Chart {
         duration_ms: chart.duration_ms as u32,
@@ -362,6 +393,22 @@ impl ChartGenerator {
         self.capabilities.clone()
     }
 
+    /// Runs the stages that read only the audio of mono PCM at `sample_rate`: PCM preparation, the spectrogram,
+    /// BeatThis, the features and the beat grid. Blocks until they are done; `cancellation` stops them at the next
+    /// step, and a cancelled `prepare` returns `GeneratorError::Cancelled` and keeps nothing.
+    pub fn prepare(&self, pcm: Vec<f32>, sample_rate: f64, cancellation: Option<Arc<Cancellation>>) -> Result<Arc<Prepared>, GeneratorError> {
+        let audio = self.audio(pcm, sample_rate)?;
+        let cancelled = || cancellation.as_ref().is_some_and(|c| c.is_cancelled());
+        let mut sessions = crate::lock(&self.sessions);
+        let outcome = catch_unwind(AssertUnwindSafe(|| {
+            let mut generator = prepare(self.models.clone(), audio, Options::new(clock()));
+            drive_observed(&mut generator, &mut sessions, |_| if cancelled() { Err("cancelled".to_string()) } else { Ok(()) })
+        }))
+        .map_err(panic_error)?;
+        let (prepared, _) = outcome.map_err(|e| if cancelled() { GeneratorError::Cancelled } else { generation_error(e) })?;
+        Ok(Arc::new(Prepared(Arc::new(prepared))))
+    }
+
     /// Generates a chart from mono PCM at `sample_rate`. Blocks until the chart is done; `listener` hears each
     /// phase and `cancellation` stops it at its next step. A panic in the core or the listener ends the
     /// generation with `GeneratorError::Generation` and leaves the generator usable.
@@ -373,12 +420,9 @@ impl ChartGenerator {
         listener: Option<Arc<dyn GenerationListener>>,
         cancellation: Option<Arc<Cancellation>>,
     ) -> Result<ChartResult, GeneratorError> {
-        let resampler = read_resampler(self.resampler_directory.as_deref(), sample_rate)?;
-        let audio = Audio { samples: Samples::F32(pcm), channels: 1, sample_rate, mel: None, beatthis: None, resampler };
-        let audio_name = request.audio_name.clone();
+        let audio = self.audio(pcm, sample_rate)?;
+        let options = Options { audio_name: request.audio_name.clone(), ..Options::new(clock()) };
         let request = core_request(&request).map_err(generation_error)?;
-        let start = Instant::now();
-        let options = Options { random: None, setting: None, audio_name, trace: None, clock: Rc::new(move || start.elapsed().as_secs_f64() * 1000.0) };
         let cancelled = || cancellation.as_ref().is_some_and(|c| c.is_cancelled());
 
         // A panic is caught inside the lock, which therefore stays usable; ONNX Runtime sessions keep no state
@@ -402,18 +446,30 @@ impl ChartGenerator {
                 Ok(())
             })
         }))
-        .map_err(|panic| GeneratorError::Generation { code: "generation_failed".to_string(), message: format!("internal error: {}", panic_message(&*panic)) })?;
+        .map_err(panic_error)?;
         let (result, _) = outcome.map_err(|e| if cancelled() { GeneratorError::Cancelled } else { generation_error(e) })?;
-        Ok(ChartResult {
-            chart: chart(&result.chart),
-            osu: result.osu,
-            receipt: GenerationReceipt {
-                model_name: result.receipt.model_name,
-                model_version: result.receipt.model_version,
-                seed: result.receipt.seed,
-                star: result.receipt.star,
-                receipt_json: result.receipt.receipt_json,
-            },
-        })
+        Ok(chart_result(&result))
+    }
+}
+
+impl ChartGenerator {
+    /// Mono PCM as the core takes it, with the resampler tables for its rate.
+    pub(crate) fn audio(&self, pcm: Vec<f32>, sample_rate: f64) -> Result<Audio, GeneratorError> {
+        let resampler = read_resampler(self.resampler_directory.as_deref(), sample_rate)?;
+        Ok(Audio { samples: Samples::F32(pcm), channels: 1, sample_rate, mel: None, beatthis: None, resampler })
+    }
+}
+
+pub(crate) fn chart_result(result: &ensomi_generate::GenerationResult) -> ChartResult {
+    ChartResult {
+        chart: chart(&result.chart),
+        osu: result.osu.clone(),
+        receipt: GenerationReceipt {
+            model_name: result.receipt.model_name.clone(),
+            model_version: result.receipt.model_version.clone(),
+            seed: result.receipt.seed,
+            star: result.receipt.star,
+            receipt_json: result.receipt.receipt_json.clone(),
+        },
     }
 }

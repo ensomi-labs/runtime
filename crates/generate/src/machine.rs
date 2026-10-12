@@ -5,6 +5,8 @@
 //! at each request, and the caller runs the graph and resumes with the outputs. Work that needs no
 //! graph outputs can be left in [`Io::background`], for a caller that runs graphs asynchronously to
 //! do with [`Generator::work`] while a graph runs.
+use crate::export::Page;
+use crate::generate::GenerationResult;
 use std::cell::RefCell;
 use std::future::Future;
 use std::pin::Pin;
@@ -52,17 +54,21 @@ pub enum Phase {
     Export = 5,
 }
 
-pub enum Step {
+/// A step of a generator whose result is a `T`: a chart, or the [`crate::Prepared`] audio stages.
+pub enum Step<T = GenerationResult> {
     /// Run `graph` on `inputs` and pass the outputs to the next call.
     Run { graph: String, inputs: Tensors },
     /// The generator entered a phase; call again with no outputs.
     Progress(Phase),
-    Done(Box<crate::generate::GenerationResult>),
+    /// Part of the chart is final (a generation that commits per head row); call again with no outputs.
+    Commit(Page),
+    Done(Box<T>),
 }
 
 enum Request {
     Run(String, Tensors),
     Progress(Phase),
+    Commit(Page),
 }
 
 #[derive(Default)]
@@ -79,7 +85,7 @@ pub struct Io(Rc<RefCell<Mailbox>>);
 struct Suspend {
     io: Io,
     request: Option<Request>,
-    /// Whether to wait for graph outputs; a progress step resumes on the next call.
+    /// Whether to wait for graph outputs; a progress or commit step resumes on the next call.
     wait: bool,
 }
 
@@ -110,6 +116,10 @@ impl Io {
 
     pub async fn progress(&self, phase: Phase) {
         Suspend { io: self.clone(), request: Some(Request::Progress(phase)), wait: false }.await;
+    }
+
+    pub async fn commit(&self, page: Page) {
+        Suspend { io: self.clone(), request: Some(Request::Commit(page)), wait: false }.await;
     }
 
     /// Leaves work that needs no graph outputs for [`Generator::work`]. `slice` does a part of it
@@ -143,19 +153,19 @@ impl Outputs {
     }
 }
 
-pub struct Generator {
-    future: Pin<Box<dyn Future<Output = Result<crate::generate::GenerationResult, String>>>>,
+pub struct Generator<T = GenerationResult> {
+    future: Pin<Box<dyn Future<Output = Result<T, String>>>>,
     io: Io,
 }
 
-impl Generator {
-    pub fn new(io: Io, future: impl Future<Output = Result<crate::generate::GenerationResult, String>> + 'static) -> Self {
+impl<T> Generator<T> {
+    pub fn new(io: Io, future: impl Future<Output = Result<T, String>> + 'static) -> Self {
         Self { future: Box::pin(future), io }
     }
 
     /// Advances to the next step. Pass the outputs of the graph that the previous step asked for,
-    /// and nothing after a progress step or on the first call.
-    pub fn step(&mut self, outputs: Option<Tensors>) -> Result<Step, String> {
+    /// and nothing after a progress or commit step or on the first call. Not to be called after `Done` or an error.
+    pub fn step(&mut self, outputs: Option<Tensors>) -> Result<Step<T>, String> {
         self.io.0.borrow_mut().response = outputs;
         let mut cx = Context::from_waker(Waker::noop());
         match self.future.as_mut().poll(&mut cx) {
@@ -163,6 +173,7 @@ impl Generator {
             Poll::Pending => match self.io.0.borrow_mut().request.take() {
                 Some(Request::Run(graph, inputs)) => Ok(Step::Run { graph, inputs }),
                 Some(Request::Progress(phase)) => Ok(Step::Progress(phase)),
+                Some(Request::Commit(page)) => Ok(Step::Commit(page)),
                 None => Err("the generator was resumed without the outputs it asked for".to_string()),
             },
         }

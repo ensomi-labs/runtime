@@ -1,5 +1,6 @@
 //! UniFFI bindings of the runtime core: the gameplay session, feedback state, note layout, the
-//! `.osu` loader, the chart generator and its `.osz` export ([`generator`]).
+//! `.osu` loader, the chart generator and its `.osz` export ([`generator`]), and the scheduler that generates
+//! for play ([`scheduler`]).
 //!
 //! The data types are the core's own, declared here again for the binding generator
 //! (`uniffi::remote`), so a change to a core type that is not mirrored fails to compile. The two stateful
@@ -21,6 +22,7 @@ use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 pub mod generator;
+pub mod scheduler;
 
 uniffi::setup_scaffolding!();
 
@@ -238,22 +240,54 @@ fn frame<T, R: Default>(mutex: &Mutex<T>, call: impl FnOnce(&mut T) -> R) -> R {
     catch_unwind(AssertUnwindSafe(|| call(&mut lock(mutex)))).unwrap_or_default()
 }
 
-/// Judgement of one chart, complete or streamed, under one ruleset; see `ensomi_gameplay::Session`.
+/// Judgement of one chart, complete or streamed, under one ruleset; see `ensomi_gameplay::Session`. The events that
+/// a page appended by a `ChartScheduler` decides come out of the next `input` or `advance`, before their own.
 #[derive(uniffi::Object)]
-pub struct GameplaySession(Mutex<gameplay::Session>);
+pub struct GameplaySession(Mutex<gameplay::Session>, Mutex<Vec<JudgementEvent>>);
+
+impl GameplaySession {
+    /// Appends a scheduler's page and keeps the events it decides for the next `input` or `advance`.
+    pub(crate) fn append_page(
+        &self,
+        tokens: &[ChartToken],
+        coverage_ms: f64,
+        end_of_stream: bool,
+    ) -> Result<(), ChartError> {
+        let mut session = lock(&self.0);
+        let events = session.append_tokens(tokens, coverage_ms, end_of_stream)?;
+        lock(&self.1).extend(events);
+        Ok(())
+    }
+
+    /// The events kept from scheduler pages, then those of `call`, which runs on the locked session.
+    fn decide(
+        &self,
+        call: impl FnOnce(&mut gameplay::Session) -> Vec<JudgementEvent>,
+    ) -> Vec<JudgementEvent> {
+        frame(&self.0, |s| {
+            let mut events = std::mem::take(&mut *lock(&self.1));
+            events.extend(call(s));
+            events
+        })
+    }
+}
 
 #[uniffi::export]
 impl GameplaySession {
     #[uniffi::constructor]
     pub fn new(chart: Chart, ruleset: Ruleset) -> Result<Arc<Self>, ChartError> {
-        Ok(Arc::new(Self(Mutex::new(gameplay::Session::new(
-            &chart, ruleset,
-        )?))))
+        Ok(Arc::new(Self(
+            Mutex::new(gameplay::Session::new(&chart, ruleset)?),
+            Mutex::default(),
+        )))
     }
 
     #[uniffi::constructor]
     pub fn streaming(ruleset: Ruleset) -> Arc<Self> {
-        Arc::new(Self(Mutex::new(gameplay::Session::streaming(ruleset))))
+        Arc::new(Self(
+            Mutex::new(gameplay::Session::streaming(ruleset)),
+            Mutex::default(),
+        ))
     }
 
     pub fn append(
@@ -283,11 +317,11 @@ impl GameplaySession {
     }
 
     pub fn input(&self, input: InputEvent) -> Vec<JudgementEvent> {
-        frame(&self.0, |s| s.input(input))
+        self.decide(|s| s.input(input))
     }
 
     pub fn advance(&self, watermark_ms: f64) -> Vec<JudgementEvent> {
-        frame(&self.0, |s| s.advance(watermark_ms))
+        self.decide(|s| s.advance(watermark_ms))
     }
 
     /// Arithmetic on the counts, which cannot panic, so without the backstop of `frame`.

@@ -40,6 +40,12 @@ versions are the first with it.
 Both packages carry the soxr tables in [`assets/resampler`](assets/resampler), with which the generator resamples PCM at
 rates other than 22050 Hz. Releases: [`RELEASING.md`](RELEASING.md).
 
+Both also run the audio stages alone (`prepare`, whose result is stored as bytes per song) and a scheduler that
+generates for play: R2's arrangement committed per head row with the difficulty check off, and play allowed to start
+once it cannot overtake the chart ([`swift/README.md`](swift/README.md), [`js/README.md`](js/README.md)). The
+scheduler is in the core without IO (`crates/generate/src/schedule.rs`); natively its pages go into the gameplay
+session inside Rust.
+
 The TypeScript runtime in `ensomi-web/packages/runtime` retires once the Wasm build of this
 core reproduces its charts.
 

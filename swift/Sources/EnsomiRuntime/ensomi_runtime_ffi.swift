@@ -733,7 +733,7 @@ public func FfiConverterTypeCancellation_lower(_ value: Cancellation) -> UInt64 
 
 /**
  * A model directory opened into ONNX Runtime sessions. One generation runs at a time; a second call
- * waits for the first.
+ * waits for the first. A `ChartScheduler` takes the sessions for one graph run at a time.
  */
 public protocol ChartGeneratorProtocol: AnyObject, Sendable {
     
@@ -746,10 +746,17 @@ public protocol ChartGeneratorProtocol: AnyObject, Sendable {
      */
     func generate(pcm: [Float], sampleRate: Double, request: GenerateChartRequest, listener: GenerationListener?, cancellation: Cancellation?) throws  -> ChartResult
     
+    /**
+     * Runs the stages that read only the audio of mono PCM at `sample_rate`: PCM preparation, the spectrogram,
+     * BeatThis, the features and the beat grid. Blocks until they are done; `cancellation` stops them at the next
+     * step, and a cancelled `prepare` returns `GeneratorError::Cancelled` and keeps nothing.
+     */
+    func prepare(pcm: [Float], sampleRate: Double, cancellation: Cancellation?) throws  -> Prepared
+    
 }
 /**
  * A model directory opened into ONNX Runtime sessions. One generation runs at a time; a second call
- * waits for the first.
+ * waits for the first. A `ChartScheduler` takes the sessions for one graph run at a time.
  */
 open class ChartGenerator: ChartGeneratorProtocol, @unchecked Sendable {
     fileprivate let handle: UInt64
@@ -844,6 +851,22 @@ open func generate(pcm: [Float], sampleRate: Double, request: GenerateChartReque
 })
 }
     
+    /**
+     * Runs the stages that read only the audio of mono PCM at `sample_rate`: PCM preparation, the spectrogram,
+     * BeatThis, the features and the beat grid. Blocks until they are done; `cancellation` stops them at the next
+     * step, and a cancelled `prepare` returns `GeneratorError::Cancelled` and keeps nothing.
+     */
+open func prepare(pcm: [Float], sampleRate: Double, cancellation: Cancellation?)throws  -> Prepared  {
+    return try  FfiConverterTypePrepared_lift(try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
+    uniffi_ensomi_runtime_ffi_fn_method_chartgenerator_prepare(
+            self.uniffiCloneHandle(),
+        FfiConverterSequenceFloat.lower(pcm),
+        FfiConverterDouble.lower(sampleRate),
+        FfiConverterOptionTypeCancellation.lower(cancellation),$0
+    )
+})
+}
+    
 
     
 }
@@ -887,6 +910,266 @@ public func FfiConverterTypeChartGenerator_lift(_ handle: UInt64) throws -> Char
 #endif
 public func FfiConverterTypeChartGenerator_lower(_ value: ChartGenerator) -> UInt64 {
     return FfiConverterTypeChartGenerator.lower(value)
+}
+
+
+
+
+
+
+/**
+ * One chart generated for one song's play; see the module documentation.
+ */
+public protocol ChartSchedulerProtocol: AnyObject, Sendable {
+    
+    /**
+     * Each frame during play: the chart time heard and the shell's monotonic clock, in milliseconds.
+     */
+    func heard(chartMs: Double, wallMs: Double) 
+    
+    /**
+     * The song's `Prepared`, to store, once the audio stages have run.
+     */
+    func prepared()  -> Prepared?
+    
+    /**
+     * The generation's throughput so far: committed chart milliseconds per wall millisecond of work.
+     */
+    func rate()  -> Double?
+    
+    /**
+     * The whole chart, `.osu` and receipt, once generation is done.
+     */
+    func result()  -> ChartResult?
+    
+    /**
+     * Play is to start at `at_ms`, 0 or a position, judged by `session`, a new `GameplaySession.streaming`: from the
+     * next `work()` on, the chart from the join point goes into it.
+     */
+    func start(atMs: Double, session: GameplaySession) 
+    
+    /**
+     * Ends generation; `work()` then returns `Done`.
+     */
+    func stop() 
+    
+    /**
+     * Generates, on the caller's thread, until play may start or nothing is left to do; see the module
+     * documentation. A panic in the core ends it with `GeneratorError::Generation`, a page the session refuses too.
+     */
+    func work() throws  -> SchedulerAction
+    
+}
+/**
+ * One chart generated for one song's play; see the module documentation.
+ */
+open class ChartScheduler: ChartSchedulerProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_ensomi_runtime_ffi_fn_clone_chartscheduler(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_ensomi_runtime_ffi_fn_free_chartscheduler(handle, $0) }
+    }
+
+    
+    /**
+     * From mono PCM at `sample_rate`: the audio stages run first.
+     */
+public static func fromPcm(generator: ChartGenerator, pcm: [Float], sampleRate: Double, request: GenerateChartRequest, mode: ScheduleMode, lead: LeadPolicy)throws  -> ChartScheduler  {
+    return try  FfiConverterTypeChartScheduler_lift(try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
+    uniffi_ensomi_runtime_ffi_fn_constructor_chartscheduler_from_pcm(
+        FfiConverterTypeChartGenerator_lower(generator),
+        FfiConverterSequenceFloat.lower(pcm),
+        FfiConverterDouble.lower(sampleRate),
+        FfiConverterTypeGenerateChartRequest_lower(request),
+        FfiConverterTypeScheduleMode_lower(mode),
+        FfiConverterTypeLeadPolicy_lower(lead),$0
+    )
+})
+}
+    
+    /**
+     * From a stored `Prepared` of the song, without the audio stages.
+     */
+public static func fromPrepared(generator: ChartGenerator, prepared: Prepared, request: GenerateChartRequest, mode: ScheduleMode, lead: LeadPolicy)throws  -> ChartScheduler  {
+    return try  FfiConverterTypeChartScheduler_lift(try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
+    uniffi_ensomi_runtime_ffi_fn_constructor_chartscheduler_from_prepared(
+        FfiConverterTypeChartGenerator_lower(generator),
+        FfiConverterTypePrepared_lower(prepared),
+        FfiConverterTypeGenerateChartRequest_lower(request),
+        FfiConverterTypeScheduleMode_lower(mode),
+        FfiConverterTypeLeadPolicy_lower(lead),$0
+    )
+})
+}
+    
+
+    
+    /**
+     * Each frame during play: the chart time heard and the shell's monotonic clock, in milliseconds.
+     */
+open func heard(chartMs: Double, wallMs: Double)  {try! rustCall() {
+    uniffi_ensomi_runtime_ffi_fn_method_chartscheduler_heard(
+            self.uniffiCloneHandle(),
+        FfiConverterDouble.lower(chartMs),
+        FfiConverterDouble.lower(wallMs),$0
+    )
+}
+}
+    
+    /**
+     * The song's `Prepared`, to store, once the audio stages have run.
+     */
+open func prepared() -> Prepared?  {
+    return try!  FfiConverterOptionTypePrepared.lift(try! rustCall() {
+    uniffi_ensomi_runtime_ffi_fn_method_chartscheduler_prepared(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * The generation's throughput so far: committed chart milliseconds per wall millisecond of work.
+     */
+open func rate() -> Double?  {
+    return try!  FfiConverterOptionDouble.lift(try! rustCall() {
+    uniffi_ensomi_runtime_ffi_fn_method_chartscheduler_rate(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * The whole chart, `.osu` and receipt, once generation is done.
+     */
+open func result() -> ChartResult?  {
+    return try!  FfiConverterOptionTypeChartResult.lift(try! rustCall() {
+    uniffi_ensomi_runtime_ffi_fn_method_chartscheduler_result(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * Play is to start at `at_ms`, 0 or a position, judged by `session`, a new `GameplaySession.streaming`: from the
+     * next `work()` on, the chart from the join point goes into it.
+     */
+open func start(atMs: Double, session: GameplaySession)  {try! rustCall() {
+    uniffi_ensomi_runtime_ffi_fn_method_chartscheduler_start(
+            self.uniffiCloneHandle(),
+        FfiConverterDouble.lower(atMs),
+        FfiConverterTypeGameplaySession_lower(session),$0
+    )
+}
+}
+    
+    /**
+     * Ends generation; `work()` then returns `Done`.
+     */
+open func stop()  {try! rustCall() {
+    uniffi_ensomi_runtime_ffi_fn_method_chartscheduler_stop(
+            self.uniffiCloneHandle(),$0
+    )
+}
+}
+    
+    /**
+     * Generates, on the caller's thread, until play may start or nothing is left to do; see the module
+     * documentation. A panic in the core ends it with `GeneratorError::Generation`, a page the session refuses too.
+     */
+open func work()throws  -> SchedulerAction  {
+    return try  FfiConverterTypeSchedulerAction_lift(try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
+    uniffi_ensomi_runtime_ffi_fn_method_chartscheduler_work(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeChartScheduler: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = ChartScheduler
+
+    public static func lift(_ handle: UInt64) throws -> ChartScheduler {
+        return ChartScheduler(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: ChartScheduler) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ChartScheduler {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: ChartScheduler, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeChartScheduler_lift(_ handle: UInt64) throws -> ChartScheduler {
+    return try FfiConverterTypeChartScheduler.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeChartScheduler_lower(_ value: ChartScheduler) -> UInt64 {
+    return FfiConverterTypeChartScheduler.lower(value)
 }
 
 
@@ -1098,7 +1381,8 @@ public func FfiConverterTypeGameplayFeedback_lower(_ value: GameplayFeedback) ->
 
 
 /**
- * Judgement of one chart, complete or streamed, under one ruleset; see `ensomi_gameplay::Session`.
+ * Judgement of one chart, complete or streamed, under one ruleset; see `ensomi_gameplay::Session`. The events that
+ * a page appended by a `ChartScheduler` decides come out of the next `input` or `advance`, before their own.
  */
 public protocol GameplaySessionProtocol: AnyObject, Sendable {
     
@@ -1129,7 +1413,8 @@ public protocol GameplaySessionProtocol: AnyObject, Sendable {
     
 }
 /**
- * Judgement of one chart, complete or streamed, under one ruleset; see `ensomi_gameplay::Session`.
+ * Judgement of one chart, complete or streamed, under one ruleset; see `ensomi_gameplay::Session`. The events that
+ * a page appended by a `ChartScheduler` decides come out of the next `input` or `advance`, before their own.
  */
 open class GameplaySession: GameplaySessionProtocol, @unchecked Sendable {
     fileprivate let handle: UInt64
@@ -1548,6 +1833,143 @@ public func FfiConverterTypeGenerationListener_lift(_ handle: UInt64) throws -> 
 #endif
 public func FfiConverterTypeGenerationListener_lower(_ value: GenerationListener) -> UInt64 {
     return FfiConverterTypeGenerationListener.lower(value)
+}
+
+
+
+
+
+
+/**
+ * What `prepare` keeps of a song: the results of the stages that read only the audio, from which any request and
+ * seed generate. `bytes()` is the runtime's stored form, for a cache keyed by the audio file's hash; `init(bytes:)`
+ * reads it back.
+ */
+public protocol PreparedProtocol: AnyObject, Sendable {
+    
+    func bytes()  -> Data
+    
+}
+/**
+ * What `prepare` keeps of a song: the results of the stages that read only the audio, from which any request and
+ * seed generate. `bytes()` is the runtime's stored form, for a cache keyed by the audio file's hash; `init(bytes:)`
+ * reads it back.
+ */
+open class Prepared: PreparedProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_ensomi_runtime_ffi_fn_clone_prepared(self.handle, $0) }
+    }
+    /**
+     * Fails with `GeneratorError.Model` for bytes of another format, runtime version or model.
+     */
+public convenience init(bytes: Data)throws  {
+    let handle =
+        try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
+    uniffi_ensomi_runtime_ffi_fn_constructor_prepared_new(
+        FfiConverterData.lower(bytes),$0
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_ensomi_runtime_ffi_fn_free_prepared(handle, $0) }
+    }
+
+    
+
+    
+open func bytes() -> Data  {
+    return try!  FfiConverterData.lift(try! rustCall() {
+    uniffi_ensomi_runtime_ffi_fn_method_prepared_bytes(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePrepared: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = Prepared
+
+    public static func lift(_ handle: UInt64) throws -> Prepared {
+        return Prepared(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: Prepared) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Prepared {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: Prepared, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePrepared_lift(_ handle: UInt64) throws -> Prepared {
+    return try FfiConverterTypePrepared.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePrepared_lower(_ value: Prepared) -> UInt64 {
+    return FfiConverterTypePrepared.lower(value)
 }
 
 
@@ -2586,6 +3008,85 @@ public func FfiConverterTypeLaneState_lift(_ buf: RustBuffer) throws -> LaneStat
 #endif
 public func FfiConverterTypeLaneState_lower(_ value: LaneState) -> RustBuffer {
     return FfiConverterTypeLaneState.lower(value)
+}
+
+
+/**
+ * The lead L = max(settle lead, render lead) + margin that the chart keeps ahead of play.
+ */
+public struct LeadPolicy: Equatable, Hashable {
+    /**
+     * The rules of the session, whose widest wait is the settle lead (`Ruleset::settle_lead_ms`).
+     */
+    public var ruleset: Ruleset
+    /**
+     * How far ahead of the heard time the playfield draws notes: the client's scroll time.
+     */
+    public var renderLeadMs: Double
+    /**
+     * Room for the variance of the generation's throughput on this device.
+     */
+    public var marginMs: Double
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * The rules of the session, whose widest wait is the settle lead (`Ruleset::settle_lead_ms`).
+         */ruleset: Ruleset, 
+        /**
+         * How far ahead of the heard time the playfield draws notes: the client's scroll time.
+         */renderLeadMs: Double, 
+        /**
+         * Room for the variance of the generation's throughput on this device.
+         */marginMs: Double) {
+        self.ruleset = ruleset
+        self.renderLeadMs = renderLeadMs
+        self.marginMs = marginMs
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension LeadPolicy: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeLeadPolicy: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LeadPolicy {
+        return
+            try LeadPolicy(
+                ruleset: FfiConverterTypeRuleset.read(from: &buf), 
+                renderLeadMs: FfiConverterDouble.read(from: &buf), 
+                marginMs: FfiConverterDouble.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: LeadPolicy, into buf: inout [UInt8]) {
+        FfiConverterTypeRuleset.write(value.ruleset, into: &buf)
+        FfiConverterDouble.write(value.renderLeadMs, into: &buf)
+        FfiConverterDouble.write(value.marginMs, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLeadPolicy_lift(_ buf: RustBuffer) throws -> LeadPolicy {
+    return try FfiConverterTypeLeadPolicy.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLeadPolicy_lower(_ value: LeadPolicy) -> RustBuffer {
+    return FfiConverterTypeLeadPolicy.lower(value)
 }
 
 
@@ -4252,6 +4753,156 @@ public func FfiConverterTypePhase_lower(_ value: Phase) -> RustBuffer {
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
+public enum ScheduleMode: Equatable, Hashable {
+    
+    /**
+     * The whole chart, with R2's difficulty check, before play starts: for saving or exporting, and play after.
+     */
+    case wholeChart
+    /**
+     * Play while generating: a page per head row with the difficulty check off, play from when the start rule holds.
+     */
+    case aheadOfPlay
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension ScheduleMode: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeScheduleMode: FfiConverterRustBuffer {
+    typealias SwiftType = ScheduleMode
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ScheduleMode {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .wholeChart
+        
+        case 2: return .aheadOfPlay
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: ScheduleMode, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .wholeChart:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .aheadOfPlay:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeScheduleMode_lift(_ buf: RustBuffer) throws -> ScheduleMode {
+    return try FfiConverterTypeScheduleMode.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeScheduleMode_lower(_ value: ScheduleMode) -> RustBuffer {
+    return FfiConverterTypeScheduleMode.lower(value)
+}
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
+public enum SchedulerAction: Equatable, Hashable {
+    
+    /**
+     * Play may start, or resume after the chart fell behind it, at this chart time. From a position other than 0,
+     * objects before it are not in the session.
+     */
+    case ready(joinMs: Double
+    )
+    /**
+     * Nothing more until another `start`.
+     */
+    case done
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension SchedulerAction: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSchedulerAction: FfiConverterRustBuffer {
+    typealias SwiftType = SchedulerAction
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SchedulerAction {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .ready(joinMs: try FfiConverterDouble.read(from: &buf)
+        )
+        
+        case 2: return .done
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: SchedulerAction, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case let .ready(joinMs):
+            writeInt(&buf, Int32(1))
+            FfiConverterDouble.write(joinMs, into: &buf)
+            
+        
+        case .done:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSchedulerAction_lift(_ buf: RustBuffer) throws -> SchedulerAction {
+    return try FfiConverterTypeSchedulerAction.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSchedulerAction_lower(_ value: SchedulerAction) -> RustBuffer {
+    return FfiConverterTypeSchedulerAction.lower(value)
+}
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
 public enum SectionTarget: Equatable, Hashable {
     
     /**
@@ -4749,6 +5400,54 @@ fileprivate struct FfiConverterOptionTypeGenerationListener: FfiConverterRustBuf
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypeGenerationListener.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypePrepared: FfiConverterRustBuffer {
+    typealias SwiftType = Prepared?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypePrepared.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypePrepared.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeChartResult: FfiConverterRustBuffer {
+    typealias SwiftType = ChartResult?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeChartResult.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeChartResult.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -5268,7 +5967,34 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ensomi_runtime_ffi_checksum_method_chartgenerator_generate() != 63973) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_chartgenerator_prepare() != 22134) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_ensomi_runtime_ffi_checksum_method_generationlistener_progress() != 30631) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_prepared_bytes() != 48485) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_chartscheduler_heard() != 13955) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_chartscheduler_prepared() != 10818) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_chartscheduler_rate() != 10157) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_chartscheduler_result() != 5474) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_chartscheduler_start() != 10556) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_chartscheduler_stop() != 12065) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_chartscheduler_work() != 22462) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_constructor_gameplayfeedback_new() != 12333) {
@@ -5284,6 +6010,15 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_constructor_chartgenerator_open() != 15501) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_constructor_prepared_new() != 62881) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_constructor_chartscheduler_from_pcm() != 27922) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_constructor_chartscheduler_from_prepared() != 37736) {
         return InitializationResult.apiChecksumMismatch
     }
 

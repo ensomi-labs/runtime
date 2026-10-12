@@ -153,5 +153,65 @@ export interface GenerateOptions {
     replay?: unknown;
 }
 export declare function generateChart(models: Models, pcm: PCM, sampleRate: number, request: GenerateChartRequest, options?: GenerateOptions): Promise<GenerationResult>;
+
+/** What the stages that read only the audio keep of a song; any request and seed generate from it. */
+export declare class Prepared {
+    /** The runtime's stored form, for a cache keyed by the audio file's hash. */
+    bytes(): Uint8Array;
+    /** Reads stored bytes; throws for bytes of another format, runtime version or model. */
+    static fromBytes(bytes: Uint8Array): Promise<Prepared>;
+}
+export interface PrepareOptions {
+    onProgress?: (progress: GenerationProgress) => void;
+    clock?: () => number;
+}
+/** Runs the stages that read only the audio: PCM preparation, the spectrogram, BeatThis, the features and the beat grid. */
+export declare function prepare(models: Models, pcm: PCM, sampleRate: number, options?: PrepareOptions): Promise<Prepared>;
+
+/** A token of a committed page: a tap, or a hold as its start and, possibly in a later page, its end. */
+export interface ChartToken {
+    lane: number;
+    time_ms: number;
+    kind: 'tap' | 'hold_start' | 'hold_end';
+}
+/** Part of the chart that will not change: every token at or before `coverage_ms`, after the previous page's. */
+export interface ChartPage {
+    tokens: ChartToken[];
+    coverage_ms: number;
+    end_of_stream: boolean;
+}
+export interface ScheduleOptions extends Omit<GenerateOptions, 'onProgress'> {
+    /** 'ahead-of-play' (default): a page per head row with R2's difficulty check off, play while generating.
+     * 'whole-chart': the whole chart with the check, in one page, before play. */
+    mode?: 'ahead-of-play' | 'whole-chart';
+    /** The judge of the rules whose settle lead the lead takes; default 'C'. */
+    judge?: 'A' | 'B' | 'C' | 'D' | 'E';
+    /** How far ahead of the heard time the playfield draws notes, in milliseconds. */
+    renderLeadMs?: number;
+    /** Room for the variance of the generation's speed on this device, in milliseconds. */
+    marginMs?: number;
+    /** Each committed page, from the join point of the last `start` on; a new `start` sends them again. */
+    onPage?: (page: ChartPage) => void;
+}
+export type ScheduleSource = Prepared | { pcm: PCM; sampleRate: number };
+export type SchedulerAction = { kind: 'ready'; joinMs: number } | { kind: 'done'; result?: GenerationResult };
+/**
+ * Generation for play. Play may start at t0 once c0 - t0 >= L + max(0, (E - c0)(p/r - 1)): the chart committed through
+ * c0, the lead L = max(settle lead, renderLeadMs) + marginMs, the song's end E, the playback rate p and the measured
+ * generation speed r. From a position other than 0, play joins at the first time at or after it plus L where no hold
+ * is open; earlier objects are not sent.
+ */
+export declare class ChartScheduler {
+    static create(models: Models, source: ScheduleSource, request: GenerateChartRequest, options?: ScheduleOptions): Promise<ChartScheduler>;
+    start(atMs: number): void;
+    heard(chartMs: number, wallMs: number): void;
+    stop(): void;
+    /** Runs the graphs until play may start or nothing is left to do; waits for the next event while far enough ahead. */
+    work(): Promise<SchedulerAction>;
+    /** Committed chart milliseconds per wall millisecond of work so far. */
+    readonly rate: number | undefined;
+    prepared(): Prepared | undefined;
+    free(): void;
+}
 export declare function decodeAudio(arrayBuffer: ArrayBuffer): Promise<DecodedAudio>;
 export declare function validateChart(chart: Chart): void;

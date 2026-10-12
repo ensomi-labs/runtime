@@ -1,8 +1,13 @@
 //! Replays the four recorded release songs through the native pipeline and compares every stage
 //! with the Python release: the TypeScript runtime's `checks/parity.ts`, in Rust.
 //!
-//! Usage: parity --model-dir <ensomi-r2> --reference <runtime-ref> --assets <resampler tables> --out <report.json> [song...]
-use ensomi_generate::{generate, Audio, ChartObject, Generator, Grid, Models, Options, ReplayRandom, Request, Samples, Trace, TraceFn};
+//! With `--check off`, the generation commits per head row with R2's difficulty check off, from a `Prepared` made
+//! by its own run of the audio stages: every decision must be pass 1's, the pages must make the chart, and the
+//! chart must be the release's where only one pass ran.
+//!
+//! Usage: parity --model-dir <ensomi-r2> --reference <runtime-ref> --assets <resampler tables> --out <report.json>
+//!        [--check off] [song...]
+use ensomi_generate::{chart_tokens, generate, generate_prepared, prepare, Audio, ChartObject, Commit, GenerationResult, Generator, Grid, Models, Options, Page, ReplayRandom, Request, Samples, Step, Trace, TraceFn};
 use ensomi_generate_ort::recording::Recording;
 use ensomi_generate_ort::{drive, phase_name, Config, Sessions, Timings};
 use serde_json::{json, Map, Value};
@@ -166,6 +171,31 @@ fn read_files(paths: &[String], base: &Path) -> Result<HashMap<String, Vec<u8>>,
 struct Context {
     models: Arc<Models>,
     sessions: Sessions,
+    /// R2's difficulty check is off and the chart is committed per head row.
+    check_off: bool,
+}
+
+/// Runs a generator that commits per head row to the end, keeping its pages.
+fn drive_pages(generator: &mut Generator, sessions: &mut Sessions) -> Result<(GenerationResult, Vec<Page>), String> {
+    let (mut outputs, mut pages) = (None, Vec::new());
+    loop {
+        match generator.step(outputs.take())? {
+            Step::Run { graph, inputs } => outputs = Some(sessions.run(&graph, inputs)?),
+            Step::Progress(_) => {}
+            Step::Commit(page) => pages.push(page),
+            Step::Done(result) => return Ok((*result, pages)),
+        }
+    }
+}
+
+/// Whether the pages make the chart: one per head row and the final row, their coverage rising, the last one
+/// ending the stream, their tokens those of the whole chart.
+fn pages_make_chart(pages: &[Page], result: &GenerationResult, heads: usize) -> Value {
+    let tokens: Vec<_> = pages.iter().flat_map(|p| p.tokens.iter().copied()).collect();
+    let rising = pages.windows(2).all(|w| w[0].coverage_ms < w[1].coverage_ms);
+    let ends = pages.last().is_some_and(|p| p.end_of_stream) && pages.iter().filter(|p| p.end_of_stream).count() == 1;
+    let passed = pages.len() == heads + 1 && rising && ends && tokens == chart_tokens(&result.chart);
+    json!({"passed": passed, "pages": pages.len(), "tokens": tokens.len(), "coverage_rising": rising, "one_end_of_stream": ends})
 }
 
 fn clock() -> Rc<dyn Fn() -> f64> {
@@ -204,6 +234,7 @@ fn run_song(ctx: &mut Context, model_dir: &Path, reference_dir: &Path, assets: &
     let expected_listener = (audio_event["spectrogram"].f64s(), listener["log_mel"].f64s(), listener["beat_logits"].f64s());
     let grid_positions = grid_event["position_ms"].f64s();
     let head_ms_expected = expected_rows["head_ms"].f64s();
+    let heads = head_ms_expected.len();
     let prior_expected: Vec<(String, f64)> = ["held", "heads", "busy_free", "quad", "log_r"].iter().map(|k| (k.to_string(), expected_prior[*k].f64s()[0])).collect();
     let replay = ReplayRandom::new(recording.draws());
     let recorded_draws = replay.recorded();
@@ -271,11 +302,29 @@ fn run_song(ctx: &mut Context, model_dir: &Path, reference_dir: &Path, assets: &
         }
         Ok(())
     });
-    let options = Options { random: Some(Box::new(replay)), setting: Some(setting.clone()), audio_name: Some(audio_name.clone()), trace: Some(trace), clock: clock() };
-    let mut generator: Generator = generate(ctx.models.clone(), audio, request, options);
-    let (result, _) = drive(&mut generator, &mut ctx.sessions)?;
-    if consumed.get() != recorded_draws {
-        return Err(format!("Unconsumed draws: {}/{recorded_draws}", consumed.get()));
+    // With the check off, the audio stages and the rest are two generators, which share the trace.
+    let trace = Rc::new(RefCell::new(trace));
+    let traced = || -> Option<TraceFn> {
+        let trace = trace.clone();
+        Some(Box::new(move |event: Trace<'_>| (trace.borrow_mut())(event)))
+    };
+    let options = Options { random: Some(Box::new(replay)), setting: Some(setting.clone()), audio_name: Some(audio_name.clone()), trace: traced(), clock: clock(), commit: Commit::AtEnd };
+    let mut audio_stages = None;
+    let result = if ctx.check_off {
+        let (prepared, _) = drive(&mut prepare(ctx.models.clone(), audio, Options { trace: traced(), ..Options::new(clock()) }), &mut ctx.sessions)?;
+        let prepared = Arc::new(prepared);
+        audio_stages = Some(prepared.clone());
+        let (result, pages) = drive_pages(&mut generate_prepared(ctx.models.clone(), prepared, request, Options { commit: Commit::HeadRow, ..options }), &mut ctx.sessions)?;
+        row.borrow_mut().insert("pages".into(), pages_make_chart(&pages, &result, heads));
+        result
+    } else {
+        drive(&mut generate(ctx.models.clone(), audio, request, options), &mut ctx.sessions)?.0
+    };
+    // With the check off, pass 2's draws are left.
+    let pass_2 = recording.index["draws"].as_array().ok_or("no draws")?.iter().filter(|d| d["name"].as_str().is_some_and(|n| n.starts_with("r2_pass_2/"))).count();
+    let expected_draws = if ctx.check_off { recorded_draws - pass_2 } else { recorded_draws };
+    if consumed.get() != expected_draws {
+        return Err(format!("Unconsumed draws: {}/{expected_draws}", consumed.get()));
     }
     let mut row = row.borrow().clone();
     let detail: Value = serde_json::from_str(&result.receipt.receipt_json).map_err(|e| e.to_string())?;
@@ -285,50 +334,75 @@ fn run_song(ctx: &mut Context, model_dir: &Path, reference_dir: &Path, assets: &
     stage4["draws_consumed"] = json!(consumed.get());
     stage4["draws_recorded"] = json!(recorded_draws);
     stage4["passes"] = detail["controls"]["difficulty"]["passes"].clone();
+    if ctx.check_off {
+        // One pass, and the check would have arranged again exactly where the release did.
+        let would_repass = detail["controls"]["difficulty"]["would_repass"] == true;
+        stage4["would_repass"] = json!(would_repass);
+        stage4["release_passes"] = json!(if pass_2 > 0 { 2 } else { 1 });
+        if detail["controls"]["difficulty"]["passes"].as_array().map(Vec::len) != Some(1) || would_repass != (pass_2 > 0) {
+            return Err(format!("stage 4 {song}: passes {} and would_repass {would_repass} against the release's {}", detail["controls"]["difficulty"]["passes"], if pass_2 > 0 { 2 } else { 1 }));
+        }
+    }
     row.insert("stage4".into(), stage4);
     row.insert("replay_seconds".into(), detail["seconds"].clone());
     let expected_objects = parse_osu(&expected_osu);
-    if result.chart.objects != expected_objects {
+    if ctx.check_off && pass_2 > 0 {
+        // The release's chart is pass 2's; pass 1's decisions were checked one by one above.
+        row.insert("stage5".into(), json!({"passed": true, "compared": false, "reason": "the release ran pass 2", "objects": result.chart.objects.len(), "same_as_release": result.chart.objects == expected_objects}));
+    } else if result.chart.objects != expected_objects {
         let index = result.chart.objects.iter().zip(&expected_objects).position(|(a, b)| a != b).unwrap_or(result.chart.objects.len().min(expected_objects.len()));
         return Err(format!("stage 5 {song}: hit objects differ at {index}: {:?} vs {:?}", result.chart.objects.get(index), expected_objects.get(index)));
-    }
-    let text_difference = first_text_difference(&strip_generator(&result.osu), &strip_generator(&expected_osu));
-    let (rows_a, rows_b) = (timing_rows(&result.osu), timing_rows(&expected_osu));
-    let same_rows = rows_a.len() == rows_b.len() && rows_a.iter().zip(&rows_b).all(|(a, b)| a.len() == b.len());
-    let mut timing_max = 0.0f64;
-    for (a, b) in rows_a.iter().zip(&rows_b) {
-        for (x, y) in a.iter().zip(b) {
-            timing_max = timing_max.max((x - y).abs());
+    } else {
+        let text_difference = first_text_difference(&strip_generator(&result.osu), &strip_generator(&expected_osu));
+        let (rows_a, rows_b) = (timing_rows(&result.osu), timing_rows(&expected_osu));
+        let same_rows = rows_a.len() == rows_b.len() && rows_a.iter().zip(&rows_b).all(|(a, b)| a.len() == b.len());
+        let mut timing_max = 0.0f64;
+        for (a, b) in rows_a.iter().zip(&rows_b) {
+            for (x, y) in a.iter().zip(b) {
+                timing_max = timing_max.max((x - y).abs());
+            }
         }
+        let rest = first_text_difference(&strip_generator(&without_timing_points(&result.osu)), &strip_generator(&without_timing_points(&expected_osu)));
+        row.insert(
+            "stage5".into(),
+            json!({
+                "passed": same_rows && timing_max <= TIMING_TOLERANCE_MS && rest.is_none(),
+                "hitobjects_identical": true, "objects": result.chart.objects.len(), "timing_points": rows_b.len(), "timing_max_abs_ms": timing_max,
+                "rest_identical": rest.is_none(), "osu_identical_except_generator": text_difference.is_none(), "first_text_difference": text_difference,
+            }),
+        );
     }
-    let rest = first_text_difference(&strip_generator(&without_timing_points(&result.osu)), &strip_generator(&without_timing_points(&expected_osu)));
-    row.insert(
-        "stage5".into(),
-        json!({
-            "passed": same_rows && timing_max <= TIMING_TOLERANCE_MS && rest.is_none(),
-            "hitobjects_identical": true, "objects": result.chart.objects.len(), "timing_points": rows_b.len(), "timing_max_abs_ms": timing_max,
-            "rest_identical": rest.is_none(), "osu_identical_except_generator": text_difference.is_none(), "first_text_difference": text_difference,
-        }),
-    );
     println!("{song} replay {}", row["stage5"]);
-    // The generator's own PRNG, as it runs in production.
+    // The generator's own PRNG, as it runs in production; with the check off, from the same audio stages.
     println!("{song}: own PRNG run");
     let (audio, request, _, _, _) = song_inputs(model_dir, reference_dir, assets, &recording, song)?;
-    let options = Options { random: None, setting: Some(setting), audio_name: Some(audio_name), trace: None, clock: clock() };
-    let mut generator = generate(ctx.models.clone(), audio, request.clone_for_check(), options);
+    let options = Options { setting: Some(setting), audio_name: Some(audio_name), ..Options::new(clock()) };
     let started = Instant::now();
-    let (own, own_timings) = drive(&mut generator, &mut ctx.sessions)?;
+    let (own, own_timings, own_pages) = match audio_stages {
+        Some(prepared) => {
+            let (own, pages) = drive_pages(&mut generate_prepared(ctx.models.clone(), prepared, request.clone_for_check(), Options { commit: Commit::HeadRow, ..options }), &mut ctx.sessions)?;
+            let heads = serde_json::from_str::<Value>(&own.receipt.receipt_json).map_err(|e| e.to_string())?["rows"]["K"].as_u64().unwrap_or(0) as usize;
+            let check = pages_make_chart(&pages, &own, heads);
+            (own, None, Some(check))
+        }
+        None => {
+            let (own, timings) = drive(&mut generate(ctx.models.clone(), audio, request.clone_for_check(), options), &mut ctx.sessions)?;
+            (own, Some(timings), None)
+        }
+    };
     let wall = started.elapsed().as_secs_f64();
     let own_detail: Value = serde_json::from_str(&own.receipt.receipt_json).map_err(|e| e.to_string())?;
     let finalized = own_detail["export"]["replay_finalized"].as_bool().unwrap_or(false);
     if !finalized {
         return Err(format!("Own PRNG left an open hold: {song}"));
     }
+    let pages_passed = own_pages.as_ref().is_none_or(|p| p["passed"] == true);
     row.insert(
         "prng".into(),
         json!({
-            "passed": true, "algorithm": own_detail["runtime"]["random_algorithm"], "objects": own.chart.objects.len(), "heads": own_detail["rows"]["K"],
-            "fallbacks": own_detail["fallback_count"], "seconds": own_detail["seconds"], "wall_seconds": wall, "timings": timings_json(&own_timings),
+            "passed": pages_passed, "algorithm": own_detail["runtime"]["random_algorithm"], "objects": own.chart.objects.len(), "heads": own_detail["rows"]["K"],
+            "fallbacks": own_detail["fallback_count"], "seconds": own_detail["seconds"], "wall_seconds": wall, "timings": own_timings.as_ref().map(timings_json),
+            "pages": own_pages, "would_repass": own_detail["controls"]["difficulty"]["would_repass"],
         }),
     );
     report.insert(song.to_string(), Value::Object(row));
@@ -360,6 +434,7 @@ impl CloneForCheck for Request {
 fn main() {
     let mut args = std::env::args().skip(1);
     let (mut model_dir, mut reference, mut assets, mut out) = (None, None, None, None);
+    let mut check_off = false;
     let mut songs: Vec<String> = Vec::new();
     while let Some(arg) = args.next() {
         match arg.as_str() {
@@ -367,6 +442,7 @@ fn main() {
             "--reference" => reference = args.next().map(PathBuf::from),
             "--assets" => assets = args.next().map(PathBuf::from),
             "--out" => out = args.next().map(PathBuf::from),
+            "--check" => check_off = args.next().as_deref() == Some("off"),
             _ => songs.push(arg),
         }
     }
@@ -382,6 +458,7 @@ fn main() {
     report.insert("grid_tolerance_ms".into(), json!(GRID_TOLERANCE_MS));
     report.insert("timing_tolerance_ms".into(), json!(TIMING_TOLERANCE_MS));
     report.insert("scope".into(), json!("recorded graph inputs, PCM frontends, full Rust decode with carried state and replayed random draws, exact exports, own PRNG"));
+    report.insert("check".into(), json!(if check_off { "off: one pass committed per head row from a Prepared; graphs as with the check on, not replayed again" } else { "on" }));
     let save = |report: &Map<String, Value>| {
         if let Some(parent) = out.parent() {
             std::fs::create_dir_all(parent).unwrap();
@@ -394,9 +471,13 @@ fn main() {
         let files = read_files(&Models::required_files(&manifest), &onnx)?;
         let models = Arc::new(Models::new(manifest, files)?);
         let sessions = Sessions::load(&onnx, &models, &Config::default())?;
-        let mut ctx = Context { models, sessions };
+        let mut ctx = Context { models, sessions, check_off };
         let mut songs_report = Map::new();
         for song in &songs {
+            if check_off {
+                songs_report.insert(song.clone(), json!({}));
+                continue;
+            }
             println!("{song}: stage 1 graph replay");
             let recording = Recording::open(&reference.join("bulk").join(song))?;
             let networks = network_replay(&recording, &mut ctx.sessions)?;
@@ -419,7 +500,8 @@ fn main() {
             save(&report);
             result?;
         }
-        let passed = songs.iter().all(|s| (1..=5).all(|n| songs_report[s][format!("stage{n}")]["passed"] == true) && songs_report[s]["prng"]["passed"] == true);
+        let first = if check_off { 2 } else { 1 };
+        let passed = songs.iter().all(|s| (first..=5).all(|n| songs_report[s][format!("stage{n}")]["passed"] == true) && songs_report[s]["prng"]["passed"] == true && (!check_off || songs_report[s]["pages"]["passed"] == true));
         report.insert("passed".into(), json!(passed));
         if !passed {
             return Err("some stage did not pass".to_string());

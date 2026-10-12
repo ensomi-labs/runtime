@@ -1,12 +1,16 @@
 //! The chart generator through the bindings, with the released model read from beside the repository where
 //! bings-mac keeps it (conformance/generate/README.md); without it the test passes without running.
 
+use ensomi_gameplay::{Judge, Ruleset};
 use ensomi_runtime_ffi::generator::{
     ChartControls, ChartGenerator, ExecutionProvider, GenerateChartRequest, GenerationListener, GenerationPhase,
-    GeneratorError, GeneratorOptions,
+    GeneratorError, GeneratorOptions, Prepared,
 };
-use std::path::Path;
+use ensomi_runtime_ffi::scheduler::{ChartScheduler, LeadPolicy, ScheduleMode, SchedulerAction};
+use ensomi_runtime_ffi::GameplaySession;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::Duration;
 
 /// A listener that panics when the generation reaches the rows, as a bug in the core would.
 struct PanicsAtRows;
@@ -28,16 +32,29 @@ fn noise(seconds: usize) -> Vec<f32> {
         .collect()
 }
 
-#[test]
-fn a_panic_ends_its_generation_with_an_error_and_the_next_generation_works() {
+/// The released model where bings-mac keeps it, or `None` when it is absent.
+fn model() -> Option<PathBuf> {
     let model = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2/onnx");
     if !model.exists() {
         eprintln!("skipped: {} is absent", model.display());
-        return;
     }
+    model.exists().then_some(model)
+}
+
+fn open(model: &Path) -> Arc<ChartGenerator> {
     let options = GeneratorOptions { provider: ExecutionProvider::Cpu, resampler_directory: None, low_memory: None };
-    let generator = ChartGenerator::open(model.to_string_lossy().into_owned(), options).unwrap();
-    let request = GenerateChartRequest { star: 3.0, seed: 0, controls: ChartControls { long_notes: None, sections: Vec::new() }, title: None, artist: None, audio_name: None };
+    ChartGenerator::open(model.to_string_lossy().into_owned(), options).unwrap()
+}
+
+fn request() -> GenerateChartRequest {
+    GenerateChartRequest { star: 3.0, seed: 0, controls: ChartControls { long_notes: None, sections: Vec::new() }, title: None, artist: None, audio_name: None }
+}
+
+#[test]
+fn a_panic_ends_its_generation_with_an_error_and_the_next_generation_works() {
+    let Some(model) = model() else { return };
+    let generator = open(&model);
+    let request = request();
 
     match generator.generate(noise(20), 22_050.0, request.clone(), Some(Arc::new(PanicsAtRows)), None) {
         Err(GeneratorError::Generation { code, message }) => {
@@ -48,4 +65,57 @@ fn a_panic_ends_its_generation_with_an_error_and_the_next_generation_works() {
     }
     let result = generator.generate(noise(20), 22_050.0, request, None, None).unwrap();
     assert!(!result.chart.objects.is_empty());
+}
+
+#[test]
+fn the_scheduler_puts_the_chart_into_the_session_page_by_page() {
+    let Some(model) = model() else { return };
+    let generator = open(&model);
+    let prepared = generator.prepare(noise(30), 22_050.0, None).unwrap();
+    let stored = Prepared::new(prepared.bytes()).unwrap();
+    let lead = LeadPolicy { ruleset: Ruleset { judge: Judge::C }, render_lead_ms: 500.0, margin_ms: 0.0 };
+
+    let whole = ChartScheduler::from_prepared(generator.clone(), stored.clone(), request(), ScheduleMode::WholeChart, lead).unwrap();
+    whole.start(0.0, GameplaySession::streaming(Ruleset { judge: Judge::C }));
+    assert_eq!(whole.work().unwrap(), SchedulerAction::Ready { join_ms: 0.0 });
+    assert_eq!(whole.work().unwrap(), SchedulerAction::Done);
+    let checked = whole.result().unwrap();
+    assert_eq!(checked.osu, generator.generate(noise(30), 22_050.0, request(), None, None).unwrap().osu);
+
+    let streamed = ChartScheduler::from_prepared(generator.clone(), stored, request(), ScheduleMode::AheadOfPlay, lead).unwrap();
+    let session = GameplaySession::streaming(Ruleset { judge: Judge::C });
+    streamed.start(0.0, session.clone());
+    assert_eq!(streamed.work().unwrap(), SchedulerAction::Ready { join_ms: 0.0 });
+    assert!(session.coverage_ms() >= 500.0 && session.coverage_ms() < checked.chart.duration_ms as f64);
+    assert!(streamed.rate().unwrap() > 0.0);
+    assert_eq!(streamed.work().unwrap(), SchedulerAction::Done);
+    let result = streamed.result().unwrap();
+    assert!(session.coverage_ms().is_infinite());
+    let objects: Vec<_> = session.visible_objects(f64::NEG_INFINITY, f64::INFINITY).iter().map(|o| (o.lane, o.start_time_ms as u32, o.end_time_ms.map(|e| e as u32))).collect();
+    assert_eq!(objects, result.chart.objects.iter().map(|o| (o.lane, o.start_ms, o.end_ms)).collect::<Vec<_>>());
+    let receipt: serde_json::Value = serde_json::from_str(&result.receipt.receipt_json).unwrap();
+    let difficulty = &receipt["controls"]["difficulty"];
+    assert_eq!(difficulty["passes"].as_array().unwrap().len(), 1);
+    // The streamed chart is the checked one unless the check arranged the song again.
+    assert_eq!(result.chart == checked.chart, difficulty["would_repass"] == false);
+}
+
+#[test]
+fn stop_ends_a_scheduler_that_waits_for_play() {
+    let Some(model) = model() else { return };
+    let generator = open(&model);
+    let lead = LeadPolicy { ruleset: Ruleset { judge: Judge::C }, render_lead_ms: 500.0, margin_ms: 0.0 };
+    let scheduler = ChartScheduler::from_pcm(generator, noise(30), 22_050.0, request(), ScheduleMode::AheadOfPlay, lead).unwrap();
+    scheduler.start(0.0, GameplaySession::streaming(Ruleset { judge: Judge::C }));
+    assert_eq!(scheduler.work().unwrap(), SchedulerAction::Ready { join_ms: 0.0 });
+    // Heard at the start of play, with the chart well ahead: work waits for play to move on.
+    scheduler.heard(0.0, 0.0);
+    scheduler.heard(1.0, 1.0);
+    let worker = {
+        let scheduler = scheduler.clone();
+        std::thread::spawn(move || scheduler.work())
+    };
+    std::thread::sleep(Duration::from_millis(200));
+    scheduler.stop();
+    assert_eq!(worker.join().unwrap().unwrap(), SchedulerAction::Done);
 }

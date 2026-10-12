@@ -31,22 +31,49 @@ extension ChartGenerator {
         let cancellation = Cancellation()
         let listener = ProgressListener(progress)
         return try await withTaskCancellationHandler {
-            try await withCheckedThrowingContinuation { continuation in
-                let thread = Thread {
-                    continuation.resume(with: Result {
-                        try self.generate(
-                            pcm: pcm, sampleRate: sampleRate, request: request, listener: listener, cancellation: cancellation
-                        )
-                    })
-                }
-                // ONNX Runtime and the generator get the stack of a main thread, not the 512 KiB of a secondary one.
-                thread.stackSize = 8 << 20
-                thread.qualityOfService = .userInitiated
-                thread.start()
+            try await onGenerationThread {
+                try self.generate(pcm: pcm, sampleRate: sampleRate, request: request, listener: listener, cancellation: cancellation)
             }
         } onCancel: {
             cancellation.cancel()
         }
+    }
+
+    /// Runs the stages that read only the audio of mono PCM at `sampleRate` on a thread of its own, for a
+    /// `ChartScheduler` to generate from; `bytes()` stores the result. Cancelling the task stops it at its next step
+    /// with `GeneratorError.Cancelled`.
+    public func prepare(pcm: [Float], sampleRate: Double) async throws -> Prepared {
+        let cancellation = Cancellation()
+        return try await withTaskCancellationHandler {
+            try await onGenerationThread { try self.prepare(pcm: pcm, sampleRate: sampleRate, cancellation: cancellation) }
+        } onCancel: {
+            cancellation.cancel()
+        }
+    }
+}
+
+extension ChartScheduler {
+    /// `work()` on a thread of its own: generates until play may start (`.ready`) or nothing is left to do (`.done`),
+    /// waiting while play is far enough ahead. Cancelling the task stops the scheduler, which then returns `.done`.
+    public func work() async throws -> SchedulerAction {
+        try await withTaskCancellationHandler {
+            try await onGenerationThread { try self.work() }
+        } onCancel: {
+            self.stop()
+        }
+    }
+}
+
+/// Runs `body` on a new thread with the stack of a main thread, which ONNX Runtime and the generator need, not the
+/// 512 KiB of a secondary one.
+private func onGenerationThread<T>(_ body: @escaping () throws -> T) async throws -> T {
+    try await withCheckedThrowingContinuation { continuation in
+        let thread = Thread {
+            continuation.resume(with: Result { try body() })
+        }
+        thread.stackSize = 8 << 20
+        thread.qualityOfService = .userInitiated
+        thread.start()
     }
 }
 

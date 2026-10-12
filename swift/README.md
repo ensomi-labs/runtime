@@ -88,6 +88,46 @@ result.receipt                                      // EnsomiProtocol Generation
 - No call aborts the app on a panic in the core: the gameplay methods that do not throw return an empty or
   default value instead, which the core's tests show it never needs (`crates/gameplay/tests/no_panic.rs`).
 
+### Stored audio stages and play while generating
+
+`prepare(pcm:sampleRate:)` runs the stages that read only the audio (PCM preparation, the spectrogram, BeatThis,
+the features and the beat grid), which take most of a generation; any request and seed generate from its result.
+Start it when the song is chosen. `Prepared.bytes()` is the runtime's stored form (safetensors layout, valid for this
+runtime version and model) for a cache keyed by the audio file's hash; `Prepared(bytes:)` reads it back and throws
+`GeneratorError.Model` for bytes it cannot use.
+
+`ChartScheduler` generates for play, from PCM (`fromPcm`) or a `Prepared` (`fromPrepared`), and appends the chart
+to a `GameplaySession` page by page inside Rust:
+
+```swift
+let lead = LeadPolicy(ruleset: Ruleset(judge: .c), renderLeadMs: scrollTimeMs, marginMs: 0)
+let scheduler = try ChartScheduler.fromPrepared(
+    generator: generator, prepared: prepared, request: request, mode: .aheadOfPlay, lead: lead
+)
+let session = GameplaySession.streaming(ruleset: Ruleset(judge: .c))
+scheduler.start(atMs: 0, session: session)
+if case .ready(let joinMs) = try await scheduler.work() { /* start audio at 0; judging from joinMs */ }
+Task { _ = try await scheduler.work() }             // keeps generating ahead of play, then returns .done
+// each frame: scheduler.heard(chartMs: heard, wallMs: now); session.advance(watermarkMs: heard)
+scheduler.result()                                  // the whole chart, .osu and receipt once done
+```
+
+- `.aheadOfPlay` commits a page after each head row of R2's arrangement, with the difficulty check off: one pass
+  with the first multiplier. The chart differs from the whole chart only where the check would have arranged the
+  song again; the receipt's `controls.difficulty.would_repass` says whether it would have. `.wholeChart` keeps the
+  check and commits the chart in one page at the end.
+- `.ready(joinMs:)` comes once play from there stays behind the chart to the end:
+  c₀ − t₀ ≥ L + max(0, (E − c₀)(p/r − 1)), with the chart committed through c₀, the lead L = max(the ruleset's settle
+  lead, `renderLeadMs`) + `marginMs`, the song's end E, the playback rate p from `heard` and the generation's
+  throughput r measured as it runs (`rate()`). A slower device starts later instead of stalling.
+- `start(atMs:session:)` at a position other than 0 joins at the first time at or after `atMs` + L where no hold is
+  open, and leaves the earlier objects out of the session; generation still runs from the song's start. Each start
+  takes a new streaming session.
+- `work()` runs on a thread of its own, returns at `.ready` and `.done`, and waits while play is far enough ahead. If
+  the chart falls behind play (`session.decidedThroughMs()` below the watermark), pause; the next `.ready` says
+  where to resume. `stop()`, or cancelling the task, ends it.
+- `prepared()` gives the `Prepared` a `fromPcm` scheduler made, to store.
+
 ### Execution provider
 
 Use `.cpu`. Measured on bings-mac (M5) with `crates/generate-ort/examples/providers.rs`

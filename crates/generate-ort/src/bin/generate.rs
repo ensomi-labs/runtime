@@ -36,7 +36,7 @@ fn main() -> Result<(), String> {
     let models = Arc::new(models);
     let mut sessions = Sessions::load(&model_dir, &models, &Config::default())?;
     let start = Instant::now();
-    let options = Options { random: None, setting: None, audio_name: args.get("audio-name").cloned(), trace: None, clock: Rc::new(move || start.elapsed().as_secs_f64() * 1000.0) };
+    let options = Options { audio_name: args.get("audio-name").cloned(), ..Options::new(Rc::new(move || start.elapsed().as_secs_f64() * 1000.0)) };
     let audio = Audio { samples: Samples::F32(pcm), channels: 1, sample_rate, mel: None, beatthis: None, resampler };
     let mut generator = generate(models.clone(), audio, Request::from_json(&request.to_string(), seed, seed > (1 << 53) - 1)?, options);
     let (result, _) = drive(&mut generator, &mut sessions)?;
