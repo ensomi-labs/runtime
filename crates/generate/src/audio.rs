@@ -1,6 +1,5 @@
 //! PCM to the model inputs: mono mixdown, rate conversion, the two spectrograms and the row features.
 use crate::fft::Fft;
-use crate::jsmath;
 use crate::machine::{Io, Tensor};
 use crate::math::{f32r, half, round};
 use serde::Deserialize;
@@ -104,60 +103,94 @@ pub fn resample(pcm: &[f64], kernel: &Resampler) -> Vec<f32> {
 
 /// The log spectrogram of one frontend: BeatThis (`beatthis`, reflect-padded 1024-point frames every
 /// 441 samples) or the rows model's Log-Mel (960-point frames every 240 samples). 128 values per frame.
-pub fn spectrogram(pcm: &[f32], window: &[f32], filter: &[f32], beatthis: bool) -> Vec<f32> {
-    let n = window.len();
-    let bins = n / 2 + 1;
-    let hop = if beatthis { 441 } else { 240 };
-    let scale = if beatthis { 1.0 / 32.0 } else { 1.0 };
-    let frames = if beatthis { 1 + pcm.len() / hop } else { pcm.len().div_ceil(hop) };
-    let mut out = vec![0f32; frames * 128];
-    let mut input = vec![0f64; n];
-    let mut fft = Fft::new(n);
-    let mut power = vec![0f32; bins];
-    // Only nonzero Mel weights contribute, in ascending FFT-bin order: band m sums entries ends[m] to ends[m + 1].
-    let mut ends = [0usize; 129];
-    let (mut bin_list, mut weights) = (Vec::new(), Vec::new());
-    for m in 0..128 {
-        for k in 0..bins {
-            let w = filter[if beatthis { k * 128 + m } else { m * bins + k }];
-            if w != 0.0 {
-                bin_list.push(k);
-                weights.push(w);
-            }
-        }
-        ends[m + 1] = bin_list.len();
-    }
-    let len = pcm.len() as i64;
-    for f in 0..frames {
-        let start = (f * hop) as i64 - if beatthis { n as i64 / 2 } else { 0 };
-        for j in 0..n {
-            let mut i = start + j as i64;
-            if beatthis {
-                if i < 0 {
-                    i = -i;
-                }
-                if i >= len {
-                    i = 2 * len - 2 - i;
-                }
-            }
-            input[j] = if i >= 0 && i < len { f32r(pcm[i as usize] as f64 * window[j] as f64) } else { 0.0 };
-        }
-        fft.run(&input);
-        for k in 0..bins {
-            let re = f32r(fft.re[k] * scale);
-            let im = f32r(fft.im[k] * scale);
-            let mag = f32r(f32r(f32r(re * re) + f32r(im * im)).sqrt());
-            power[k] = if beatthis { mag as f32 } else { f32r(mag * mag) as f32 };
-        }
+pub fn spectrogram(pcm: Vec<f32>, window: Vec<f32>, filter: &[f32], beatthis: bool) -> Vec<f32> {
+    Spectrogram::new(pcm, window, filter, beatthis).finish()
+}
+
+/// A spectrogram computed a few frames at a time, so that it can run while a graph does.
+pub struct Spectrogram {
+    pcm: Vec<f32>,
+    window: Vec<f32>,
+    beatthis: bool,
+    frames: usize,
+    next: usize,
+    out: Vec<f32>,
+    input: Vec<f64>,
+    fft: Fft,
+    power: Vec<f32>,
+    /// Only nonzero Mel weights contribute, in ascending FFT-bin order: band m sums entries ends[m] to ends[m + 1].
+    ends: [usize; 129],
+    bins: Vec<usize>,
+    weights: Vec<f32>,
+}
+
+impl Spectrogram {
+    pub fn new(pcm: Vec<f32>, window: Vec<f32>, filter: &[f32], beatthis: bool) -> Self {
+        let n = window.len();
+        let bins = n / 2 + 1;
+        let hop = if beatthis { 441 } else { 240 };
+        let frames = if beatthis { 1 + pcm.len() / hop } else { pcm.len().div_ceil(hop) };
+        let mut ends = [0usize; 129];
+        let (mut bin_list, mut weights) = (Vec::new(), Vec::new());
         for m in 0..128 {
-            let mut v = 0.0;
-            for e in ends[m]..ends[m + 1] {
-                v += power[bin_list[e]] as f64 * weights[e] as f64;
+            for k in 0..bins {
+                let w = filter[if beatthis { k * 128 + m } else { m * bins + k }];
+                if w != 0.0 {
+                    bin_list.push(k);
+                    weights.push(w);
+                }
             }
-            out[f * 128 + m] = if beatthis { jsmath::log1p(f32r(1000.0 * f32r(v))) as f32 } else { jsmath::log(f64::max(f32r(v), 1e-5)) as f32 };
+            ends[m + 1] = bin_list.len();
         }
+        Spectrogram { pcm, window, beatthis, frames, next: 0, out: vec![0f32; frames * 128], input: vec![0f64; n], fft: Fft::new(n), power: vec![0f32; bins], ends, bins: bin_list, weights }
     }
-    out
+
+    /// Computes up to `count` more frames; returns whether any are left.
+    pub fn advance(&mut self, count: usize) -> bool {
+        let n = self.window.len();
+        let beatthis = self.beatthis;
+        let hop = if beatthis { 441 } else { 240 };
+        let scale = if beatthis { 1.0 / 32.0 } else { 1.0 };
+        let len = self.pcm.len() as i64;
+        let end = self.frames.min(self.next.saturating_add(count));
+        for f in self.next..end {
+            let start = (f * hop) as i64 - if beatthis { n as i64 / 2 } else { 0 };
+            for j in 0..n {
+                let mut i = start + j as i64;
+                if beatthis {
+                    if i < 0 {
+                        i = -i;
+                    }
+                    if i >= len {
+                        i = 2 * len - 2 - i;
+                    }
+                }
+                self.input[j] = if i >= 0 && i < len { f32r(self.pcm[i as usize] as f64 * self.window[j] as f64) } else { 0.0 };
+            }
+            self.fft.run(&self.input);
+            for k in 0..n / 2 + 1 {
+                let re = f32r(self.fft.re[k] * scale);
+                let im = f32r(self.fft.im[k] * scale);
+                let mag = f32r(f32r(f32r(re * re) + f32r(im * im)).sqrt());
+                self.power[k] = if beatthis { mag as f32 } else { f32r(mag * mag) as f32 };
+            }
+            for m in 0..128 {
+                let mut v = 0.0;
+                for e in self.ends[m]..self.ends[m + 1] {
+                    v += self.power[self.bins[e]] as f64 * self.weights[e] as f64;
+                }
+                self.out[f * 128 + m] = if beatthis { libm::log1p(f32r(1000.0 * f32r(v))) as f32 } else { libm::log(f64::max(f32r(v), 1e-5)) as f32 };
+            }
+        }
+        self.next = end;
+        end < self.frames
+    }
+
+    /// Computes the remaining frames and returns all of them.
+    pub fn finish(mut self) -> Vec<f32> {
+        self.advance(usize::MAX);
+        self.out
+    }
 }
 
 /// BeatThis logits for the whole song, from overlapping chunks run one graph call each.
@@ -200,7 +233,7 @@ pub async fn beat_activations(io: &Io, spect: &[f32]) -> Result<Activations, Str
         beat[at..at + len].copy_from_slice(&outputs[c].0[6..6 + len]);
         downbeat[at..at + len].copy_from_slice(&outputs[c].1[6..6 + len]);
     }
-    let sigmoid = |x: f32| f32r(1.0 / (1.0 + jsmath::exp(-(x as f64)))) as f32;
+    let sigmoid = |x: f32| f32r(1.0 / (1.0 + libm::exp(-(x as f64)))) as f32;
     Ok(Activations { beat_probability: beat.iter().map(|&x| sigmoid(x)).collect(), downbeat_probability: downbeat.iter().map(|&x| sigmoid(x)).collect(), beat, downbeat })
 }
 
@@ -270,8 +303,8 @@ pub fn sinc_resample(pcm: &[f64], sample_rate: f64, target_rate: f64) -> Vec<f32
         for j in lo..=hi {
             let x = at - j as f64;
             let z = PI * x * scale;
-            let sinc = if z == 0.0 { 1.0 } else { jsmath::sin(z) / z };
-            let window = 0.42 + 0.5 * jsmath::cos(PI * x / radius) + 0.08 * jsmath::cos(2.0 * PI * x / radius);
+            let sinc = if z == 0.0 { 1.0 } else { libm::sin(z) / z };
+            let window = 0.42 + 0.5 * libm::cos(PI * x / radius) + 0.08 * libm::cos(2.0 * PI * x / radius);
             let w = sinc * window * scale;
             let sample = if j >= 0 && (j as usize) < pcm.len() { pcm[j as usize] } else { 0.0 };
             value += sample * w;

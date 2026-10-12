@@ -1,4 +1,3 @@
-use crate::jsmath;
 use std::f64::consts::PI;
 
 struct Stage {
@@ -51,8 +50,8 @@ impl Fft {
         while size > 1 {
             let r = radix(size);
             let m = size / r;
-            let cos: Vec<f64> = (0..size).map(|k| jsmath::cos(-2.0 * PI * k as f64 / size as f64)).collect();
-            let sin: Vec<f64> = (0..size).map(|k| jsmath::sin(-2.0 * PI * k as f64 / size as f64)).collect();
+            let cos: Vec<f64> = (0..size).map(|k| libm::cos(-2.0 * PI * k as f64 / size as f64)).collect();
+            let sin: Vec<f64> = (0..size).map(|k| libm::sin(-2.0 * PI * k as f64 / size as f64)).collect();
             let (mut wcos, mut wsin) = (Vec::new(), Vec::new());
             if r > 2 {
                 for k in 0..m {

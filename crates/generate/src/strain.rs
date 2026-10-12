@@ -1,14 +1,13 @@
 //! r2/strain.py: the frozen ras-v1 workload. Strain continues across section boundaries.
-use crate::jsmath;
 
 pub const REFERENCE_LANES: [usize; 4] = [0, 2, 1, 3];
 
 fn tau_i() -> f64 {
-    -1.0 / jsmath::log(0.125)
+    -1.0 / libm::log(0.125)
 }
 
 fn tau_g() -> f64 {
-    -1.0 / jsmath::log(0.30)
+    -1.0 / libm::log(0.30)
 }
 
 #[derive(Clone, Default)]
@@ -21,7 +20,7 @@ pub struct StrainState {
 impl StrainState {
     fn decayed(&self, time: f64) -> StrainState {
         let dt = (time - self.time_ms) / 1000.0;
-        StrainState { lane: self.lane.map(|x| x * jsmath::exp(-dt / tau_i())), overall: self.overall * jsmath::exp(-dt / tau_g()), time_ms: time }
+        StrainState { lane: self.lane.map(|x| x * libm::exp(-dt / tau_i())), overall: self.overall * libm::exp(-dt / tau_g()), time_ms: time }
     }
 
     fn cost(&self, heads: &[f64; 4]) -> f64 {

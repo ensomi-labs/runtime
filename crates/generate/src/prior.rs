@@ -1,6 +1,5 @@
 //! The corpus prior: the held, head, busy and quad shares a chart of this star band is expected to have.
 use crate::grid::Grid;
-use crate::jsmath;
 use crate::math::{clip, median};
 use crate::models::Prior;
 use crate::strain::reference_workload;
@@ -19,10 +18,10 @@ pub fn rows_features(head_ms: &[f64], song_ms: f64, grid: &Grid) -> [f64; 4] {
     let seconds = song_ms / 1000.0;
     let gap = if head_ms.len() > 1 { median(&head_ms[1..].iter().zip(head_ms).map(|(t, p)| t - p).collect::<Vec<_>>()) } else { song_ms };
     [
-        jsmath::log(head_ms.len() as f64 / seconds),
-        jsmath::log(f64::max(gap, 1.0)),
-        jsmath::log(f64::max(reference_workload(head_ms), 1e-6) / seconds),
-        jsmath::log(median(&head_ms.iter().map(|&t| grid.bpm(t)).collect::<Vec<_>>())),
+        libm::log(head_ms.len() as f64 / seconds),
+        libm::log(f64::max(gap, 1.0)),
+        libm::log(f64::max(reference_workload(head_ms), 1e-6) / seconds),
+        libm::log(median(&head_ms.iter().map(|&t| grid.bpm(t)).collect::<Vec<_>>())),
     ]
 }
 

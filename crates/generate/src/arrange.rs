@@ -2,7 +2,6 @@
 use crate::controls::{action_tables, chance, chord_feature, fallback_action, get, log_normalize, logit, number, row_range, scope_statistics, subtype_info, text, tilt, transition, Playability, Scope};
 use crate::generate::{Trace, TraceFn};
 use crate::grid::Grid;
-use crate::jsmath;
 use crate::machine::Io;
 use crate::math::{clip, f32r, max, mean};
 use crate::models::{Masks, Models};
@@ -22,10 +21,10 @@ fn log_softmax32(logits: &[f32], support: &[bool]) -> Vec<f32> {
     let mut total = 0.0;
     for i in 0..logits.len() {
         if support[i] {
-            total += f32r(jsmath::exp(f32r(logits[i] as f64 - peak)));
+            total += f32r(libm::exp(f32r(logits[i] as f64 - peak)));
         }
     }
-    let z = f32r(jsmath::log(f32r(total)));
+    let z = f32r(libm::log(f32r(total)));
     logits.iter().enumerate().map(|(i, &x)| if support[i] { f32r(f32r(x as f64 - peak) - z) as f32 } else { f32::NEG_INFINITY }).collect()
 }
 
@@ -219,7 +218,7 @@ pub async fn arrange(a: Arrange<'_>) -> Result<Arrangement, String> {
                     let cf: Vec<bool> = features.iter().map(|f| chord_feature(f[1] as i32, &subtype)).collect();
                     let mut mass = 0.0;
                     for (i, x) in base.iter().enumerate() {
-                        mass += if cf[i] { jsmath::exp(*x) } else { 0.0 };
+                        mass += if cf[i] { libm::exp(*x) } else { 0.0 };
                     }
                     scope.chord_probability += mass;
                     if visible {
@@ -259,7 +258,7 @@ pub async fn arrange(a: Arrange<'_>) -> Result<Arrangement, String> {
                         .collect();
                     let (mut expected, mut expected_chance) = (0.0, 0.0);
                     for i in 0..base.len() {
-                        let mass = jsmath::exp(base[i]);
+                        let mass = libm::exp(base[i]);
                         expected += mass * readout[i];
                         expected_chance += mass * chances[i];
                     }

@@ -1,5 +1,4 @@
 //! The helpers of the TypeScript runtime's `math.ts`, with JavaScript's semantics.
-use crate::jsmath;
 
 /// `Math.fround`.
 pub fn f32r(x: f64) -> f64 {
@@ -178,6 +177,6 @@ pub fn half(x: f64) -> f64 {
     if a < pow2(-14.0) {
         return s * round(a / pow2(-24.0)) * pow2(-24.0);
     }
-    let e = jsmath::log2(a).floor();
+    let e = libm::log2(a).floor();
     s * round(a / pow2(e - 10.0)) * pow2(e - 10.0)
 }

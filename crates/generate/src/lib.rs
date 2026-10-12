@@ -13,7 +13,6 @@ pub mod fitter;
 mod generate;
 mod grid;
 mod json;
-pub mod jsmath;
 mod machine;
 mod math;
 mod models;

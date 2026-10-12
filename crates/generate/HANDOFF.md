@@ -27,8 +27,9 @@ the report to the human.
 
 - No clock in the core: `Options.clock` (ms) is injected, like the PCM; the Wasm binding passes `performance.now`.
   Receipt `seconds` and `wall_seconds` are wall-clock and excluded from the TS comparison.
-- `Math.*` ported (`jsmath.rs`): fdlibm with the fused multiply-adds that Node on arm64 uses; bit-equal to Node 26 on
-  3.2 M inputs. System libm and the `libm` crate are not.
+- Transcendental functions from the `libm` crate on every target (2026-10-11). The earlier port of V8's `Math`
+  (`jsmath.rs`, with Node-on-arm64's fused multiply-adds) ran a software `fma` in WebAssembly, which made the Wasm
+  build slower than the TypeScript runtime. Receipts now differ from the TypeScript runtime's in last digits.
 - Receipt writer = `JSON.stringify(v, null, 2)` (`json.rs`, ES number formatting, insertion order).
 - Runtime name in receipt and `.osu` comment is `ensomi-runtime` (`RUNTIME_NAME`); version `0.1.0` as TS.
 - A BigInt seed prints as a JSON string in the receipt as in TS (`Request.seed_is_bigint`).
@@ -46,4 +47,3 @@ the report to the human.
 
 - The mac's checkout is the only place anything is built; `js/pkg` (generated) and `js/node_modules` are ignored.
 - The JS API is not exercised in a browser; `loadCore` uses `fetch` for the `.wasm` by default, Node needs `options.core`.
-- Wasm uses software `fma` for the fused ports; transcendental-heavy loops (spectrogram) are slower than native.

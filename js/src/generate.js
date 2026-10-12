@@ -1,5 +1,15 @@
 import { exportOsz } from './export.js';
 
+/** Lets queued tasks run, such as the WebGPU result that a graph run is waiting for. */
+const pause = () => new Promise(resolve => {
+    const channel = new MessageChannel();
+    channel.port1.onmessage = () => {
+        channel.port1.close();
+        resolve();
+    };
+    channel.port2.postMessage(null);
+});
+
 /**
  * Generates a chart. `pcm` is mono Float32Array/Float64Array or `{samples, channels, mel?, beatthis?}` with
  * interleaved samples at `sampleRate`; `request` is a GenerateChartRequest.
@@ -32,7 +42,14 @@ export async function generateChart(models, pcm, sampleRate, request, options = 
                 const feeds = {};
                 for (const [name, tensor] of Object.entries(step.inputs))
                     feeds[name] = new models.ort.Tensor(tensor.type, tensor.data, tensor.dims);
-                const result = await models.sessions[step.graph].run(feeds);
+                // While the graph runs (BeatThis on the GPU), the core does what needs no outputs, yielding between
+                // slices so that the outputs are taken as soon as they arrive.
+                let running = true;
+                const run = models.sessions[step.graph].run(feeds);
+                run.then(() => { running = false; }, () => { running = false; });
+                while (running && generator.work())
+                    await pause();
+                const result = await run;
                 outputs = {};
                 for (const [name, tensor] of Object.entries(result))
                     outputs[name] = { type: tensor.type, dims: Array.from(tensor.dims), data: tensor.data };

@@ -48,7 +48,7 @@ pub fn bpm(beat_length_ms: f64) -> f64 {
 }
 
 fn sigmoid32(x: f32) -> f64 {
-    crate::math::f32r(1.0 / (1.0 + crate::jsmath::exp(-(x as f64))))
+    crate::math::f32r(1.0 / (1.0 + libm::exp(-(x as f64))))
 }
 
 fn fit_segments(beat: &[f32], downbeat: &[f32], config: &FitterConfig) -> Vec<Segment> {

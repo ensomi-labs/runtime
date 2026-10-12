@@ -1,7 +1,6 @@
 use super::scoring::{best_bpm, centered, score_grid};
 use super::segments::{merge_segments, nearest_offset, phase_error};
 use super::{bpm, Segment};
-use crate::jsmath;
 use crate::math::{argmax, lower_bound, modp, round, sum};
 use crate::models::FitterConfig;
 
@@ -71,8 +70,8 @@ fn collapse(segments: &[Segment], times: &[f64], c: &FitterConfig) -> Option<Vec
     for &i in indices {
         let w = durations[i];
         let a = 2.0 * std::f64::consts::PI * modp(segments[i].offset_ms, length) / length;
-        x += w * jsmath::cos(a);
-        y += w * jsmath::sin(a);
+        x += w * libm::cos(a);
+        y += w * libm::sin(a);
         weight += w;
         if w > longest_duration {
             longest = i;
@@ -80,8 +79,8 @@ fn collapse(segments: &[Segment], times: &[f64], c: &FitterConfig) -> Option<Vec
         }
     }
     let mut offset = modp(segments[longest].offset_ms, length);
-    if weight > 0.0 && jsmath::hypot(&[x, y]) / weight >= c.refine_circular_phase_min_coherence {
-        offset = modp(jsmath::atan2(y, x), 2.0 * std::f64::consts::PI) / (2.0 * std::f64::consts::PI) * length;
+    if weight > 0.0 && libm::hypot(x, y) / weight >= c.refine_circular_phase_min_coherence {
+        offset = modp(libm::atan2(y, x), 2.0 * std::f64::consts::PI) / (2.0 * std::f64::consts::PI) * length;
     }
     Some(vec![Segment { offset_ms: nearest_offset(offset, length, segments[0].offset_ms), beat_length_ms: length }])
 }

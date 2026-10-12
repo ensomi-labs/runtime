@@ -1,6 +1,5 @@
 use super::Segment;
 use crate::grid::canonical_length;
-use crate::jsmath;
 use crate::math::{argmax, interp, line, max, mean, median, min, modp, pow2, round};
 
 pub struct BeatPeaks {
@@ -27,7 +26,7 @@ pub fn beat_peaks(logits: &[f32], fps: f64) -> BeatPeaks {
             _ => groups.push(vec![i]),
         }
     }
-    let probability: Vec<f64> = logits.iter().map(|&x| 1.0 / (1.0 + jsmath::exp(-(x as f64)))).collect();
+    let probability: Vec<f64> = logits.iter().map(|&x| 1.0 / (1.0 + libm::exp(-(x as f64)))).collect();
     let (mut times, mut weights) = (Vec::new(), Vec::new());
     for group in &groups {
         let indices: Vec<f64> = group.iter().map(|&i| i as f64).collect();
@@ -95,7 +94,7 @@ pub fn refine_peaks(segments: &[Segment], logits: &[f32], fps: f64) -> Vec<Segme
         })
         .collect();
     if refined.len() > 1 {
-        let aligned: Vec<f64> = refined.iter().map(|s| s.beat_length_ms * pow2(round(jsmath::log2(refined[0].beat_length_ms / s.beat_length_ms)))).collect();
+        let aligned: Vec<f64> = refined.iter().map(|s| s.beat_length_ms * pow2(round(libm::log2(refined[0].beat_length_ms / s.beat_length_ms)))).collect();
         if aligned.iter().all(|x| (x / aligned[0] - 1.0).abs() < 0.003) {
             let spans: Vec<f64> = refined.iter().enumerate().map(|(i, s)| refined.get(i + 1).map_or(logits.len() as f64 * 1000.0 / fps, |n| n.offset_ms) - s.offset_ms).collect();
             let longest = refined[argmax(&spans)];
@@ -124,7 +123,7 @@ pub fn downbeat_phase(segments: &[Segment], beat: &[f32], downbeat: &[f32], fps:
         return segments.to_vec();
     }
     let xp: Vec<f64> = (0..downbeat.len()).map(|i| i as f64 * 1000.0 / fps).collect();
-    let prob: Vec<f64> = downbeat.iter().map(|&x| 1.0 / (1.0 + jsmath::exp(-(x as f64)))).collect();
+    let prob: Vec<f64> = downbeat.iter().map(|&x| 1.0 / (1.0 + libm::exp(-(x as f64)))).collect();
     let mut scores = vec![0.0; period as usize];
     let mut n = lo;
     while n <= hi {

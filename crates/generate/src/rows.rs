@@ -1,6 +1,5 @@
 //! audio_rows/rowsgen.py: song encoder, GRU, copy mixture, quiet rests and section tilt.
 use crate::grid::Grid;
-use crate::jsmath;
 use crate::machine::{Io, Tensor};
 use crate::math::{clip, f32r, interp, modp, round, sum};
 use crate::models::Models;
@@ -203,7 +202,7 @@ pub async fn decode_rows(io: &Io, models: &Models, features: &[f32], grid: &Grid
         let mut p = vec![0f32; v_size];
         let mut ph = vec![0f32; v_size];
         for v in 0..v_size {
-            pgen[v] = jsmath::exp(logp[v] as f64) as f32;
+            pgen[v] = libm::exp(logp[v] as f64) as f32;
             p[v] = f32r(gate[0] as f64 * pgen[v] as f64) as f32;
         }
         for hd in 0..heads {
@@ -242,10 +241,10 @@ pub async fn decode_rows(io: &Io, models: &Models, features: &[f32], grid: &Grid
             let ta = clip(edges[a], 0.0, song_ms);
             let tb = clip(edges[b], 0.0, song_ms);
             if b > a && tb > ta {
-                let realised = jsmath::log(f64::max(sum(&wh[a..b]) / ((tb - ta) / 1000.0), 0.001));
+                let realised = libm::log(f64::max(sum(&wh[a..b]) / ((tb - ta) / 1000.0), 0.001));
                 tilts[b] = clip(SECTION_GAIN * (target[b] - realised), -2.0, 2.0) as f32;
                 for v in 0..v_size {
-                    p[v] = f32r(p[v] as f64 * f32r(jsmath::exp(f32r(tilts[b] as f64 * counts[v] as f64)))) as f32;
+                    p[v] = f32r(p[v] as f64 * f32r(libm::exp(f32r(tilts[b] as f64 * counts[v] as f64)))) as f32;
                 }
             }
         }

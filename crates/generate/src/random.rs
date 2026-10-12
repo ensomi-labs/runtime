@@ -1,4 +1,3 @@
-use crate::jsmath;
 use crate::math::{argmax, f32r};
 use std::cell::Cell;
 use std::rc::Rc;
@@ -52,7 +51,7 @@ impl RandomSource for SeededRandom {
     fn multinomial(&mut self, p: &[f32], _name: &str) -> Result<usize, String> {
         let (mut k, mut best) = (0, f64::NEG_INFINITY);
         for i in 0..p.len() {
-            let score = f32r(p[i] as f64 / f32r(-jsmath::log(self.uniform())));
+            let score = f32r(p[i] as f64 / f32r(-libm::log(self.uniform())));
             if i == 0 || score > best {
                 k = i;
                 best = score;
@@ -64,7 +63,7 @@ impl RandomSource for SeededRandom {
     fn gumbel(&mut self, logits: &[f64], _name: &str) -> Result<usize, String> {
         let (mut k, mut best) = (0, f64::NEG_INFINITY);
         for i in 0..logits.len() {
-            let score = logits[i] - jsmath::log(-jsmath::log(self.uniform()));
+            let score = logits[i] - libm::log(-libm::log(self.uniform()));
             if i == 0 || score > best {
                 k = i;
                 best = score;
@@ -147,7 +146,7 @@ impl RandomSource for ReplayRandom {
     fn gumbel(&mut self, logits: &[f64], name: &str) -> Result<usize, String> {
         let at = self.position.get();
         let row = self.draw(name, "uniform")?;
-        let scores: Vec<f64> = logits.iter().zip(&row.values).map(|(&p, &v)| p - jsmath::log(-jsmath::log(f64::max(v, 2.2250738585072014e-308)))).collect();
+        let scores: Vec<f64> = logits.iter().zip(&row.values).map(|(&p, &v)| p - libm::log(-libm::log(f64::max(v, 2.2250738585072014e-308)))).collect();
         Self::check(row, argmax(&scores), &scores, at)
     }
 

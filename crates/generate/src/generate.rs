@@ -1,13 +1,12 @@
 //! generate.ts: the whole pipeline from PCM and a request to the chart, `.osu` text and receipt.
 use crate::arrange::{arrange, Arrange, Arrangement};
-use crate::audio::{beat_activations, features, load_resampler, mel_pcm, mono, resample, resampler_files, sinc_resample, spectrogram, Samples};
+use crate::audio::{beat_activations, features, load_resampler, mel_pcm, mono, resample, resampler_files, sinc_resample, spectrogram, Samples, Spectrogram};
 use crate::capabilities::{MODEL_NAME, MODEL_VERSION};
 use crate::controls::{load_scopes, number, resolve_requests, Scope};
 use crate::export::{audio_filename, chart_from_decisions, osu_text, validate_chart, Chart, OsuOptions};
 use crate::fitter::{fit_grid, Segment};
 use crate::grid::{corrected_grid, Grid};
 use crate::json::{number_string, stringify};
-use crate::jsmath;
 use crate::machine::{Generator, Io, Phase};
 use crate::math::{clip, quantile};
 use crate::models::Models;
@@ -15,6 +14,7 @@ use crate::prior::{kappa_targets, predict_prior, rows_features, Prediction};
 use crate::random::{RandomSource, SeededRandom};
 use crate::rows::{decode_rows, RowsSection};
 use serde_json::{json, Map, Value};
+use std::cell::RefCell;
 use std::rc::Rc;
 
 pub struct Audio {
@@ -217,7 +217,8 @@ async fn run(io: Io, models: Rc<Models>, audio: Audio, request: Request, mut opt
     let mut random: Box<dyn RandomSource> = options.random.take().unwrap_or_else(|| Box::new(SeededRandom::new(seed32)));
     let mut seconds: Vec<(&str, f64)> = Vec::new();
     io.progress(Phase::Loading).await;
-    let wave = mono(&audio.samples, audio.channels);
+    // With both frontend streams given, the samples are not read again.
+    let wave = if audio.beatthis.is_none() || audio.mel.is_none() { mono(&audio.samples, audio.channels) } else { Vec::new() };
     drop(audio.samples);
     let mut start = clock();
     let beat_pcm: Vec<f32> = match audio.beatthis {
@@ -234,13 +235,19 @@ async fn run(io: Io, models: Rc<Models>, audio: Audio, request: Request, mut opt
     seconds.push(("pcm", seconds_since(&*clock, start)));
     io.progress(Phase::Timing).await;
     start = clock();
-    let spect = spectrogram(&beat_pcm, &models.f32s(&models.beatthis_window)?, &models.f32s(&models.beatthis_filter)?, true);
+    let spect = spectrogram(beat_pcm, models.f32s(&models.beatthis_window)?, &models.f32s(&models.beatthis_filter)?, true);
     seconds.push(("spectrogram", seconds_since(&*clock, start)));
     start = clock();
+    // The Log-Mel spectrogram needs nothing from BeatThis, so a caller that runs graphs asynchronously
+    // computes it while BeatThis runs (`Generator::work`); otherwise it is computed after.
+    let log_mel = Rc::new(RefCell::new(Spectrogram::new(rows_pcm, models.f32s(&models.rows_window)?, &models.f32s(&models.rows_filter)?, false)));
+    let slices = log_mel.clone();
+    io.background(move || slices.borrow_mut().advance(64));
     let acts = beat_activations(&io, &spect).await?;
+    io.end_background();
     seconds.push(("beatthis", seconds_since(&*clock, start)));
     start = clock();
-    let log_mel = spectrogram(&rows_pcm, &models.f32s(&models.rows_window)?, &models.f32s(&models.rows_filter)?, false);
+    let log_mel = Rc::try_unwrap(log_mel).ok().expect("the background work has ended").into_inner().finish();
     let feats = features(&log_mel, &acts.beat_probability, &acts.downbeat_probability);
     seconds.push(("mel", seconds_since(&*clock, start)));
     start = clock();
@@ -297,7 +304,7 @@ async fn run(io: Io, models: Rc<Models>, audio: Audio, request: Request, mut opt
     let band_key = band.to_string();
     let masks = models.calibration.masks.get(&band_key).ok_or_else(|| format!("The calibration has no band {band}"))?.clone();
     let default_q = *models.default_q.get(&band_key).ok_or_else(|| format!("The system has no default q for band {band}"))?;
-    let base_r = jsmath::exp(prediction.log_r);
+    let base_r = libm::exp(prediction.log_r);
     let fit = models.calibration.difficulty_fit.by_band.get(&band_key).ok_or_else(|| format!("The difficulty fit has no band {band}"))?;
     let fit_number = |key: &str| fit[key].as_f64().unwrap_or(f64::NAN);
     let (alpha, beta, gamma, seed_sd) = (fit_number("alpha"), fit_number("beta"), fit_number("gamma"), fit_number("seed_sd"));
@@ -305,7 +312,7 @@ async fn run(io: Io, models: Rc<Models>, audio: Audio, request: Request, mut opt
     let target_r = quantile(values, default_q);
     let domain = &models.calibration.difficulty_fit.domain;
     let (lo, hi) = (domain[0], f64::min(domain[1], 1.2));
-    let raw = jsmath::exp((jsmath::log(target_r) - alpha - gamma * jsmath::log(base_r)) / beta);
+    let raw = libm::exp((libm::log(target_r) - alpha - gamma * libm::log(base_r)) / beta);
     let mut multiplier = clip(raw, lo, hi);
     let mut passes: Vec<Value> = Vec::new();
     let mut result: Option<Arrangement> = None;
@@ -334,7 +341,7 @@ async fn run(io: Io, models: Rc<Models>, audio: Audio, request: Request, mut opt
         if attempt > 0 || (achieved - target_r).abs() <= seed_sd {
             break;
         }
-        let corrected_multiplier = clip(multiplier * jsmath::exp((jsmath::log(target_r) - jsmath::log(achieved)) / beta), lo, hi);
+        let corrected_multiplier = clip(multiplier * libm::exp((libm::log(target_r) - libm::log(achieved)) / beta), lo, hi);
         if corrected_multiplier == multiplier {
             break;
         }

@@ -2,7 +2,6 @@ use super::peaks::beat_peaks;
 use super::Segment;
 use crate::grid::corrected_grid;
 use crate::math::{argmax, clip, line, lower_bound, mean, median, round, pow2};
-use crate::jsmath;
 
 fn onset_envelope(log_mel: &[f32]) -> Vec<f64> {
     let mut out = vec![0.0; log_mel.len() / 128];
@@ -159,7 +158,7 @@ pub fn mel_tempo(segments: &[Segment], mel: &[f32], logits: &[f32], song_ms: f64
     if grid.len() == 1 {
         let sorted: Vec<Segment> = order.iter().map(|&i| segments[i]).collect();
         let spans: Vec<f64> = sorted.iter().enumerate().map(|(i, s)| sorted.get(i + 1).map_or(f64::max(song_ms, sorted[sorted.len() - 1].offset_ms + 1.0), |n| n.offset_ms) - s.offset_ms).collect();
-        let octave = pow2(round(jsmath::log2(sorted[argmax(&spans)].beat_length_ms / grid[0].beat_length_ms)));
+        let octave = pow2(round(libm::log2(sorted[argmax(&spans)].beat_length_ms / grid[0].beat_length_ms)));
         let bpm = 60000.0 / (out[0].beat_length_ms * octave);
         if (bpm - round(bpm)).abs() <= 0.25 {
             let length = 60000.0 / round(bpm) / octave;

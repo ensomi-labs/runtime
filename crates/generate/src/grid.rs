@@ -1,10 +1,9 @@
 use crate::fitter::Segment;
-use crate::jsmath;
 use crate::math::{argmax, round, pow2};
 
 pub fn canonical_length(length: f64) -> f64 {
     let bpm = 60000.0 / length;
-    let fold = jsmath::log2(80.0 / bpm).ceil();
+    let fold = libm::log2(80.0 / bpm).ceil();
     length / pow2(fold)
 }
 
@@ -18,7 +17,7 @@ pub fn corrected_grid(segments: &[Segment], song_ms: f64) -> Vec<Segment> {
     let ends: Vec<f64> = (0..sorted.len()).map(|i| sorted.get(i + 1).map_or(f64::max(song_ms, sorted[i].offset_ms + 1.0), |n| n.offset_ms)).collect();
     let longest = argmax(&sorted.iter().enumerate().map(|(i, s)| ends[i] - s.offset_ms).collect::<Vec<_>>());
     let canonical: Vec<f64> = sorted.iter().map(|s| canonical_length(s.beat_length_ms)).collect();
-    let aligned: Vec<f64> = canonical.iter().map(|&x| x * pow2(round(jsmath::log2(canonical[longest] / x)))).collect();
+    let aligned: Vec<f64> = canonical.iter().map(|&x| x * pow2(round(libm::log2(canonical[longest] / x)))).collect();
     if aligned.iter().all(|x| (x / aligned[longest] - 1.0).abs() < 0.003) {
         let Segment { offset_ms: mut offset, beat_length_ms: mut length } = sorted[longest];
         let bpm = 60000.0 / length;

@@ -1,7 +1,6 @@
 use super::scoring::{best_candidate, centered, order, score_grid};
 use super::segments::{aliases, phase_error, timing_segments, weighted_score};
 use super::{bpm, GridCandidate, Segment, SegmentFit};
-use crate::jsmath;
 use crate::math::{argmax, mean, modp, round};
 use crate::models::FitterConfig;
 
@@ -154,7 +153,7 @@ pub fn canonicalize_aliases(fits: &[SegmentFit], signal: &[f64], times: &[f64], 
             for j in 0..scores.len() {
                 let b = bpm(options[s][i].fit.beat_length_ms);
                 let prev = bpm(options[s - 1][j].fit.beat_length_ms);
-                let penalty = if prev <= 0.0 || b <= 0.0 { 0.0 } else { c.alias_continuity_penalty * jsmath::log2(b / prev).abs() };
+                let penalty = if prev <= 0.0 || b <= 0.0 { 0.0 } else { c.alias_continuity_penalty * libm::log2(b / prev).abs() };
                 let score = scores[j] + options[s][i].local_score - penalty;
                 if score > best {
                     best = score;

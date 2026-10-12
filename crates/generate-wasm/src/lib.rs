@@ -3,6 +3,7 @@
 //! The generator is a state machine: `WasmGenerator.step(outputs)` returns the next step as a plain
 //! object, `{kind: 'run', graph, inputs}`, `{kind: 'progress', phase}` or `{kind: 'done', ...}`, and
 //! the JavaScript caller runs the named graph with ONNX Runtime Web and passes the outputs back.
+//! While a graph runs, `work()` does what needs no outputs.
 //! Tensors cross as `{type, dims, data}` with the typed array ONNX Runtime Web uses for the type.
 use ensomi_generate::{capabilities, generate, Audio, Data, Draw, Generator, Models, Options, ReplayRandom, Request, Samples, Step, Tensor};
 use js_sys::{Array, BigInt64Array, Float32Array, Float64Array, Object, Reflect, Uint8Array};
@@ -222,5 +223,11 @@ impl WasmGenerator {
             }
         }
         Ok(object.into())
+    }
+
+    /// Does a slice of the work that needs no graph outputs (the Log-Mel spectrogram while BeatThis
+    /// runs) and returns whether any is left. Call it after a `run` step while the graph runs.
+    pub fn work(&mut self) -> bool {
+        self.inner.work()
     }
 }

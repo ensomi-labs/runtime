@@ -2,7 +2,9 @@
 //!
 //! The pipeline is written as an async function that awaits [`Io::run`] wherever the TypeScript
 //! runtime awaits a graph. [`Generator`] polls it with no runtime and no waker: the future suspends
-//! at each request, and the caller runs the graph and resumes with the outputs.
+//! at each request, and the caller runs the graph and resumes with the outputs. Work that needs no
+//! graph outputs can be left in [`Io::background`], for a caller that runs graphs asynchronously to
+//! do with [`Generator::work`] while a graph runs.
 use std::cell::RefCell;
 use std::future::Future;
 use std::pin::Pin;
@@ -74,6 +76,8 @@ enum Request {
 struct Mailbox {
     request: Option<Request>,
     response: Option<Tensors>,
+    /// Does a slice of the background work and returns whether any is left.
+    background: Option<Box<dyn FnMut() -> bool>>,
 }
 
 #[derive(Clone, Default)]
@@ -113,6 +117,16 @@ impl Io {
 
     pub async fn progress(&self, phase: Phase) {
         Suspend { io: self.clone(), request: Some(Request::Progress(phase)), wait: false }.await;
+    }
+
+    /// Leaves work that needs no graph outputs for [`Generator::work`]. `slice` does a part of it
+    /// and returns whether any is left. The pipeline finishes what is left after [`Io::end_background`].
+    pub fn background(&self, slice: impl FnMut() -> bool + 'static) {
+        self.0.borrow_mut().background = Some(Box::new(slice));
+    }
+
+    pub fn end_background(&self) {
+        self.0.borrow_mut().background = None;
     }
 }
 
@@ -156,5 +170,19 @@ impl Generator {
                 None => Err("the generator was resumed without the outputs it asked for".to_string()),
             },
         }
+    }
+
+    /// Does a slice of the work that needs no graph outputs, such as the Log-Mel spectrogram while
+    /// BeatThis runs, and returns whether any is left. Call it after a [`Step::Run`], until the graph's
+    /// outputs are ready or it returns false, then pass the outputs to [`Generator::step`] as usual. A
+    /// caller that never calls it gets the same results, with that work done after the graph.
+    pub fn work(&mut self) -> bool {
+        let slice = self.io.0.borrow_mut().background.take();
+        let Some(mut slice) = slice else { return false };
+        let more = slice();
+        if more {
+            self.io.0.borrow_mut().background = Some(slice);
+        }
+        more
     }
 }

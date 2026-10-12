@@ -1,5 +1,4 @@
 //! system/controls.py: class-preserving controls and corpus-scope lookup.
-use crate::jsmath;
 use crate::math::{argmax, clip, lower_bound, max, mean, median, quantile};
 use crate::models::{Calibration, Models};
 use crate::r2::ChartState;
@@ -61,10 +60,10 @@ pub fn log_normalize(logp: &[f64]) -> Vec<f64> {
     let mut sum = 0.0;
     for &x in logp {
         if x.is_finite() {
-            sum += jsmath::exp(x - peak);
+            sum += libm::exp(x - peak);
         }
     }
-    let z = peak + jsmath::log(sum);
+    let z = peak + libm::log(sum);
     logp.iter().map(|x| x - z).collect()
 }
 
@@ -76,7 +75,7 @@ fn log_add_exp(a: f64, b: f64) -> f64 {
         return a;
     }
     let m = max(a, b);
-    m + jsmath::log1p(jsmath::exp(-(a - b).abs()))
+    m + libm::log1p(libm::exp(-(a - b).abs()))
 }
 
 /// Tilts the probability inside each group toward the feature, keeping each group's mass.
@@ -99,8 +98,8 @@ pub fn tilt(logp: &[f64], feature: &[bool], groups: &[Vec<usize>], weight: f64) 
         let (mut old_mass, mut new_mass) = (0.0, 0.0);
         for &i in &indices {
             out[i] = logp[i] + weight * feature[i] as i32 as f64 + old_z - new_z;
-            old_mass += jsmath::exp(logp[i]);
-            new_mass += jsmath::exp(out[i]);
+            old_mass += libm::exp(logp[i]);
+            new_mass += libm::exp(out[i]);
         }
         error = max(error, (new_mass - old_mass).abs());
     }
@@ -145,7 +144,7 @@ pub fn chord_feature(count: i32, subtype: &str) -> bool {
 
 pub fn logit(v: f64) -> f64 {
     let p = clip(v, 0.01, 0.99);
-    jsmath::log(p / (1.0 - p))
+    libm::log(p / (1.0 - p))
 }
 
 pub fn row_range(heads: &[f64], a: f64, b: f64, song_ms: f64) -> (usize, usize) {
@@ -219,11 +218,11 @@ struct Matched {
 
 fn matched_scopes(table: &ScopeTable, band: f64, length_ms: f64, gap_ms: f64, subtype: Option<&str>, chord_target: f64) -> Matched {
     let lengths = [8.0, 16.0, 32.0];
-    let length = lengths[argmax(&lengths.map(|x: f64| -(jsmath::log(x) - jsmath::log(length_ms / 1000.0)).abs()))];
+    let length = lengths[argmax(&lengths.map(|x: f64| -(libm::log(x) - libm::log(length_ms / 1000.0)).abs()))];
     let indices: Vec<usize> = (0..table["band"].len()).filter(|&i| table["band"][i] == band && table["length_s"][i] == length).collect();
-    let lg: Vec<f64> = indices.iter().map(|&i| jsmath::log(table["median_gap_ms"][i])).collect();
+    let lg: Vec<f64> = indices.iter().map(|&i| libm::log(table["median_gap_ms"][i])).collect();
     let (distances, scale): (Vec<f64>, Option<Value>) = match subtype {
-        None => (lg.iter().map(|x| (x - jsmath::log(gap_ms)).abs()).collect(), None),
+        None => (lg.iter().map(|x| (x - libm::log(gap_ms)).abs()).collect(), None),
         Some(sub) => {
             let share: Vec<f64> = indices.iter().map(|&i| table[subtype_info(sub).1][i]).collect();
             let means = [mean(&lg), mean(&share)];
@@ -235,7 +234,7 @@ fn matched_scopes(table: &ScopeTable, band: f64, length_ms: f64, gap_ms: f64, su
                     if s == 0.0 || s.is_nan() { 1.0 } else { s }
                 })
                 .collect();
-            let distances = (0..indices.len()).map(|i| jsmath::hypot(&[(lg[i] - jsmath::log(gap_ms)) / sd[0], (share[i] - chord_target) / sd[1]])).collect();
+            let distances = (0..indices.len()).map(|i| libm::hypot((lg[i] - libm::log(gap_ms)) / sd[0], (share[i] - chord_target) / sd[1])).collect();
             (distances, Some(json!({"population_scopes": indices.len(), "mean": means, "sd": sd, "ddof": 0, "constant_coordinate_scale": 1})))
         }
     };

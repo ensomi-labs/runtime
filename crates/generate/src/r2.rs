@@ -1,6 +1,5 @@
 //! r2/features.py and sampling.IncrementalState: explicit, committed-prefix state, and the R2 graph calls.
 use crate::grid::Grid;
-use crate::jsmath;
 use crate::machine::{Io, Outputs, Tensor};
 use crate::math::{clip, lower_bound, round, sign};
 use crate::models::Models;
@@ -10,7 +9,7 @@ use std::f64::consts::PI;
 type Lanes = [f64; 4];
 
 fn psi(d: f64, scale: f64) -> [f64; 2] {
-    [clip(d / scale, -32.0, 32.0), sign(d) * jsmath::log1p(d.abs() / scale)]
+    [clip(d / scale, -32.0, 32.0), sign(d) * libm::log1p(d.abs() / scale)]
 }
 
 fn psi_pair(ms: f64, beats: f64) -> [f64; 4] {
@@ -22,8 +21,8 @@ fn phase(beat: f64) -> [f64; 6] {
     let mut out = [0.0; 6];
     for (i, p) in [1.0, 4.0, 16.0].into_iter().enumerate() {
         let angle = 2.0 * PI * beat / p;
-        out[2 * i] = jsmath::sin(angle);
-        out[2 * i + 1] = jsmath::cos(angle);
+        out[2 * i] = libm::sin(angle);
+        out[2 * i + 1] = libm::cos(angle);
     }
     out
 }
@@ -160,7 +159,7 @@ pub fn query_features(chart: &ChartState, k: usize) -> Vec<f32> {
     shared.extend([chart.grid.bpm(t) / 120.0, chart.grid.meter(t) / 4.0]);
     let lo = right_bound(&chart.head_beats, bt);
     for h in [1.0, 2.0, 4.0, 8.0, 16.0, 32.0] {
-        shared.push(if k == kk { 0.0 } else { jsmath::log1p(right_bound(&chart.head_beats, bt + h) as f64 - lo as f64) });
+        shared.push(if k == kk { 0.0 } else { libm::log1p(right_bound(&chart.head_beats, bt + h) as f64 - lo as f64) });
     }
     for i in 1..=16usize {
         let index = k + i;
@@ -401,10 +400,11 @@ impl R2Stepper {
 
     pub async fn commit(&mut self, chart: &ChartState, k: usize) -> Result<(), String> {
         let mut feeds = vec![("history_token", Tensor::f32(&[2, 100], history_token(chart, k)))];
-        let names: Vec<String> = self.commit_inputs.iter().filter(|n| *n != "history_token").cloned().collect();
-        let tensors: Vec<Tensor> = names.iter().map(|n| self.state(n)).collect();
-        for (name, tensor) in names.iter().zip(tensors) {
-            feeds.push((name.as_str(), tensor));
+        // The outputs replace the whole state, so the inputs are moved out of it rather than copied.
+        let mut state = std::mem::take(&mut self.state);
+        for name in self.commit_inputs.iter().filter(|n| *n != "history_token") {
+            let at = state.iter().position(|(n, _)| n == name).expect("R2 state tensor");
+            feeds.push((name.as_str(), state.swap_remove(at).1));
         }
         let mut output: Outputs = self.io.run("r2_commit", feeds).await?;
         let mut next = Vec::new();

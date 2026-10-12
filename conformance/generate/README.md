@@ -7,8 +7,7 @@ inputs. Paths below are relative to `~/ensomi` on bings-mac; run the commands in
 | --- | --- |
 | `native-parity.json` | `crates/generate-ort/src/bin/parity.rs`: the four release recordings replayed natively. |
 | `wasm-parity.json` | `js/checks/replay.mjs`: the same replay through the Wasm build and onnxruntime-web (WASM backend) in Node. |
-| `same-as-ts.json` | `js/checks/same-as-ts.mjs`: charts, `.osu` and receipts against the TypeScript runtime, seeds 0, 1 and 2. |
-| `jsmath_cases.mjs` | Node's `Math` results for `crates/generate/examples/jsmath_check.rs`, which compares the fdlibm port bit for bit. |
+| `same-as-ts.json` | `js/checks/same-as-ts.mjs`: charts, `.osu` and receipts against the TypeScript runtime, seeds 0, 1 and 2, with V8's `Math` ported (before the core moved to `libm`). ensomi-web's `npm run same-as-ts` now runs this comparison. |
 | `apple-providers.json` | `crates/generate-ort/examples/providers.rs`: time, memory and chart equality of ONNX Runtime's CPU and Core ML providers on the four songs. |
 | `native-charts/` | The same run's CPU chart and request for hesitation-snow, which `swift test` reproduces through the Swift API. |
 
@@ -60,11 +59,9 @@ cd ../ensomi-web/packages/runtime && node --import tsx ../../../ensomi-runtime/j
 
 ## Numerics
 
-The TypeScript runtime's `Math.exp`, `log`, `log1p`, `log2`, `sin`, `cos`, `atan2` and `hypot` are V8's fdlibm
-ports (`hypot` is V8's own scaled sum). Node on Apple silicon returns results that clang compiled with fused
-multiply-adds (`a * b + c` within one expression becomes one rounding), so `crates/generate/src/jsmath.rs`
-ports the functions with the same fusions (`f64::mul_add`); it matches Node's results on 3.2 million random
-inputs (`jsmath_cases.mjs`, `jsmath_check.rs`). The system libm differs from Node's in the last bit for 0.4 to
-42 percent of inputs depending on the function, and the `libm` crate for 0 to 41 percent; those last bits reach
-the receipt. Node on another CPU may round differently, so the TypeScript runtime's receipts are not
-guaranteed bit-stable across machines; the Rust core follows Apple silicon.
+The core computes `exp`, `log`, `log1p`, `log2`, `sin`, `cos`, `atan2` and `hypot` with the `libm` crate: pure
+Rust without fused multiply-adds, so the native and the WebAssembly builds give the same bits on every platform.
+The TypeScript runtime used V8's `Math`, whose last bits follow the machine (Node on Apple silicon fuses
+multiply-adds, which WebAssembly can only emulate slowly). Where the two differ in the last bit, receipt numbers
+differ in their last digits, and a sampled choice can differ only at a near-tie; ensomi-web's `npm run same-as-ts`
+lists both. The Python release stays the reference: the replays above compare with its recorded values.
