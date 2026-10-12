@@ -7,6 +7,7 @@ inputs. Paths below are relative to `~/ensomi` on bings-mac; run the commands in
 | --- | --- |
 | `native-parity.json` | `crates/generate-ort/src/bin/parity.rs`: the four release recordings replayed natively. |
 | `wasm-parity.json` | `js/checks/replay.mjs`: the same replay through the Wasm build and onnxruntime-web (WASM backend) in Node. |
+| `native-parity-check-off.json`, `wasm-parity-check-off.json` | The same two replays with `--check off`: R2's arrangement committed per head row with the difficulty check off, from a `Prepared`. |
 | `same-as-ts.json` | `js/checks/same-as-ts.mjs`: charts, `.osu` and receipts against the TypeScript runtime, seeds 0, 1 and 2, with V8's `Math` ported (before the core moved to `libm`). ensomi-web's `npm run same-as-ts` now runs this comparison. |
 | `apple-providers.json` | `crates/generate-ort/examples/providers.rs`: time, memory and chart equality of ONNX Runtime's CPU and Core ML providers on the four songs. |
 | `native-charts/` | The same run's CPU chart and request for hesitation-snow, which `swift test` reproduces through the Swift API. |
@@ -27,6 +28,23 @@ Criteria: every recorded graph call within 1e-4 (BeatThis 2e-4), grid positions 
 same whole milliseconds and Mel frames, identical head times, prior exactly equal, identical sampled
 choices for every recorded draw, identical hit objects, timing points within 1e-6 ms, all other `.osu`
 text identical.
+
+With `--check off`, the generation commits a page per head row with R2's difficulty check off, from a `Prepared` made
+by its own run of the audio stages (`prepare`, then `generate_prepared`), as play while generating does. The graphs
+are not replayed again. Criteria: stages 2 to 4 as above for pass 1, with the draws consumed through pass 1's
+(`r2_pass_1/...`) and every decision pass 1's; one pass in the receipt, and `would_repass` true exactly where the
+release ran pass 2; the pages make the chart (one per head row and the final row, rising coverage, one end of stream,
+their tokens the whole chart's); the hit objects and `.osu` of the release on the songs where it ran one pass; the own
+PRNG run, from the same `Prepared`, finalised and its pages making its chart.
+
+```sh
+target/generate/release/parity --check off --model-dir ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 \
+  --reference ../ensomi-model/artifacts/runtime-ref --assets assets/resampler \
+  --out conformance/generate/bulk/native-parity-check-off.json
+```
+
+`node js/checks/replay.mjs --check off ...` does the same through the JavaScript `ChartScheduler`; there, on the songs
+where the release ran pass 2, the hit objects must be those that pass 1's recorded decisions make.
 
 ## Providers on Apple silicon
 
@@ -56,6 +74,21 @@ cd ../ensomi-web/packages/runtime && node --import tsx ../../../ensomi-runtime/j
   --core ../../../ensomi-runtime/js/pkg/ensomi_generate_wasm_bg.wasm \
   --out ../../../ensomi-runtime/conformance/generate/same-as-ts.json
 ```
+
+## Time to first playable
+
+```sh
+CARGO_TARGET_DIR=target/generate cargo build --release -p ensomi-runtime-ffi --example stream
+target/generate/release/examples/stream --model-dir ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 \
+  --reference ../ensomi-model/artifacts/runtime-ref --out <native.json>
+node js/checks/stream.mjs --model-dir ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 \
+  --reference ../ensomi-model/artifacts/runtime-ref --assets assets/resampler \
+  --core js/pkg/ensomi_generate_wasm_bg.wasm --out <wasm.json>
+```
+
+Seconds from the start of a generation to the scheduler's first `Ready` at 0 and to `Done`, playing while generating
+against the whole chart, from PCM and from stored `Prepared` bytes, three runs each, natively through the UniFFI
+binding and in Node through the JavaScript API; and the throughput r.
 
 ## Memory in Node
 

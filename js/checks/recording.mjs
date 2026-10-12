@@ -91,3 +91,52 @@ export function timingDifference(actual, expected) {
 
 /** The generator comment line differs by runtime name and is not part of the chart. */
 export const stripGenerator = (text) => text.split('\n').filter(line => !/^\/\/ (rows=|@ensomi\/runtime |ensomi-runtime )/.test(line)).join('\n');
+
+/** Ties to even, as the core's `round`. */
+const round = (x) => {
+    const lo = Math.floor(x), d = x - lo;
+    return d === 0.5 ? lo + (lo % 2 === 0 ? 0 : 1) : d > 0.5 ? lo + 1 : lo;
+};
+
+/** The hit objects of a run of decisions, per row the lane codes and gap releases (export.rs `chart_from_decisions`). */
+export function chartFromDecisions(headMs, songMs, actions, gaps) {
+    const objects = [], open = [null, null, null, null];
+    for (let k = 0; k < actions.length; k++) {
+        const time = k < headMs.length ? headMs[k] : songMs;
+        for (let lane = 0; lane < 4; lane++) {
+            const code = actions[k][lane], wasHeld = open[lane] !== null;
+            if (wasHeld && code !== 0) {
+                const upper = (k < headMs.length ? headMs[k] : Math.ceil(songMs)) - 1;
+                objects[open[lane]].end_ms = code === 1 ? time : Math.max(headMs[k - 1] + 1, Math.min(upper, round(gaps[k][lane])));
+                open[lane] = null;
+            }
+            const tap = wasHeld ? code === 3 : code === 1, hold = wasHeld ? code === 4 : code === 2;
+            if (tap || hold) {
+                objects.push(hold ? { lane, start_ms: time, end_ms: NaN } : { lane, start_ms: time });
+                if (hold)
+                    open[lane] = objects.length - 1;
+            }
+        }
+    }
+    return objects.sort((a, b) => a.start_ms - b.start_ms || a.lane - b.lane);
+}
+
+/** A chart as the tokens of its pages, in their order: by time, a hold's end before a start, then by lane. */
+export function chartTokens(chart) {
+    const tokens = [];
+    for (const o of chart.objects) {
+        tokens.push({ lane: o.lane, time_ms: o.start_ms, kind: o.end_ms === undefined ? 'tap' : 'hold_start' });
+        if (o.end_ms !== undefined)
+            tokens.push({ lane: o.lane, time_ms: o.end_ms, kind: 'hold_end' });
+    }
+    return tokens.sort((a, b) => a.time_ms - b.time_ms || (a.kind !== 'hold_end') - (b.kind !== 'hold_end') || a.lane - b.lane);
+}
+
+/** Whether pages make the chart: one per head row and the final row, rising coverage, one end of stream at the end. */
+export function pagesMakeChart(pages, chart, heads) {
+    const tokens = pages.flatMap(p => p.tokens);
+    const rising = pages.every((p, i) => i === 0 || pages[i - 1].coverage_ms < p.coverage_ms);
+    const ends = pages.at(-1)?.end_of_stream === true && pages.filter(p => p.end_of_stream).length === 1;
+    const passed = pages.length === heads + 1 && rising && ends && JSON.stringify(tokens) === JSON.stringify(chartTokens(chart));
+    return { passed, pages: pages.length, tokens: tokens.length, coverage_rising: rising, one_end_of_stream: ends };
+}

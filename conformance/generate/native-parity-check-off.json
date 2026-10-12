@@ -1,0 +1,494 @@
+{
+  "ort": "onnxruntime 1.23.2 (ort 2.0.0-rc.11)",
+  "provider": "cpu",
+  "threads": 1,
+  "graph_tolerance": {
+    "default": 0.0001,
+    "beatthis": 0.0002
+  },
+  "grid_tolerance_ms": 0.0001,
+  "timing_tolerance_ms": 1e-6,
+  "scope": "recorded graph inputs, PCM frontends, full Rust decode with carried state and replayed random draws, exact exports, own PRNG",
+  "check": "off: one pass committed per head row from a Prepared; graphs as with the check on, not replayed again",
+  "songs": {
+    "hesitation-snow": {
+      "stage2": {
+        "passed": true,
+        "max_grid_error_ms": 2.04920070245862e-7,
+        "whole_ms_mismatches": 0,
+        "frame_mismatches": 0,
+        "spectrogram": {
+          "max_abs": 0.00010383129119873047,
+          "rms": 7.081911647518314e-7,
+          "index": 987261,
+          "nonfinite_equal": true,
+          "reference": 0.656713604927063,
+          "actual": 0.6566097736358643,
+          "same_length": true
+        },
+        "log_mel": {
+          "max_abs": 0.00009059906005859375,
+          "rms": 7.974616787854723e-7,
+          "index": 1217156,
+          "nonfinite_equal": true,
+          "reference": -10.540921211242676,
+          "actual": -10.540830612182617,
+          "same_length": true
+        },
+        "beat_logits": {
+          "max_abs": 0.00006985664367675781,
+          "rms": 6.5340279814063795e-6,
+          "index": 5825,
+          "nonfinite_equal": true,
+          "reference": 2.576951026916504,
+          "actual": 2.5770208835601807,
+          "same_length": true
+        },
+        "segments": [
+          [
+            1011.4725203535777,
+            444.42443421851004
+          ]
+        ]
+      },
+      "stage3": {
+        "passed": true,
+        "heads": 897,
+        "head_times": {
+          "max_abs": 0.0,
+          "rms": 0.0,
+          "index": -1,
+          "nonfinite_equal": true,
+          "reference": null,
+          "actual": null,
+          "same_length": true
+        }
+      },
+      "stage4": {
+        "passed": true,
+        "prior_max_error": 0.0,
+        "decisions": 898,
+        "draws_consumed": 2172,
+        "draws_recorded": 2172,
+        "passes": [
+          {
+            "multiplier": 1.0115911606943524,
+            "achieved": 1.3455830579580628,
+            "fallback_count": 0,
+            "wall_seconds": 0.42777487500000005
+          }
+        ],
+        "would_repass": false,
+        "release_passes": 1
+      },
+      "pages": {
+        "passed": true,
+        "pages": 898,
+        "tokens": 1221,
+        "coverage_rising": true,
+        "one_end_of_stream": true
+      },
+      "replay_seconds": {
+        "rows": 0.09445624999999927,
+        "prior": 0.00007674999999926512,
+        "arrangement": 0.4278107500000006,
+        "export": 0.0003539170000003651,
+        "total": 0.522706209
+      },
+      "stage5": {
+        "passed": true,
+        "hitobjects_identical": true,
+        "objects": 1214,
+        "timing_points": 1,
+        "timing_max_abs_ms": 0.0,
+        "rest_identical": true,
+        "osu_identical_except_generator": true,
+        "first_text_difference": null
+      },
+      "prng": {
+        "passed": true,
+        "algorithm": "mulberry32-u53-v1",
+        "objects": 1059,
+        "heads": 767,
+        "fallbacks": 0,
+        "seconds": {
+          "rows": 0.098625625,
+          "prior": 0.0000693330000000003,
+          "arrangement": 0.355076542,
+          "export": 0.0003062910000000443,
+          "total": 0.454080125
+        },
+        "wall_seconds": 0.4541715,
+        "timings": null,
+        "pages": {
+          "passed": true,
+          "pages": 768,
+          "tokens": 1200,
+          "coverage_rising": true,
+          "one_end_of_stream": true
+        },
+        "would_repass": false
+      }
+    },
+    "saigetsu": {
+      "stage2": {
+        "passed": true,
+        "max_grid_error_ms": 3.2794196158647537e-7,
+        "whole_ms_mismatches": 0,
+        "frame_mismatches": 0,
+        "spectrogram": {
+          "max_abs": 0.00018358230590820312,
+          "rms": 1.743181821901869e-6,
+          "index": 478971,
+          "nonfinite_equal": true,
+          "reference": 0.5591014623641968,
+          "actual": 0.559285044670105,
+          "same_length": true
+        },
+        "log_mel": {
+          "max_abs": 0.0000705718994140625,
+          "rms": 1.0791206250143582e-6,
+          "index": 257311,
+          "nonfinite_equal": true,
+          "reference": -8.783892631530762,
+          "actual": -8.783963203430176,
+          "same_length": true
+        },
+        "beat_logits": {
+          "max_abs": 0.00007534027099609375,
+          "rms": 4.851283297447442e-6,
+          "index": 1245,
+          "nonfinite_equal": true,
+          "reference": 8.163451194763184,
+          "actual": 8.16352653503418,
+          "same_length": true
+        },
+        "segments": [
+          [
+            800.5748798506852,
+            588.2192872162952
+          ]
+        ]
+      },
+      "stage3": {
+        "passed": true,
+        "heads": 785,
+        "head_times": {
+          "max_abs": 0.0,
+          "rms": 0.0,
+          "index": -1,
+          "nonfinite_equal": true,
+          "reference": null,
+          "actual": null,
+          "same_length": true
+        }
+      },
+      "stage4": {
+        "passed": true,
+        "prior_max_error": 0.0,
+        "decisions": 786,
+        "draws_consumed": 1805,
+        "draws_recorded": 3380,
+        "passes": [
+          {
+            "multiplier": 0.9365579816442061,
+            "achieved": 1.4391102764195374,
+            "fallback_count": 0,
+            "wall_seconds": 0.37144608399999923
+          }
+        ],
+        "would_repass": true,
+        "release_passes": 2
+      },
+      "pages": {
+        "passed": true,
+        "pages": 786,
+        "tokens": 1235,
+        "coverage_rising": true,
+        "one_end_of_stream": true
+      },
+      "replay_seconds": {
+        "rows": 0.060978499999999713,
+        "prior": 0.00006454199999961929,
+        "arrangement": 0.37148166700000046,
+        "export": 0.0003242499999996653,
+        "total": 0.43285412499999987
+      },
+      "stage5": {
+        "passed": true,
+        "compared": false,
+        "reason": "the release ran pass 2",
+        "objects": 1131,
+        "same_as_release": false
+      },
+      "prng": {
+        "passed": true,
+        "algorithm": "mulberry32-u53-v1",
+        "objects": 1131,
+        "heads": 805,
+        "fallbacks": 0,
+        "seconds": {
+          "rows": 0.064360334,
+          "prior": 0.00006720900000000541,
+          "arrangement": 0.376069333,
+          "export": 0.0003213750000000459,
+          "total": 0.44082041699999996
+        },
+        "wall_seconds": 0.440913,
+        "timings": null,
+        "pages": {
+          "passed": true,
+          "pages": 806,
+          "tokens": 1308,
+          "coverage_rising": true,
+          "one_end_of_stream": true
+        },
+        "would_repass": true
+      }
+    },
+    "catch-the-moment": {
+      "stage2": {
+        "passed": true,
+        "max_grid_error_ms": 9.689538273960352e-7,
+        "whole_ms_mismatches": 0,
+        "frame_mismatches": 0,
+        "spectrogram": {
+          "max_abs": 0.00012239813804626465,
+          "rms": 1.152844562083793e-6,
+          "index": 706431,
+          "nonfinite_equal": true,
+          "reference": 0.1596723198890686,
+          "actual": 0.15954992175102234,
+          "same_length": true
+        },
+        "log_mel": {
+          "max_abs": 0.00005245208740234375,
+          "rms": 7.895559454005123e-7,
+          "index": 47233,
+          "nonfinite_equal": true,
+          "reference": -7.640624523162842,
+          "actual": -7.6405720710754395,
+          "same_length": true
+        },
+        "beat_logits": {
+          "max_abs": 0.00010061264038085938,
+          "rms": 6.5019474451073195e-6,
+          "index": 4442,
+          "nonfinite_equal": true,
+          "reference": 0.929293155670166,
+          "actual": 0.9293937683105469,
+          "same_length": true
+        },
+        "segments": [
+          [
+            1689.2850628721221,
+            631.3408705352042
+          ],
+          [
+            29479.019437683895,
+            315.7484294041498
+          ],
+          [
+            105686.84418409795,
+            1935.483870967742
+          ]
+        ]
+      },
+      "stage3": {
+        "passed": true,
+        "heads": 773,
+        "head_times": {
+          "max_abs": 0.0,
+          "rms": 0.0,
+          "index": -1,
+          "nonfinite_equal": true,
+          "reference": null,
+          "actual": null,
+          "same_length": true
+        }
+      },
+      "stage4": {
+        "passed": true,
+        "prior_max_error": 0.0,
+        "decisions": 774,
+        "draws_consumed": 1767,
+        "draws_recorded": 3331,
+        "passes": [
+          {
+            "multiplier": 0.9864209795304626,
+            "achieved": 1.437874697048943,
+            "fallback_count": 0,
+            "wall_seconds": 0.3642504159999994
+          }
+        ],
+        "would_repass": true,
+        "release_passes": 2
+      },
+      "pages": {
+        "passed": true,
+        "pages": 774,
+        "tokens": 1227,
+        "coverage_rising": true,
+        "one_end_of_stream": true
+      },
+      "replay_seconds": {
+        "rows": 0.05412591699999984,
+        "prior": 0.00006612499999982902,
+        "arrangement": 0.3642857920000001,
+        "export": 0.0003123329999998532,
+        "total": 0.41879649999999946
+      },
+      "stage5": {
+        "passed": true,
+        "compared": false,
+        "reason": "the release ran pass 2",
+        "objects": 1126,
+        "same_as_release": false
+      },
+      "prng": {
+        "passed": true,
+        "algorithm": "mulberry32-u53-v1",
+        "objects": 976,
+        "heads": 631,
+        "fallbacks": 0,
+        "seconds": {
+          "rows": 0.056923167,
+          "prior": 0.00006304199999999582,
+          "arrangement": 0.295650208,
+          "export": 0.00028104200000001356,
+          "total": 0.35291987500000005
+        },
+        "wall_seconds": 0.353008,
+        "timings": null,
+        "pages": {
+          "passed": true,
+          "pages": 632,
+          "tokens": 1202,
+          "coverage_rising": true,
+          "one_end_of_stream": true
+        },
+        "would_repass": true
+      }
+    },
+    "adventure": {
+      "stage2": {
+        "passed": true,
+        "max_grid_error_ms": 7.483195076929405e-7,
+        "whole_ms_mismatches": 0,
+        "frame_mismatches": 0,
+        "spectrogram": {
+          "max_abs": 0.00016456842422485352,
+          "rms": 1.8532696832127873e-6,
+          "index": 1248767,
+          "nonfinite_equal": true,
+          "reference": 0.13386723399162292,
+          "actual": 0.13403180241584778,
+          "same_length": true
+        },
+        "log_mel": {
+          "max_abs": 0.0001201629638671875,
+          "rms": 1.072447877185122e-6,
+          "index": 1653122,
+          "nonfinite_equal": true,
+          "reference": -11.17276382446289,
+          "actual": -11.172883987426758,
+          "same_length": true
+        },
+        "beat_logits": {
+          "max_abs": 0.00008726119995117188,
+          "rms": 5.35560305532012e-6,
+          "index": 5531,
+          "nonfinite_equal": true,
+          "reference": 3.289146900177002,
+          "actual": 3.289059638977051,
+          "same_length": true
+        },
+        "segments": [
+          [
+            8.660512126916322,
+            468.73968803739143
+          ]
+        ]
+      },
+      "stage3": {
+        "passed": true,
+        "heads": 1703,
+        "head_times": {
+          "max_abs": 0.0,
+          "rms": 0.0,
+          "index": -1,
+          "nonfinite_equal": true,
+          "reference": null,
+          "actual": null,
+          "same_length": true
+        }
+      },
+      "stage4": {
+        "passed": true,
+        "prior_max_error": 0.0,
+        "decisions": 1704,
+        "draws_consumed": 3850,
+        "draws_recorded": 3850,
+        "passes": [
+          {
+            "multiplier": 1.0227338165214293,
+            "achieved": 1.502286623823186,
+            "fallback_count": 0,
+            "wall_seconds": 0.7951810830000003
+          }
+        ],
+        "would_repass": false,
+        "release_passes": 1
+      },
+      "pages": {
+        "passed": true,
+        "pages": 1704,
+        "tokens": 2611,
+        "coverage_rising": true,
+        "one_end_of_stream": true
+      },
+      "replay_seconds": {
+        "rows": 0.10824479200000042,
+        "prior": 0.00006879200000003039,
+        "arrangement": 0.7952111670000013,
+        "export": 0.0005889590000006138,
+        "total": 0.9041207910000003
+      },
+      "stage5": {
+        "passed": true,
+        "hitobjects_identical": true,
+        "objects": 2557,
+        "timing_points": 1,
+        "timing_max_abs_ms": 0.0,
+        "rest_identical": true,
+        "osu_identical_except_generator": true,
+        "first_text_difference": null
+      },
+      "prng": {
+        "passed": true,
+        "algorithm": "mulberry32-u53-v1",
+        "objects": 2022,
+        "heads": 1399,
+        "fallbacks": 1,
+        "seconds": {
+          "rows": 0.11440900000000001,
+          "prior": 0.00006616699999999299,
+          "arrangement": 0.6588489999999999,
+          "export": 0.0005423749999999927,
+          "total": 0.773868917
+        },
+        "wall_seconds": 0.774011583,
+        "timings": null,
+        "pages": {
+          "passed": true,
+          "pages": 1400,
+          "tokens": 2458,
+          "coverage_rising": true,
+          "one_end_of_stream": true
+        },
+        "would_repass": true
+      }
+    }
+  },
+  "passed": true
+}
