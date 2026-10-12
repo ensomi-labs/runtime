@@ -1,0 +1,84 @@
+name: Release
+
+# A tag vX.Y.Z on main's head releases X.Y.Z (RELEASING.md): CI's checks, then the xcframework on a GitHub release
+# with its URL and checksum committed to Package.swift on main, then @ensomi/runtime on npm.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  versions:
+    name: Tag, main and package versions agree
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - run: |
+          version="${GITHUB_REF_NAME#v}"
+          if [ "$(git rev-parse origin/main)" != "$GITHUB_SHA" ]; then
+            echo "::error::$GITHUB_REF_NAME is not on main's head"; exit 1
+          fi
+          if [ "$(jq -r .version js/package.json)" != "$version" ] || ! grep -qx "version = \"$version\"" Cargo.toml; then
+            echo "::error::js/package.json and Cargo.toml must both have version $version"; exit 1
+          fi
+
+  checks:
+    needs: versions
+    uses: ./.github/workflows/ci.yml
+
+  github-release:
+    name: GitHub release and Package.swift
+    needs: checks
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v8
+        with:
+          name: xcframework
+      # SwiftPM reads Package.swift at the tag, so the tag moves onto the commit that pins the binary.
+      - name: Pin the xcframework in Package.swift on main, move the tag there, publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="$GITHUB_REF_NAME"
+          url="https://github.com/$GITHUB_REPOSITORY/releases/download/$tag/EnsomiRuntimeFFI.xcframework.zip"
+          checksum=$(sha256sum EnsomiRuntimeFFI.xcframework.zip | cut -d ' ' -f 1)
+          sed -i -e "s|^private let releaseURL = .*|private let releaseURL = \"$url\"|" \
+            -e "s|^private let releaseChecksum = .*|private let releaseChecksum = \"$checksum\"|" Package.swift
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -am "Package.swift: the xcframework of $tag"
+          git push origin HEAD:main
+          git tag -f -a "$tag" -m "$tag"
+          git push -f origin "refs/tags/$tag"
+          gh release create "$tag" EnsomiRuntimeFFI.xcframework.zip --verify-tag --title "$tag" --generate-notes
+
+  npm:
+    name: Publish @ensomi/runtime
+    needs: github-release
+    runs-on: ubuntu-24.04
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - uses: actions/download-artifact@v8
+        with:
+          name: npm-package
+      # Trusted publishing (OIDC): no token; publishConfig asks for provenance.
+      - run: npm publish ensomi-runtime-*.tgz --tag "$(case "$GITHUB_REF_NAME" in *-*) echo next ;; *) echo latest ;; esac)"
