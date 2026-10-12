@@ -1,14 +1,13 @@
 # Chart generator conformance
 
-The generator (`crates/generate`) reproduces the TypeScript runtime and the Python release from recorded
-inputs. Paths below are relative to `~/ensomi` on bings-mac; run the commands in `ensomi-runtime`.
+The generator (`crates/generate`) reproduces the Python release from recorded inputs. Paths below are relative to
+`~/ensomi` on bings-mac; run the commands in `ensomi-runtime`.
 
 | File | What it pins |
 | --- | --- |
 | `native-parity.json` | `crates/generate-ort/src/bin/parity.rs`: the four release recordings replayed natively. |
 | `wasm-parity.json` | `js/checks/replay.mjs`: the same replay through the Wasm build and onnxruntime-web (WASM backend) in Node. |
 | `native-parity-stream.json`, `wasm-parity-stream.json` | The same two replays with `--stream`: R2's arrangement committed per head row, from a `Prepared`. |
-| `same-as-ts.json` | `js/checks/same-as-ts.mjs`: charts, `.osu` and receipts against the TypeScript runtime, seeds 0, 1 and 2, with V8's `Math` ported (before the core moved to `libm`), while both arranged a song a second time where the Python release did. ensomi-web's `npm run same-as-ts` now runs this comparison. |
 | `apple-providers.json` | `crates/generate-ort/examples/providers.rs`: time, memory and chart equality of ONNX Runtime's CPU and Core ML providers on the four songs. |
 | `native-charts/` | The same run's CPU chart and request for hesitation-snow, which `swift test` reproduces through the Swift API. |
 
@@ -47,7 +46,10 @@ target/generate/release/parity --stream --model-dir ../ensomi-model/artifacts/re
   --out conformance/generate/native-parity-stream.json
 ```
 
-`node js/checks/replay.mjs --stream ...` does the same through the JavaScript `ChartScheduler`.
+The Wasm replay with `--stream` (below) does the same through the JavaScript `ChartScheduler` playing from 0: the
+recorded draws from the recorded PCM, whose audio stages the scheduler runs itself, and the own PRNG run from the
+`Prepared` that scheduler kept. Criteria: those of the native streamed replay; where the release arranged a song
+twice, stage 5 compares hit objects, as the Wasm replay does.
 
 ## Providers on Apple silicon
 
@@ -63,7 +65,7 @@ The input is what a client passes: the recorded PCM averaged to mono float32 at 
 the recorded frontend streams, with the release example's star, seed, title and artist. Each configuration
 and song runs in a process of its own, which generates twice.
 
-## Wasm replay and equality with TypeScript
+## Wasm replay
 
 ```sh
 scripts/wasm-build.sh
@@ -71,11 +73,9 @@ cd js && npm install && cd ..
 node js/checks/replay.mjs --model-dir ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 \
   --reference ../ensomi-model/artifacts/runtime-ref --assets assets/resampler \
   --core js/pkg/ensomi_generate_wasm_bg.wasm --out conformance/generate/wasm-parity.json
-cd ../ensomi-web/packages/runtime && node --import tsx ../../../ensomi-runtime/js/checks/same-as-ts.mjs \
-  --model-dir ../../../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 \
-  --reference ../../../ensomi-model/artifacts/runtime-ref --assets assets \
-  --core ../../../ensomi-runtime/js/pkg/ensomi_generate_wasm_bg.wasm \
-  --out ../../../ensomi-runtime/conformance/generate/same-as-ts.json
+node js/checks/replay.mjs --stream --model-dir ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 \
+  --reference ../ensomi-model/artifacts/runtime-ref --assets assets/resampler \
+  --core js/pkg/ensomi_generate_wasm_bg.wasm --out conformance/generate/wasm-parity-stream.json
 ```
 
 ## Time to first playable
@@ -112,8 +112,8 @@ The core computes `exp`, `log`, `log1p`, `log2`, `sin`, `cos`, `atan2` and `hypo
 Rust without fused multiply-adds, so the native and the WebAssembly builds give the same bits on every platform.
 The TypeScript runtime used V8's `Math`, whose last bits follow the machine (Node on Apple silicon fuses
 multiply-adds, which WebAssembly can only emulate slowly). On the four songs with seeds 0 to 2 and the controls
-case, charts, `.osu` and receipts still equalled the TypeScript runtime's (ensomi-web's `npm run same-as-ts`) while
-this runtime, like it, arranged a song a second time where the difficulty check asked; they now differ wherever the
-TypeScript runtime arranges a song twice. On other input a last-bit difference can show in receipt digits or, at a
+case, charts, `.osu` and receipts still equalled the TypeScript runtime's while this runtime, like it, arranged a song
+a second time where the difficulty check asked; they now differ wherever the TypeScript runtime arranged a song twice,
+and that comparison is retired with it. On other input a last-bit difference can show in receipt digits or, at a
 near-tie, in a sampled choice. The Python release stays the reference: the replays above compare with its recorded
 values.

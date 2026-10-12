@@ -3,9 +3,9 @@
 ## State
 
 Branch `core/v0`. Stage 1 is committed (c0e8b40). Stage 2 passes on all four songs
-(`conformance/generate/wasm-parity.json`, committed). Stage 3 passes: `conformance/generate/same-as-ts.json` (13 cases, all equal; mean wall
-seconds per chart in Node: TypeScript 26.6, Wasm 24.0, BeatThis about 18 of them). All three stages are done; what is left is in
-the report to the human.
+(`conformance/generate/wasm-parity.json`, committed). Stage 3 passed: 13 cases equal to the TypeScript runtime (mean wall
+seconds per chart in Node: TypeScript 26.6, Wasm 24.0, BeatThis about 18 of them); that comparison is retired with the
+TypeScript runtime. All three stages are done; what is left is in the report to the human.
 
 | Piece | Where | State |
 | --- | --- | --- |
@@ -14,7 +14,7 @@ the report to the human.
 | Wasm binding | `crates/generate-wasm`, `scripts/wasm-build.sh` | builds; wasm-bindgen-cli 0.2.129 is installed on the mac |
 | JS API (`loadModels`, `generateChart`, `decodeAudio`, `localFilesSource`, `models.capabilities`) | `js/src` | written; used by the Wasm replay |
 | Stage 2 check | `js/checks/replay.mjs` -> `conformance/generate/wasm-parity.json` | all four songs pass (BeatThis 1.06e-4 to 1.17e-4 on ORT-web, inside the 2e-4 allowance) |
-| Stage 3 check | `js/checks/same-as-ts.mjs` -> `conformance/generate/same-as-ts.json` | passes |
+| Stage 3 check | the comparison with the TypeScript runtime | passed; retired with that runtime |
 
 ## Next steps
 
@@ -29,8 +29,8 @@ the report to the human.
   Receipt `seconds` and `wall_seconds` are wall-clock and excluded from the TS comparison.
 - Transcendental functions from the `libm` crate on every target (2026-10-11). The earlier port of V8's `Math`
   (`jsmath.rs`, with Node-on-arm64's fused multiply-adds) ran a software `fma` in WebAssembly, which made the Wasm
-  build slower than the TypeScript runtime. Charts, `.osu` and receipts still equal the TypeScript runtime's on the
-  13 cases of ensomi-web's `npm run same-as-ts`.
+  build slower than the TypeScript runtime. Charts, `.osu` and receipts still equalled the TypeScript runtime's on
+  the 13 cases of the stage 3 comparison.
 - `Generator::work` (2026-10-11): after a `Run` step, an asynchronous caller computes the Log-Mel spectrogram while
   BeatThis runs, 64 frames per call; `step` alone computes it after BeatThis as before.
 - Receipt writer = `JSON.stringify(v, null, 2)` (`json.rs`, ES number formatting, insertion order).

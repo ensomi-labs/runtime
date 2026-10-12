@@ -73,7 +73,8 @@ Here a placeholder takes the hand-published slot, so that 0.1.0 is already the C
 
 These need data CI does not have. Run them in `~/ensomi/ensomi-runtime` on the commit to be tagged.
 
-5. Generator replay parity on the four release recordings (4.3 GB in `ensomi-model/artifacts/runtime-ref`); both
+5. Generator replay parity on the four release recordings (4.3 GB in `ensomi-model/artifacts/runtime-ref`), native
+   and Wasm, each for the whole chart and streamed (`--stream`: R2's arrangement committed per head row); all four
    reports end with `"passed": true` ([`conformance/generate`](conformance/generate/README.md) has the criteria):
 
    ```sh
@@ -81,10 +82,16 @@ These need data CI does not have. Run them in `~/ensomi/ensomi-runtime` on the c
      --model-dir ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 \
      --reference ../ensomi-model/artifacts/runtime-ref --assets assets/resampler \
      --out conformance/generate/bulk/native-parity.json
+   target/generate/release/parity --stream --model-dir ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 \
+     --reference ../ensomi-model/artifacts/runtime-ref --assets assets/resampler \
+     --out conformance/generate/bulk/native-parity-stream.json
    scripts/wasm-build.sh && (cd js && npm install)
    node js/checks/replay.mjs --model-dir ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 \
      --reference ../ensomi-model/artifacts/runtime-ref --assets assets/resampler \
      --core js/pkg/ensomi_generate_wasm_bg.wasm --out conformance/generate/bulk/wasm-parity.json
+   node js/checks/replay.mjs --stream --model-dir ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 \
+     --reference ../ensomi-model/artifacts/runtime-ref --assets assets/resampler \
+     --core js/pkg/ensomi_generate_wasm_bg.wasm --out conformance/generate/bulk/wasm-parity-stream.json
    ```
 
 6. The Swift generator tests, which CI skips without the model; all pass:
