@@ -1,0 +1,18 @@
+{
+  "sample_rate": 11025,
+  "target_rate": 22050,
+  "numerator": 1,
+  "phases": 2,
+  "radius": 128,
+  "dtype": "float64",
+  "shape": [
+    2,
+    257
+  ],
+  "file": "resample-11025.bin",
+  "boundary_frames": 128,
+  "boundary_samples": 192,
+  "boundary_file": "resample-11025-boundary.bin",
+  "algorithm": "soxr HQ polyphase FIR",
+  "soxr_version": "1.1.0"
+}
