@@ -138,29 +138,30 @@ scheduler.result()                                  // the whole chart, .osu and
 ### Execution provider
 
 Use `.cpu`. Measured on bings-mac (M5) with `crates/generate-ort/examples/providers.rs`
-([`conformance/generate/apple-providers.json`](../conformance/generate/apple-providers.json)): seconds of the
-second generation in a process, and the process's peak physical footprint. When generation starts the
-footprint is 0.3 to 0.55 GiB: the opened model (0.2 GiB) and the recording the measurement reads.
+([`conformance/generate/apple-providers.json`](../conformance/generate/apple-providers.json), runtime 0.2.0, with no
+other job on the machine): seconds of the second generation in a process, and the process's peak physical
+footprint. When generation starts the footprint is 0.25 to 0.4 GiB: the opened model (0.2 GiB) and the recording
+the measurement reads.
 
 | Song | CPU seconds (BeatThis) | Core ML seconds (BeatThis) | CPU peak footprint | Core ML peak footprint |
 | --- | --- | --- | --- | --- |
-| hesitation-snow | 6.0 (3.7) | 11.6 (9.2) | 2.0 GiB | 11.5 GiB |
-| saigetsu | 5.2 (3.0) | 10.0 (7.7) | 2.0 GiB | 11.5 GiB |
-| catch-the-moment | 4.9 (3.0) | 9.8 (7.7) | 2.0 GiB | 11.5 GiB |
-| adventure | 9.5 (4.2) | 16.3 (10.9) | 2.3 GiB | 11.6 GiB |
+| hesitation-snow | 5.2 (3.7) | 9.2 (7.6) | 1.9 GiB | 11.4 GiB |
+| saigetsu | 4.3 (3.0) | 7.6 (6.3) | 1.9 GiB | 11.4 GiB |
+| catch-the-moment | 4.2 (3.1) | 7.6 (6.5) | 1.9 GiB | 11.4 GiB |
+| adventure | 6.9 (4.2) | 11.6 (8.9) | 2.1 GiB | 11.6 GiB |
 
 `.coreMl` gives BeatThis to Core ML and leaves the other graphs on the CPU. Opening the model then takes 10 s
-instead of 0.2 s, BeatThis runs two to three times slower and the process needs 11.5 GiB: Core ML takes BeatThis's
-dynamic frame axis in 180 partitions. Its charts have the CPU's hit objects on all four songs. Core ML for every
-graph fails on the rows graphs' dynamic sequence length. No compute unit or model format helped (exploratory,
-hesitation-snow). The Core ML rows overlapped a browser timing run on the same machine; the CPU rows did not.
+instead of 0.2 s, BeatThis runs about two times slower and the process needs 11.4 to 11.6 GiB: Core ML takes
+BeatThis's dynamic frame axis in 180 partitions. Its charts have the CPU's hit objects on all four songs. Core ML
+for every graph fails on the rows graphs' dynamic sequence length. No compute unit or model format helped
+(exploratory, hesitation-snow).
 
 Most of the CPU footprint is BeatThis's working memory, which ONNX Runtime keeps after the first run: the
 footprint grows by 1.6 GiB during the timing phase on every song. The `providers` configuration `cpu-lean`
-(no CPU arena and no memory patterns), `lowMemory` here, brings the peak to 1.3 to 1.6 GiB with the same
-charts; its times overlapped the browser run. `cpu-threads` is not exposed (ONNX Runtime picks the
-thread count), which took hesitation-snow from 6.0 to 5.1 s with the same chart; sessions run on one thread,
-as the parity recordings were checked.
+(no CPU arena and no memory patterns), `lowMemory` here, brings the peak to 1.25 to 1.45 GiB with the same
+charts and times within 0.2 s of `.cpu`. `cpu-threads` is not exposed (ONNX Runtime picks the thread count),
+which took the four songs from 4.2 to 6.9 s down to 3.4 to 6.0 s with the same charts; sessions run on one
+thread, as the parity recordings were checked.
 
 ### Size
 
