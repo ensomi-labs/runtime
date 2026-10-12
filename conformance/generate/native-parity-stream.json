@@ -9,7 +9,7 @@
   "grid_tolerance_ms": 0.0001,
   "timing_tolerance_ms": 1e-6,
   "scope": "recorded graph inputs, PCM frontends, full Rust decode with carried state and replayed random draws, exact exports, own PRNG",
-  "check": "off: one pass committed per head row from a Prepared; graphs as with the check on, not replayed again",
+  "commit": "a page per head row from a Prepared; graphs not replayed again",
   "songs": {
     "hesitation-snow": {
       "stage2": {
@@ -75,10 +75,9 @@
             "multiplier": 1.0115911606943524,
             "achieved": 1.3455830579580628,
             "fallback_count": 0,
-            "wall_seconds": 0.42777487500000005
+            "wall_seconds": 0.42397112500000095
           }
         ],
-        "would_repass": false,
         "release_passes": 1
       },
       "pages": {
@@ -89,11 +88,11 @@
         "one_end_of_stream": true
       },
       "replay_seconds": {
-        "rows": 0.09445624999999927,
-        "prior": 0.00007674999999926512,
-        "arrangement": 0.4278107500000006,
-        "export": 0.0003539170000003651,
-        "total": 0.522706209
+        "rows": 0.09344358300000022,
+        "prior": 0.00008091700000022684,
+        "arrangement": 0.42397112500000095,
+        "export": 0.00034637500000008,
+        "total": 0.5178531659999999
       },
       "stage5": {
         "passed": true,
@@ -112,13 +111,13 @@
         "heads": 767,
         "fallbacks": 0,
         "seconds": {
-          "rows": 0.098625625,
-          "prior": 0.0000693330000000003,
-          "arrangement": 0.355076542,
-          "export": 0.0003062910000000443,
-          "total": 0.454080125
+          "rows": 0.098487167,
+          "prior": 0.00007083299999999327,
+          "arrangement": 0.35478504200000005,
+          "export": 0.0003232090000000198,
+          "total": 0.453668459
         },
-        "wall_seconds": 0.4541715,
+        "wall_seconds": 0.453758125,
         "timings": null,
         "pages": {
           "passed": true,
@@ -126,8 +125,7 @@
           "tokens": 1200,
           "coverage_rising": true,
           "one_end_of_stream": true
-        },
-        "would_repass": false
+        }
       }
     },
     "saigetsu": {
@@ -194,10 +192,9 @@
             "multiplier": 0.9365579816442061,
             "achieved": 1.4391102764195374,
             "fallback_count": 0,
-            "wall_seconds": 0.37144608399999923
+            "wall_seconds": 0.36732000000000065
           }
         ],
-        "would_repass": true,
         "release_passes": 2
       },
       "pages": {
@@ -208,11 +205,11 @@
         "one_end_of_stream": true
       },
       "replay_seconds": {
-        "rows": 0.060978499999999713,
-        "prior": 0.00006454199999961929,
-        "arrangement": 0.37148166700000046,
-        "export": 0.0003242499999996653,
-        "total": 0.43285412499999987
+        "rows": 0.06042025000000013,
+        "prior": 0.00006883300000026793,
+        "arrangement": 0.36732000000000065,
+        "export": 0.00034112499999991994,
+        "total": 0.42815687499999966
       },
       "stage5": {
         "passed": true,
@@ -228,13 +225,13 @@
         "heads": 805,
         "fallbacks": 0,
         "seconds": {
-          "rows": 0.064360334,
-          "prior": 0.00006720900000000541,
-          "arrangement": 0.376069333,
-          "export": 0.0003213750000000459,
-          "total": 0.44082041699999996
+          "rows": 0.0644555,
+          "prior": 0.0000622499999999917,
+          "arrangement": 0.373059209,
+          "export": 0.00033066600000006475,
+          "total": 0.43790970799999995
         },
-        "wall_seconds": 0.440913,
+        "wall_seconds": 0.438000709,
         "timings": null,
         "pages": {
           "passed": true,
@@ -242,8 +239,7 @@
           "tokens": 1308,
           "coverage_rising": true,
           "one_end_of_stream": true
-        },
-        "would_repass": true
+        }
       }
     },
     "catch-the-moment": {
@@ -318,10 +314,9 @@
             "multiplier": 0.9864209795304626,
             "achieved": 1.437874697048943,
             "fallback_count": 0,
-            "wall_seconds": 0.3642504159999994
+            "wall_seconds": 0.3614762500000006
           }
         ],
-        "would_repass": true,
         "release_passes": 2
       },
       "pages": {
@@ -332,11 +327,11 @@
         "one_end_of_stream": true
       },
       "replay_seconds": {
-        "rows": 0.05412591699999984,
-        "prior": 0.00006612499999982902,
-        "arrangement": 0.3642857920000001,
-        "export": 0.0003123329999998532,
-        "total": 0.41879649999999946
+        "rows": 0.05654833300000064,
+        "prior": 0.00007112499999948341,
+        "arrangement": 0.3614762500000006,
+        "export": 0.00032245899999998074,
+        "total": 0.4184253330000001
       },
       "stage5": {
         "passed": true,
@@ -352,13 +347,13 @@
         "heads": 631,
         "fallbacks": 0,
         "seconds": {
-          "rows": 0.056923167,
-          "prior": 0.00006304199999999582,
-          "arrangement": 0.295650208,
-          "export": 0.00028104200000001356,
-          "total": 0.35291987500000005
+          "rows": 0.057063708000000005,
+          "prior": 0.0000660000000000096,
+          "arrangement": 0.29702387500000005,
+          "export": 0.0003080839999999512,
+          "total": 0.35446425
         },
-        "wall_seconds": 0.353008,
+        "wall_seconds": 0.354559834,
         "timings": null,
         "pages": {
           "passed": true,
@@ -366,8 +361,7 @@
           "tokens": 1202,
           "coverage_rising": true,
           "one_end_of_stream": true
-        },
-        "would_repass": true
+        }
       }
     },
     "adventure": {
@@ -434,10 +428,9 @@
             "multiplier": 1.0227338165214293,
             "achieved": 1.502286623823186,
             "fallback_count": 0,
-            "wall_seconds": 0.7951810830000003
+            "wall_seconds": 1.1445554169999987
           }
         ],
-        "would_repass": false,
         "release_passes": 1
       },
       "pages": {
@@ -448,11 +441,11 @@
         "one_end_of_stream": true
       },
       "replay_seconds": {
-        "rows": 0.10824479200000042,
-        "prior": 0.00006879200000003039,
-        "arrangement": 0.7952111670000013,
-        "export": 0.0005889590000006138,
-        "total": 0.9041207910000003
+        "rows": 0.15256695800000034,
+        "prior": 0.00011104100000011385,
+        "arrangement": 1.1445554169999987,
+        "export": 0.0007331250000006548,
+        "total": 1.2979842920000002
       },
       "stage5": {
         "passed": true,
@@ -471,13 +464,13 @@
         "heads": 1399,
         "fallbacks": 1,
         "seconds": {
-          "rows": 0.11440900000000001,
-          "prior": 0.00006616699999999299,
-          "arrangement": 0.6588489999999999,
-          "export": 0.0005423749999999927,
-          "total": 0.773868917
+          "rows": 0.12956170899999997,
+          "prior": 0.00010158300000000509,
+          "arrangement": 0.7678287500000001,
+          "export": 0.0006642499999999246,
+          "total": 0.898159041
         },
-        "wall_seconds": 0.774011583,
+        "wall_seconds": 0.898325458,
         "timings": null,
         "pages": {
           "passed": true,
@@ -485,8 +478,7 @@
           "tokens": 2458,
           "coverage_rising": true,
           "one_end_of_stream": true
-        },
-        "would_repass": true
+        }
       }
     }
   },
