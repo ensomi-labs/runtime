@@ -62,6 +62,7 @@ cd ../ensomi-web/packages/runtime && node --import tsx ../../../ensomi-runtime/j
 The core computes `exp`, `log`, `log1p`, `log2`, `sin`, `cos`, `atan2` and `hypot` with the `libm` crate: pure
 Rust without fused multiply-adds, so the native and the WebAssembly builds give the same bits on every platform.
 The TypeScript runtime used V8's `Math`, whose last bits follow the machine (Node on Apple silicon fuses
-multiply-adds, which WebAssembly can only emulate slowly). Where the two differ in the last bit, receipt numbers
-differ in their last digits, and a sampled choice can differ only at a near-tie; ensomi-web's `npm run same-as-ts`
-lists both. The Python release stays the reference: the replays above compare with its recorded values.
+multiply-adds, which WebAssembly can only emulate slowly). On the four songs with seeds 0 to 2 and the controls
+case, charts, `.osu` and receipts still equal the TypeScript runtime's (ensomi-web's `npm run same-as-ts`); on
+other input a last-bit difference can show in receipt digits or, at a near-tie, in a sampled choice. The Python
+release stays the reference: the replays above compare with its recorded values.

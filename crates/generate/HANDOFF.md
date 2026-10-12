@@ -29,7 +29,10 @@ the report to the human.
   Receipt `seconds` and `wall_seconds` are wall-clock and excluded from the TS comparison.
 - Transcendental functions from the `libm` crate on every target (2026-10-11). The earlier port of V8's `Math`
   (`jsmath.rs`, with Node-on-arm64's fused multiply-adds) ran a software `fma` in WebAssembly, which made the Wasm
-  build slower than the TypeScript runtime. Receipts now differ from the TypeScript runtime's in last digits.
+  build slower than the TypeScript runtime. Charts, `.osu` and receipts still equal the TypeScript runtime's on the
+  13 cases of ensomi-web's `npm run same-as-ts`.
+- `Generator::work` (2026-10-11): after a `Run` step, an asynchronous caller computes the Log-Mel spectrogram while
+  BeatThis runs, 64 frames per call; `step` alone computes it after BeatThis as before.
 - Receipt writer = `JSON.stringify(v, null, 2)` (`json.rs`, ES number formatting, insertion order).
 - Runtime name in receipt and `.osu` comment is `ensomi-runtime` (`RUNTIME_NAME`); version `0.1.0` as TS.
 - A BigInt seed prints as a JSON string in the receipt as in TS (`Request.seed_is_bigint`).
