@@ -8,9 +8,10 @@ and keep only what is specific to their platform.
 
 | Layer | Holds | Lives in |
 | --- | --- | --- |
-| Contracts | chart, generation, capabilities, model package, gameplay ruleset, input log, replay, result, chart stream | [EnsomiProtocol](https://github.com/ensomi-labs/protocol) |
+| Messages between programs | chart, generation, capabilities, chart stream (unreleased) | [EnsomiProtocol](https://github.com/ensomi-labs/protocol) |
+| Model package | `runtime.json` and the files it names; an `ensomi-model.json` manifest is read when present, its format not settled | the released model's `onnx/` directory (`sed-i/ensomi-r2`) |
 | Conformance fixtures | inputs and expected outputs any implementation must reproduce | `conformance/` |
-| Core | gameplay rules, clock and offset arithmetic, note layout, chart sources, the generator's host pipeline | `crates/` |
+| Core | gameplay rules with their ruleset, input events, judgement events and score, clock and offset arithmetic, note layout, chart sources, the generator's host pipeline | `crates/` |
 | Compute | the published ONNX graphs, run by ONNX Runtime with the platform's execution provider | each binding |
 | Platform shell | audio codec, audio output and its clock, timestamped input, display link, rendering, UI, storage, model download | each app |
 
