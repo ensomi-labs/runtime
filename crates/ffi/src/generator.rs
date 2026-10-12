@@ -9,6 +9,8 @@ use ensomi_generate::capabilities::capabilities as core_capabilities;
 use ensomi_generate::{generate, resampler_files, Audio, Models, Options, Phase, Request, Samples};
 use ensomi_generate_ort::{drive_observed, package, Config, Sessions};
 use serde_json::{json, Value};
+use std::any::Any;
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -235,19 +237,14 @@ impl Cancellation {
     }
 }
 
-struct Loaded {
-    /// Taken out for each generation, which needs it behind an `Rc`, and put back after.
-    models: Option<Models>,
-    sessions: Sessions,
-}
-
 /// A model directory opened into ONNX Runtime sessions. One generation runs at a time; a second call
 /// waits for the first.
 #[derive(uniffi::Object)]
 pub struct ChartGenerator {
     capabilities: ModelCapabilities,
     resampler_directory: Option<PathBuf>,
-    loaded: Mutex<Loaded>,
+    models: Arc<Models>,
+    sessions: Mutex<Sessions>,
 }
 
 fn session_config(options: &GeneratorOptions) -> Config {
@@ -332,6 +329,10 @@ fn read_resampler(directory: Option<&Path>, sample_rate: f64) -> Result<Option<[
     }
 }
 
+fn panic_message(payload: &(dyn Any + Send)) -> &str {
+    payload.downcast_ref::<&str>().copied().or_else(|| payload.downcast_ref::<String>().map(String::as_str)).unwrap_or("no message")
+}
+
 fn chart(chart: &ensomi_generate::Chart) -> Chart {
     Chart {
         duration_ms: chart.duration_ms as u32,
@@ -352,7 +353,8 @@ impl ChartGenerator {
         Ok(Arc::new(Self {
             capabilities: capabilities(&models, manifest.as_ref()),
             resampler_directory: options.resampler_directory.map(PathBuf::from),
-            loaded: Mutex::new(Loaded { models: Some(models), sessions }),
+            models: Arc::new(models),
+            sessions: Mutex::new(sessions),
         }))
     }
 
@@ -360,50 +362,47 @@ impl ChartGenerator {
         self.capabilities.clone()
     }
 
-    /// Generates a chart from mono float32 PCM in native byte order at `sample_rate`. Blocks until the
-    /// chart is done; `listener` hears each phase and `cancellation` stops it at its next step.
+    /// Generates a chart from mono PCM at `sample_rate`. Blocks until the chart is done; `listener` hears each
+    /// phase and `cancellation` stops it at its next step. A panic in the core or the listener ends the
+    /// generation with `GeneratorError::Generation` and leaves the generator usable.
     pub fn generate(
         &self,
-        pcm: Vec<u8>,
+        pcm: Vec<f32>,
         sample_rate: f64,
         request: GenerateChartRequest,
         listener: Option<Arc<dyn GenerationListener>>,
         cancellation: Option<Arc<Cancellation>>,
     ) -> Result<ChartResult, GeneratorError> {
-        if !pcm.len().is_multiple_of(4) {
-            return Err(generation_error("PCM must be whole float32 samples".to_string()));
-        }
-        let samples: Vec<f32> = pcm.as_chunks::<4>().0.iter().map(|c| f32::from_ne_bytes(*c)).collect();
-        drop(pcm);
         let resampler = read_resampler(self.resampler_directory.as_deref(), sample_rate)?;
-        let audio = Audio { samples: Samples::F32(samples), channels: 1, sample_rate, mel: None, beatthis: None, resampler };
+        let audio = Audio { samples: Samples::F32(pcm), channels: 1, sample_rate, mel: None, beatthis: None, resampler };
         let audio_name = request.audio_name.clone();
         let request = core_request(&request).map_err(generation_error)?;
         let start = Instant::now();
         let options = Options { random: None, setting: None, audio_name, trace: None, clock: Rc::new(move || start.elapsed().as_secs_f64() * 1000.0) };
         let cancelled = || cancellation.as_ref().is_some_and(|c| c.is_cancelled());
 
-        let mut loaded = self.loaded.lock().unwrap();
-        let loaded = &mut *loaded;
-        let models = Rc::new(loaded.models.take().expect("models are put back after each generation"));
-        let mut generator = generate(models.clone(), audio, request, options);
-        let outcome = drive_observed(&mut generator, &mut loaded.sessions, |phase| {
-            if cancelled() {
-                return Err("cancelled".to_string());
-            }
-            if let (Some(phase), Some(listener)) = (phase, &listener) {
-                listener.progress(match phase {
-                    Phase::Loading => GenerationPhase::Loading,
-                    Phase::Timing => GenerationPhase::Timing,
-                    Phase::Rows => GenerationPhase::Rows,
-                    Phase::Arrangement => GenerationPhase::Arrangement,
-                    Phase::Export => GenerationPhase::Export,
-                });
-            }
-            Ok(())
-        });
-        drop(generator);
-        loaded.models = Rc::into_inner(models);
+        // A panic is caught inside the lock, which therefore stays usable; ONNX Runtime sessions keep no state
+        // between runs.
+        let mut sessions = crate::lock(&self.sessions);
+        let outcome = catch_unwind(AssertUnwindSafe(|| {
+            let mut generator = generate(self.models.clone(), audio, request, options);
+            drive_observed(&mut generator, &mut sessions, |phase| {
+                if cancelled() {
+                    return Err("cancelled".to_string());
+                }
+                if let (Some(phase), Some(listener)) = (phase, &listener) {
+                    listener.progress(match phase {
+                        Phase::Loading => GenerationPhase::Loading,
+                        Phase::Timing => GenerationPhase::Timing,
+                        Phase::Rows => GenerationPhase::Rows,
+                        Phase::Arrangement => GenerationPhase::Arrangement,
+                        Phase::Export => GenerationPhase::Export,
+                    });
+                }
+                Ok(())
+            })
+        }))
+        .map_err(|panic| GeneratorError::Generation { code: "generation_failed".to_string(), message: format!("internal error: {}", panic_message(&*panic)) })?;
         let (result, _) = outcome.map_err(|e| if cancelled() { GeneratorError::Cancelled } else { generation_error(e) })?;
         Ok(ChartResult {
             chart: chart(&result.chart),

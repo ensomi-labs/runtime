@@ -10,6 +10,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use std::sync::Arc;
 use std::time::Instant;
 
 /// The tolerance the TypeScript runtime was checked with; BeatThis is allowed `BEATTHIS_TOLERANCE`, see the report.
@@ -163,7 +164,7 @@ fn read_files(paths: &[String], base: &Path) -> Result<HashMap<String, Vec<u8>>,
 }
 
 struct Context {
-    models: Rc<Models>,
+    models: Arc<Models>,
     sessions: Sessions,
 }
 
@@ -391,7 +392,7 @@ fn main() {
         let onnx = model_dir.join("onnx");
         let manifest: Value = serde_json::from_slice(&std::fs::read(onnx.join("runtime.json")).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
         let files = read_files(&Models::required_files(&manifest), &onnx)?;
-        let models = Rc::new(Models::new(manifest, files)?);
+        let models = Arc::new(Models::new(manifest, files)?);
         let sessions = Sessions::load(&onnx, &models, &Config::default())?;
         let mut ctx = Context { models, sessions };
         let mut songs_report = Map::new();

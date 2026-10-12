@@ -19,6 +19,7 @@ use serde_json::{json, Map, Value};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::rc::Rc;
+use std::sync::Arc;
 use std::time::Instant;
 
 const SONGS: [&str; 4] = ["hesitation-snow", "saigetsu", "catch-the-moment", "adventure"];
@@ -91,7 +92,7 @@ fn child(paths: &Paths, name: &str, song: &str) -> Value {
     let onnx = paths.model_dir.join("onnx");
     let started = Instant::now();
     let (models, _) = package::open(&onnx).unwrap();
-    let models = Rc::new(models);
+    let models = Arc::new(models);
     let config = config(name, &models);
     let mut sessions = Sessions::load(&onnx, &models, &config).unwrap();
     let load_seconds = started.elapsed().as_secs_f64();

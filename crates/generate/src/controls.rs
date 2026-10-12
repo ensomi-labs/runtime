@@ -193,6 +193,7 @@ impl Playability {
 }
 
 pub fn fallback_action(logp: &[f64], heads: &[Row], elapsed: &[f64; 4]) -> Result<usize, String> {
+    // Only asked of the candidates, whose heads sum to one.
     let lane = |i: usize| heads[i].iter().position(|&x| x != 0).unwrap();
     let mut candidates: Vec<usize> = (0..logp.len()).filter(|&i| logp[i].is_finite() && heads[i].iter().sum::<i32>() == 1).collect();
     let oldest = candidates.iter().fold(f64::NEG_INFINITY, |a, &i| max(a, elapsed[lane(i)]));

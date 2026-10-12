@@ -81,8 +81,12 @@ result.receipt                                      // EnsomiProtocol Generation
   the archive.
 - The same model, PCM, request and seed give the same chart. `generate(pcm:sampleRate:request:progress:)` runs
   on a thread of its own; cancelling its task stops it at the next graph run or phase with
-  `GeneratorError.Cancelled`. Refusals carry EnsomiProtocol's error code in `GeneratorError.Generation`. The
-  blocking `generate(pcm:sampleRate:request:listener:cancellation:)` takes the PCM as `Data`.
+  `GeneratorError.Cancelled`. Refusals carry EnsomiProtocol's error code in `GeneratorError.Generation`; so
+  does a panic in the core (`generation_failed`, "internal error: ..."), after which the generator still works.
+  The blocking `generate(pcm:sampleRate:request:listener:cancellation:)` underneath passes the `[Float]` as
+  UniFFI's `sequence<float>`; the core keeps one copy until it has made its two frontend streams.
+- No call aborts the app on a panic in the core: the gameplay methods that do not throw return an empty or
+  default value instead, which the core's tests show it never needs (`crates/gameplay/tests/no_panic.rs`).
 
 ### Execution provider
 

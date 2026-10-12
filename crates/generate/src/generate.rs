@@ -16,9 +16,11 @@ use crate::rows::{decode_rows, RowsSection};
 use serde_json::{json, Map, Value};
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::Arc;
 
 pub struct Audio {
-    /// Interleaved samples at `sample_rate`.
+    /// Interleaved samples at `sample_rate`. Empty when both frontend streams are given and `mel` stands for them,
+    /// as the browser's decode passes its Mel stream as the samples too.
     pub samples: Samples,
     pub channels: usize,
     pub sample_rate: f64,
@@ -138,8 +140,16 @@ fn all_finite_f32(a: &[f32]) -> bool {
     a.iter().all(|x| x.is_finite())
 }
 
+/// How many interleaved samples the song has; see [`Audio::samples`].
+fn sample_count(audio: &Audio) -> usize {
+    match (&audio.mel, &audio.beatthis) {
+        (Some(mel), Some(_)) if audio.samples.len() == 0 => mel.len(),
+        _ => audio.samples.len(),
+    }
+}
+
 fn validate(audio: &Audio, request: &Request) -> Result<f64, String> {
-    let len = audio.samples.len();
+    let len = sample_count(audio);
     if !audio.sample_rate.is_finite() || audio.sample_rate <= 0.0 || audio.channels < 1 || len == 0 || !len.is_multiple_of(audio.channels) {
         return Err("PCM needs nonempty interleaved samples, a positive sample rate and a channel count".to_string());
     }
@@ -192,7 +202,7 @@ fn validate(audio: &Audio, request: &Request) -> Result<f64, String> {
 }
 
 /// Starts a generation. Drive the returned [`Generator`] with [`Generator::step`].
-pub fn generate(models: Rc<Models>, audio: Audio, request: Request, options: Options) -> Generator {
+pub fn generate(models: Arc<Models>, audio: Audio, request: Request, options: Options) -> Generator {
     let io = Io::default();
     let future = run(io.clone(), models, audio, request, options);
     Generator::new(io, future)
@@ -206,32 +216,54 @@ fn mean_of(values: impl Iterator<Item = i32>, count: usize) -> f64 {
     values.fold(0.0, |a, b| a + b as f64) / count as f64
 }
 
-async fn run(io: Io, models: Rc<Models>, audio: Audio, request: Request, mut options: Options) -> Result<GenerationResult, String> {
+/// The frontend streams the caller did not pass, from mono `wave` at `rate`: BeatThis's at 22050 Hz and the rows
+/// model's at 24000 Hz.
+fn frontends<T: Copy>(wave: &[T], rate: f64, beatthis: Option<Vec<f32>>, mel: Option<Vec<f32>>, resampler: Option<[Vec<u8>; 3]>) -> Result<(Vec<f32>, Vec<f32>), String>
+where
+    f64: From<T>,
+{
+    let beat_pcm = match beatthis {
+        Some(b) => b,
+        None if rate == 22050.0 => wave.iter().map(|&x| f64::from(x) as f32).collect(),
+        None if resampler_files(rate).is_some() => resample(wave, &load_resampler(&resampler.ok_or_else(|| format!("PCM at {rate} Hz needs its resampler table files"))?)?),
+        None => sinc_resample(wave, rate, 22050.0),
+    };
+    let rows_pcm = match mel {
+        Some(m) => m,
+        None => mel_pcm(wave, rate),
+    };
+    Ok((beat_pcm, rows_pcm))
+}
+
+async fn run(io: Io, models: Arc<Models>, audio: Audio, request: Request, mut options: Options) -> Result<GenerationResult, String> {
     validate(&audio, &request)?;
     let clock = options.clock.clone();
     let all_start = clock();
     let rate = audio.sample_rate;
-    let song_ms = 1000.0 * audio.samples.len() as f64 / audio.channels as f64 / rate;
+    let song_ms = 1000.0 * sample_count(&audio) as f64 / audio.channels as f64 / rate;
     let seed32 = (request.seed & 0xffff_ffff) as u32;
     let r2_seed32 = (request.seed.wrapping_add(954) & 0xffff_ffff) as u32;
     let mut random: Box<dyn RandomSource> = options.random.take().unwrap_or_else(|| Box::new(SeededRandom::new(seed32)));
     let mut seconds: Vec<(&str, f64)> = Vec::new();
     io.progress(Phase::Loading).await;
-    // With both frontend streams given, the samples are not read again.
-    let wave = if audio.beatthis.is_none() || audio.mel.is_none() { mono(&audio.samples, audio.channels) } else { Vec::new() };
-    drop(audio.samples);
     let mut start = clock();
-    let beat_pcm: Vec<f32> = match audio.beatthis {
-        Some(b) => b,
-        None if rate == 22050.0 => wave.iter().map(|&x| x as f32).collect(),
-        None if resampler_files(rate).is_some() => resample(&wave, &load_resampler(&audio.resampler.ok_or_else(|| format!("PCM at {rate} Hz needs its resampler table files"))?)?),
-        None => sinc_resample(&wave, rate, 22050.0),
+    // Mono samples are read where they are; more channels are first averaged into one float64 wave. With both
+    // frontend streams given, the samples are not read again.
+    let (beat_pcm, rows_pcm) = match (audio.beatthis, audio.mel) {
+        (Some(beatthis), Some(mel)) => {
+            drop(audio.samples);
+            (beatthis, mel)
+        }
+        (beatthis, mel) => match (audio.samples, audio.channels) {
+            (Samples::F32(wave), 1) => frontends(&wave, rate, beatthis, mel, audio.resampler)?,
+            (Samples::F64(wave), 1) => frontends(&wave, rate, beatthis, mel, audio.resampler)?,
+            (samples, channels) => {
+                let wave = mono(&samples, channels);
+                drop(samples);
+                frontends(&wave, rate, beatthis, mel, audio.resampler)?
+            }
+        },
     };
-    let rows_pcm: Vec<f32> = match audio.mel {
-        Some(m) => m,
-        None => mel_pcm(&wave, rate),
-    };
-    drop(wave);
     seconds.push(("pcm", seconds_since(&*clock, start)));
     io.progress(Phase::Timing).await;
     start = clock();
@@ -247,6 +279,7 @@ async fn run(io: Io, models: Rc<Models>, audio: Audio, request: Request, mut opt
     io.end_background();
     seconds.push(("beatthis", seconds_since(&*clock, start)));
     start = clock();
+    // `end_background` dropped the other reference, which the background work held.
     let log_mel = Rc::try_unwrap(log_mel).ok().expect("the background work has ended").into_inner().finish();
     let feats = features(&log_mel, &acts.beat_probability, &acts.downbeat_probability);
     seconds.push(("mel", seconds_since(&*clock, start)));
@@ -258,12 +291,15 @@ async fn run(io: Io, models: Rc<Models>, audio: Audio, request: Request, mut opt
     if let Some(t) = options.trace.as_mut() {
         t(Trace::Listener { spectrogram: &spect, log_mel: &log_mel, beat_logits: &acts.beat, downbeat_logits: &acts.downbeat, segments: &segments, grid: &grid, song_ms })?;
     }
+    // From here on only the row features are read.
+    drop((spect, log_mel));
     io.progress(Phase::Rows).await;
     random.reset(seed32);
     start = clock();
     let sections = &request.controls.sections;
     let star_sections: Vec<RowsSection> = sections.iter().filter_map(|s| s.star.map(|star| RowsSection { start_ms: s.start_ms, end_ms: s.end_ms, star })).collect();
     let rows = decode_rows(&io, &models, &feats, &grid, song_ms, request.star, &mut *random, &star_sections).await?;
+    drop(feats);
     seconds.push(("rows", seconds_since(&*clock, start)));
     if rows.head_ms.len() < 2 {
         return Err("generation_failed: the rows model placed fewer than two heads".to_string());
@@ -347,6 +383,7 @@ async fn run(io: Io, models: Rc<Models>, audio: Audio, request: Request, mut opt
         }
         multiplier = corrected_multiplier;
     }
+    // The loop ran at least once.
     let result = result.unwrap();
     seconds.push(("arrangement", seconds_since(&*clock, start)));
     io.progress(Phase::Export).await;

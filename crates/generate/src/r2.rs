@@ -347,6 +347,7 @@ pub struct R2Stepper {
     commit_inputs: Vec<String>,
     commit_outputs: Vec<(String, String)>,
     state: Vec<(String, Tensor)>,
+    actions: usize,
 }
 
 pub struct Prediction {
@@ -361,19 +362,17 @@ impl R2Stepper {
             commit_inputs: models.graph("r2_commit")?.inputs.clone(),
             commit_outputs: models.r2_commit_outputs.clone(),
             state: models.r2_initial.iter().map(|(name, spec)| Ok((name.clone(), models.tensor(spec)?))).collect::<Result<_, String>>()?,
+            actions: models.actions.len(),
         })
     }
 
-    fn state(&self, name: &str) -> Tensor {
-        self.state.iter().find(|(n, _)| n == name).map(|(_, t)| t.clone()).expect("R2 state tensor")
-    }
-
-    pub async fn predict(&self, chart: &ChartState, k: usize) -> Result<Prediction, String> {
-        let mut out = self
-            .io
-            .run("r2_predict", vec![("last", self.state("last")), ("query", Tensor::f32(&[1, 2, 150], query_features(chart, k))), ("row_condition", Tensor::f32(&[1, 68], vec![0.0; 68]))])
-            .await?;
-        Ok(Prediction { hands: out.take("hands")?, action_logits: out.take_f32("action_logits")? })
+    /// Row `k`'s action logits. Each row is predicted once, then committed: the prediction consumes `last`,
+    /// which the commit renews, and `Models` checks that the commit does not read it.
+    pub async fn predict(&mut self, chart: &ChartState, k: usize) -> Result<Prediction, String> {
+        let at = self.state.iter().position(|(n, _)| n == "last").ok_or("the R2 state has no tensor last")?;
+        let last = self.state.swap_remove(at).1;
+        let mut out = self.io.run("r2_predict", vec![("last", last), ("query", Tensor::f32(&[1, 2, 150], query_features(chart, k))), ("row_condition", Tensor::f32(&[1, 68], vec![0.0; 68]))]).await?;
+        Ok(Prediction { hands: out.take("hands")?, action_logits: out.take_f32("action_logits", self.actions)? })
     }
 
     pub async fn release(&self, hands: &Tensor, chart: &ChartState, k: usize, codes: [i32; 4], lane: usize, orientation: u32, placed: &Placed, candidates: &Candidates) -> Result<Vec<f32>, String> {
@@ -395,7 +394,7 @@ impl R2Stepper {
                 ],
             )
             .await?;
-        out.take_f32("release_scores")
+        out.take_f32("release_scores", n)
     }
 
     pub async fn commit(&mut self, chart: &ChartState, k: usize) -> Result<(), String> {
@@ -403,7 +402,7 @@ impl R2Stepper {
         // The outputs replace the whole state, so the inputs are moved out of it rather than copied.
         let mut state = std::mem::take(&mut self.state);
         for name in self.commit_inputs.iter().filter(|n| *n != "history_token") {
-            let at = state.iter().position(|(n, _)| n == name).expect("R2 state tensor");
+            let at = state.iter().position(|(n, _)| n == name).ok_or_else(|| format!("the R2 state has no tensor {name}"))?;
             feeds.push((name.as_str(), state.swap_remove(at).1));
         }
         let mut output: Outputs = self.io.run("r2_commit", feeds).await?;

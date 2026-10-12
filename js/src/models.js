@@ -1,4 +1,4 @@
-import { loadCore, readFile } from './core.js';
+import { callCore, coreInstance, loadCore, readFile } from './core.js';
 
 /** Reads files relative to a base URL: with `fetch`, or from the file system for a `file:` URL in Node. */
 export function urlSource(baseUrl) {
@@ -28,20 +28,37 @@ export function localFilesSource(files) {
  * inputs, where WebGPU's per-call transfers cost more than computing on the CPU. */
 const GPU_GRAPHS = new Set(['beatthis']);
 
+/** The model in the core: `runtime.json` and the files it names besides the graphs. */
+async function coreModels(core, manifestJson, read) {
+    const paths = core.WasmModels.requiredFiles(manifestJson);
+    const bytes = await Promise.all(paths.map(path => read(path)));
+    return callCore(() => new core.WasmModels(manifestJson, Object.fromEntries(paths.map((path, i) => [path, bytes[i]]))));
+}
+
 export class Models {
-    constructor(core, wasm, ort, sessions, source, runtimeSource) {
+    constructor(core, wasm, ort, sessions, source, runtimeSource, manifestJson) {
         this.core = core;
         this.wasm = wasm;
         this.ort = ort;
         this.sessions = sessions;
         this.source = source;
         this.runtimeSource = runtimeSource;
+        this.manifestJson = manifestJson;
+        this.instance = coreInstance();
         this.capabilities = JSON.parse(wasm.capabilities());
+    }
+    /** Loads the model into the core again if a trap replaced the core's instance since (see `callCore`). */
+    async reloadCore() {
+        if (this.instance === coreInstance())
+            return;
+        this.wasm = await coreModels(this.core, this.manifestJson, this.source);
+        this.instance = coreInstance();
     }
     async dispose() {
         for (const session of Object.values(this.sessions))
             await session.release();
-        this.wasm.free();
+        if (this.instance === coreInstance())
+            this.wasm.free();
     }
 }
 
@@ -82,9 +99,7 @@ export async function loadModels(source, options = {}) {
             await session.release();
     };
     try {
-        const paths = core.WasmModels.requiredFiles(manifestJson);
-        const bytes = await Promise.all(paths.map(path => read(path)));
-        const wasm = new core.WasmModels(manifestJson, Object.fromEntries(paths.map((path, i) => [path, bytes[i]])));
+        const wasm = await coreModels(core, manifestJson, read);
         try {
             await Promise.all([create, ...reads]);
         }
@@ -92,7 +107,7 @@ export async function loadModels(source, options = {}) {
             wasm.free();
             throw error;
         }
-        return new Models(core, wasm, ort, sessions, read, options.runtimeSource ?? defaultRuntimeSource);
+        return new Models(core, wasm, ort, sessions, read, options.runtimeSource ?? defaultRuntimeSource, manifestJson);
     }
     catch (error) {
         await release();

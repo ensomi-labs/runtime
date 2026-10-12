@@ -99,7 +99,8 @@ export interface GenerationResult {
     osz?: Uint8Array;
 }
 export interface AudioPCM {
-    /** Interleaved samples at the sampleRate passed to generateChart. */
+    /** Interleaved samples at the sampleRate passed to generateChart. With both frontend streams it may be the
+     * `mel` array itself, as `decodeAudio` gives it; the core then takes that array once. */
     samples: Float32Array | Float64Array;
     channels: number;
     /** Optional already-decoded frontend streams: mono, 24000 and 22050 Hz. */

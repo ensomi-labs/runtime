@@ -4,6 +4,11 @@
 //! The data types are the core's own, declared here again for the binding generator
 //! (`uniffi::remote`), so a change to a core type that is not mirrored fails to compile. The two stateful
 //! parts are objects that lock their core value.
+//!
+//! No panic reaches the foreign side. UniFFI turns a panic into an error, and the Swift bindings call a method
+//! that does not throw with `try!`, which aborts the app on that error; so the per-frame methods, none of which
+//! throw, catch a panic themselves (`frame`). The gameplay core does not panic on any input a session or
+//! feedback state accepts (`crates/gameplay/tests/no_panic.rs`); the catch is a backstop.
 
 use ensomi_gameplay as gameplay;
 use ensomi_gameplay::{
@@ -12,7 +17,8 @@ use ensomi_gameplay::{
     LaneInputTransition, LaneState, OsuBeatmap, OsuError, Part, Phase, Ruleset, Score, Tier,
     TierCounts, TokenKind, VisibleObject, VisibleState,
 };
-use std::sync::{Arc, Mutex};
+use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 pub mod generator;
 
@@ -221,6 +227,17 @@ pub enum Geometry {
     },
 }
 
+/// Locks a core value. After a panic in another call the value is used as that call left it, rather than
+/// panicking again.
+fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
+    mutex.lock().unwrap_or_else(PoisonError::into_inner)
+}
+
+/// Runs a call that does not throw on the locked value; a panic returns the default value instead.
+fn frame<T, R: Default>(mutex: &Mutex<T>, call: impl FnOnce(&mut T) -> R) -> R {
+    catch_unwind(AssertUnwindSafe(|| call(&mut lock(mutex)))).unwrap_or_default()
+}
+
 /// Judgement of one chart, complete or streamed, under one ruleset; see `ensomi_gameplay::Session`.
 #[derive(uniffi::Object)]
 pub struct GameplaySession(Mutex<gameplay::Session>);
@@ -245,10 +262,7 @@ impl GameplaySession {
         coverage_ms: f64,
         end_of_stream: bool,
     ) -> Result<Vec<JudgementEvent>, ChartError> {
-        self.0
-            .lock()
-            .unwrap()
-            .append(&objects, coverage_ms, end_of_stream)
+        lock(&self.0).append(&objects, coverage_ms, end_of_stream)
     }
 
     pub fn append_tokens(
@@ -257,46 +271,44 @@ impl GameplaySession {
         coverage_ms: f64,
         end_of_stream: bool,
     ) -> Result<Vec<JudgementEvent>, ChartError> {
-        self.0
-            .lock()
-            .unwrap()
-            .append_tokens(&tokens, coverage_ms, end_of_stream)
+        lock(&self.0).append_tokens(&tokens, coverage_ms, end_of_stream)
     }
 
     pub fn coverage_ms(&self) -> f64 {
-        self.0.lock().unwrap().coverage_ms()
+        frame(&self.0, |s| s.coverage_ms())
     }
 
     pub fn decided_through_ms(&self) -> f64 {
-        self.0.lock().unwrap().decided_through_ms()
+        frame(&self.0, |s| s.decided_through_ms())
     }
 
     pub fn input(&self, input: InputEvent) -> Vec<JudgementEvent> {
-        self.0.lock().unwrap().input(input)
+        frame(&self.0, |s| s.input(input))
     }
 
     pub fn advance(&self, watermark_ms: f64) -> Vec<JudgementEvent> {
-        self.0.lock().unwrap().advance(watermark_ms)
+        frame(&self.0, |s| s.advance(watermark_ms))
     }
 
+    /// Arithmetic on the counts, which cannot panic, so without the backstop of `frame`.
     pub fn score(&self) -> Score {
-        self.0.lock().unwrap().score()
+        lock(&self.0).score()
     }
 
     pub fn lane_states(&self) -> Vec<LaneState> {
-        self.0.lock().unwrap().lane_states()
+        frame(&self.0, |s| s.lane_states())
     }
 
     pub fn visible_objects(&self, lower_ms: f64, upper_ms: f64) -> Vec<VisibleObject> {
-        self.0.lock().unwrap().visible_objects(lower_ms, upper_ms)
+        frame(&self.0, |s| s.visible_objects(lower_ms, upper_ms))
     }
 
     pub fn is_resolved(&self) -> bool {
-        self.0.lock().unwrap().is_resolved()
+        frame(&self.0, |s| s.is_resolved())
     }
 
     pub fn late_inputs(&self) -> u32 {
-        self.0.lock().unwrap().late_inputs()
+        frame(&self.0, |s| s.late_inputs())
     }
 }
 
@@ -312,37 +324,32 @@ impl GameplayFeedback {
     }
 
     pub fn record_judgement_events(&self, events: Vec<JudgementEvent>, chart_time_ms: f64) {
-        self.0
-            .lock()
-            .unwrap()
-            .record_judgement_events(&events, chart_time_ms);
+        frame(&self.0, |f| f.record_judgement_events(&events, chart_time_ms));
     }
 
     pub fn advance_judgement_time(&self, chart_time_ms: f64) {
-        self.0.lock().unwrap().advance_judgement_time(chart_time_ms);
+        frame(&self.0, |f| f.advance_judgement_time(chart_time_ms));
     }
 
     pub fn record_input(&self, lane: u32, phase: Phase, sequence_number: u64, ui_time_ms: f64) {
-        self.0
-            .lock()
-            .unwrap()
-            .record_input(lane, phase, sequence_number, ui_time_ms);
+        frame(&self.0, |f| f.record_input(lane, phase, sequence_number, ui_time_ms));
     }
 
     pub fn judgement_presentation(&self, chart_time_ms: f64) -> Option<JudgementPresentation> {
-        self.0.lock().unwrap().judgement_presentation(chart_time_ms)
+        frame(&self.0, |f| f.judgement_presentation(chart_time_ms))
     }
 
+    /// Easing of a recorded transition, which cannot panic, so without the backstop of `frame`.
     pub fn lane_brightness(&self, lane: u32, ui_time_ms: f64) -> LaneBrightness {
-        self.0.lock().unwrap().lane_brightness(lane, ui_time_ms)
+        lock(&self.0).lane_brightness(lane, ui_time_ms)
     }
 
     pub fn judgement_event_batches(&self) -> Vec<JudgementEventBatch> {
-        self.0.lock().unwrap().judgement_event_batches().to_vec()
+        frame(&self.0, |f| f.judgement_event_batches().to_vec())
     }
 
     pub fn latest_lane_input_transition(&self, lane: u32) -> Option<LaneInputTransition> {
-        self.0.lock().unwrap().latest_lane_input_transition(lane)
+        frame(&self.0, |f| f.latest_lane_input_transition(lane))
     }
 }
 

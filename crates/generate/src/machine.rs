@@ -37,13 +37,6 @@ impl Tensor {
     pub fn bool(shape: &[usize], data: Vec<u8>) -> Self {
         Self { shape: shape.to_vec(), data: Data::Bool(data) }
     }
-
-    pub fn as_f32(&self) -> &[f32] {
-        match &self.data {
-            Data::F32(v) => v,
-            _ => panic!("tensor is not float32"),
-        }
-    }
 }
 
 /// Named tensors, as the graphs name them.
@@ -139,9 +132,12 @@ impl Outputs {
         Ok(self.0.swap_remove(at).1)
     }
 
-    pub fn take_f32(&mut self, name: &str) -> Result<Vec<f32>, String> {
+    /// A float32 output of `len` values. The pipeline indexes these by the shapes it expects, so a graph
+    /// that does not match its `runtime.json` fails here rather than out of bounds.
+    pub fn take_f32(&mut self, name: &str, len: usize) -> Result<Vec<f32>, String> {
         match self.take(name)?.data {
-            Data::F32(v) => Ok(v),
+            Data::F32(v) if v.len() == len => Ok(v),
+            Data::F32(v) => Err(format!("graph output {name} has {} values where the runtime expects {len}", v.len())),
             _ => Err(format!("graph output {name} is not float32")),
         }
     }

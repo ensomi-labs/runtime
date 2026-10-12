@@ -9,6 +9,7 @@ use serde_json::json;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::rc::Rc;
+use std::sync::Arc;
 use std::time::Instant;
 
 fn main() -> Result<(), String> {
@@ -32,7 +33,7 @@ fn main() -> Result<(), String> {
     let request = json!({"star": arg("star")?.parse::<f64>().map_err(|_| "--star is a number")?, "controls": {"long_notes": 0, "sections": []}, "title": args.get("title"), "artist": args.get("artist")});
     let seed: u64 = args.get("seed").map_or(Ok(0), |s| s.parse()).map_err(|_| "--seed is an unsigned integer")?;
     let (models, _) = package::open(&model_dir)?;
-    let models = Rc::new(models);
+    let models = Arc::new(models);
     let mut sessions = Sessions::load(&model_dir, &models, &Config::default())?;
     let start = Instant::now();
     let options = Options { random: None, setting: None, audio_name: args.get("audio-name").cloned(), trace: None, clock: Rc::new(move || start.elapsed().as_secs_f64() * 1000.0) };

@@ -23,10 +23,12 @@ pub fn chart_from_decisions(head_ms: &[f64], song_ms: f64, actions: &[[i32; 4]],
         for lane in 0..4 {
             let code = actions[k][lane];
             let was_held = open[lane].is_some();
-            if was_held && code != 0 {
+            if let Some(hold) = open[lane]
+                && code != 0
+            {
                 let upper = (if k < head_ms.len() { head_ms[k] } else { song_ms.ceil() }) - 1.0;
                 let end = if code == 1 { time } else { clip(round(gap[k][lane]), head_ms[k - 1] + 1.0, upper) };
-                objects[open[lane].unwrap()].end_ms = Some(end);
+                objects[hold].end_ms = Some(end);
                 open[lane] = None;
             }
             let tap = if was_held { code == 3 } else { code == 1 };

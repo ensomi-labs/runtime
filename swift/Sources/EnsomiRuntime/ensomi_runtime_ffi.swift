@@ -473,6 +473,22 @@ fileprivate struct FfiConverterInt64: FfiConverterPrimitive {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterFloat: FfiConverterPrimitive {
+    typealias FfiType = Float
+    typealias SwiftType = Float
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Float {
+        return try lift(readFloat(&buf))
+    }
+
+    public static func write(_ value: Float, into buf: inout [UInt8]) {
+        writeFloat(&buf, lower(value))
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterDouble: FfiConverterPrimitive {
     typealias FfiType = Double
     typealias SwiftType = Double
@@ -724,10 +740,11 @@ public protocol ChartGeneratorProtocol: AnyObject, Sendable {
     func capabilities()  -> ModelCapabilities
     
     /**
-     * Generates a chart from mono float32 PCM in native byte order at `sample_rate`. Blocks until the
-     * chart is done; `listener` hears each phase and `cancellation` stops it at its next step.
+     * Generates a chart from mono PCM at `sample_rate`. Blocks until the chart is done; `listener` hears each
+     * phase and `cancellation` stops it at its next step. A panic in the core or the listener ends the
+     * generation with `GeneratorError::Generation` and leaves the generator usable.
      */
-    func generate(pcm: Data, sampleRate: Double, request: GenerateChartRequest, listener: GenerationListener?, cancellation: Cancellation?) throws  -> ChartResult
+    func generate(pcm: [Float], sampleRate: Double, request: GenerateChartRequest, listener: GenerationListener?, cancellation: Cancellation?) throws  -> ChartResult
     
 }
 /**
@@ -810,14 +827,15 @@ open func capabilities() -> ModelCapabilities  {
 }
     
     /**
-     * Generates a chart from mono float32 PCM in native byte order at `sample_rate`. Blocks until the
-     * chart is done; `listener` hears each phase and `cancellation` stops it at its next step.
+     * Generates a chart from mono PCM at `sample_rate`. Blocks until the chart is done; `listener` hears each
+     * phase and `cancellation` stops it at its next step. A panic in the core or the listener ends the
+     * generation with `GeneratorError::Generation` and leaves the generator usable.
      */
-open func generate(pcm: Data, sampleRate: Double, request: GenerateChartRequest, listener: GenerationListener?, cancellation: Cancellation?)throws  -> ChartResult  {
+open func generate(pcm: [Float], sampleRate: Double, request: GenerateChartRequest, listener: GenerationListener?, cancellation: Cancellation?)throws  -> ChartResult  {
     return try  FfiConverterTypeChartResult_lift(try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
     uniffi_ensomi_runtime_ffi_fn_method_chartgenerator_generate(
             self.uniffiCloneHandle(),
-        FfiConverterData.lower(pcm),
+        FfiConverterSequenceFloat.lower(pcm),
         FfiConverterDouble.lower(sampleRate),
         FfiConverterTypeGenerateChartRequest_lower(request),
         FfiConverterOptionTypeGenerationListener.lower(listener),
@@ -887,6 +905,9 @@ public protocol GameplayFeedbackProtocol: AnyObject, Sendable {
     
     func judgementPresentation(chartTimeMs: Double)  -> JudgementPresentation?
     
+    /**
+     * Easing of a recorded transition, which cannot panic, so without the backstop of `frame`.
+     */
     func laneBrightness(lane: UInt32, uiTimeMs: Double)  -> LaneBrightness
     
     func latestLaneInputTransition(lane: UInt32)  -> LaneInputTransition?
@@ -984,6 +1005,9 @@ open func judgementPresentation(chartTimeMs: Double) -> JudgementPresentation?  
 })
 }
     
+    /**
+     * Easing of a recorded transition, which cannot panic, so without the backstop of `frame`.
+     */
 open func laneBrightness(lane: UInt32, uiTimeMs: Double) -> LaneBrightness  {
     return try!  FfiConverterTypeLaneBrightness_lift(try! rustCall() {
     uniffi_ensomi_runtime_ffi_fn_method_gameplayfeedback_lane_brightness(
@@ -1096,6 +1120,9 @@ public protocol GameplaySessionProtocol: AnyObject, Sendable {
     
     func lateInputs()  -> UInt32
     
+    /**
+     * Arithmetic on the counts, which cannot panic, so without the backstop of `frame`.
+     */
     func score()  -> Score
     
     func visibleObjects(lowerMs: Double, upperMs: Double)  -> [VisibleObject]
@@ -1254,6 +1281,9 @@ open func lateInputs() -> UInt32  {
 })
 }
     
+    /**
+     * Arithmetic on the counts, which cannot panic, so without the backstop of `frame`.
+     */
 open func score() -> Score  {
     return try!  FfiConverterTypeScore_lift(try! rustCall() {
     uniffi_ensomi_runtime_ffi_fn_method_gameplaysession_score(
@@ -4799,6 +4829,31 @@ fileprivate struct FfiConverterOptionTypeLongNoteAmount: FfiConverterRustBuffer 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterSequenceFloat: FfiConverterRustBuffer {
+    typealias SwiftType = [Float]
+
+    public static func write(_ value: [Float], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterFloat.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Float] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [Float]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterFloat.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceString: FfiConverterRustBuffer {
     typealias SwiftType = [String]
 
@@ -5156,7 +5211,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ensomi_runtime_ffi_checksum_method_gameplayfeedback_judgement_presentation() != 31963) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_ensomi_runtime_ffi_checksum_method_gameplayfeedback_lane_brightness() != 2059) {
+    if (uniffi_ensomi_runtime_ffi_checksum_method_gameplayfeedback_lane_brightness() != 55549) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_method_gameplayfeedback_latest_lane_input_transition() != 54886) {
@@ -5195,7 +5250,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ensomi_runtime_ffi_checksum_method_gameplaysession_late_inputs() != 5935) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_ensomi_runtime_ffi_checksum_method_gameplaysession_score() != 3996) {
+    if (uniffi_ensomi_runtime_ffi_checksum_method_gameplaysession_score() != 45289) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_method_gameplaysession_visible_objects() != 11197) {
@@ -5210,7 +5265,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ensomi_runtime_ffi_checksum_method_chartgenerator_capabilities() != 48107) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_ensomi_runtime_ffi_checksum_method_chartgenerator_generate() != 333) {
+    if (uniffi_ensomi_runtime_ffi_checksum_method_chartgenerator_generate() != 63973) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_method_generationlistener_progress() != 30631) {

@@ -13,6 +13,7 @@ pub fn number_string(x: f64) -> String {
         return if x > 0.0 { "Infinity" } else { "-Infinity" }.to_string();
     }
     let sign = if x < 0.0 { "-" } else { "" };
+    // Rust's `{:e}` of a finite nonzero number is `<digits>e<exponent>`.
     let scientific = format!("{:e}", x.abs());
     let (mantissa, exponent) = scientific.split_once('e').unwrap();
     let digits: String = mantissa.chars().filter(|c| *c != '.').collect();

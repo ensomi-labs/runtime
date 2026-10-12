@@ -5,12 +5,34 @@
 //! the JavaScript caller runs the named graph with ONNX Runtime Web and passes the outputs back.
 //! While a graph runs, `work()` does what needs no outputs.
 //! Tensors cross as `{type, dims, data}` with the typed array ONNX Runtime Web uses for the type.
+//!
+//! A panic is written to `console.error` and thrown as a `WebAssembly.RuntimeError` with the panic's message,
+//! like the traps of the instance (an exhausted memory or stack). After either, the instance's memory may be
+//! inconsistent, so the JavaScript API replaces the instance (`js/src/core.js`).
 use ensomi_generate::{capabilities, generate, Audio, Data, Draw, Generator, Models, Options, ReplayRandom, Request, Samples, Step, Tensor};
 use js_sys::{Array, BigInt64Array, Float32Array, Float64Array, Object, Reflect, Uint8Array};
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::sync::Arc;
 use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console, js_name = error)]
+    fn console_error(message: &str);
+}
+
+fn report_panic(info: &std::panic::PanicHookInfo) {
+    let message = info.to_string();
+    console_error(&message);
+    wasm_bindgen::throw_val(js_sys::WebAssembly::RuntimeError::new(&message).into());
+}
+
+#[wasm_bindgen(start)]
+fn start() {
+    std::panic::set_hook(Box::new(report_panic));
+}
 
 fn error(message: impl AsRef<str>) -> JsError {
     JsError::new(message.as_ref())
@@ -22,7 +44,7 @@ fn set(object: &Object, key: &str, value: impl Into<JsValue>) {
 
 #[wasm_bindgen]
 pub struct WasmModels {
-    inner: Rc<Models>,
+    inner: Arc<Models>,
 }
 
 #[wasm_bindgen]
@@ -52,7 +74,7 @@ impl WasmModels {
             let pair: Array = entry.into();
             map.insert(pair.get(0).as_string().unwrap_or_default(), Uint8Array::new(&pair.get(1)).to_vec());
         }
-        Ok(WasmModels { inner: Rc::new(Models::new(manifest, map).map_err(error)?) })
+        Ok(WasmModels { inner: Arc::new(Models::new(manifest, map).map_err(error)?) })
     }
 
     /// EnsomiProtocol `ModelCapabilities` as JSON.

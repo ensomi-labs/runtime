@@ -133,20 +133,20 @@ pub async fn decode_rows(io: &Io, models: &Models, features: &[f32], grid: &Grid
     for i in 0..position_ms.len() {
         available[i] = position_ms[i] >= 0.0 && position_ms[i] <= song_ms - 2.0;
     }
+    let quiet = quiet_rank(&mel, &beat_frames);
     let mut encoded = io
         .run(
             "rows_encoder",
             vec![
-                ("mel", Tensor::f32(&[1, nf, 128], mel.clone())),
+                ("mel", Tensor::f32(&[1, nf, 128], mel)),
                 ("pos_frames", Tensor::i64(&[1, nb, 24], pos_frames)),
-                ("beat_frames", Tensor::i64(&[1, nb, 2], beat_frames.clone())),
+                ("beat_frames", Tensor::i64(&[1, nb, 2], beat_frames)),
                 ("extra", Tensor::f32(&[1, nb, 9], extra.clone())),
                 ("valid", Tensor::bool(&[1, nb], vec![1; nb])),
             ],
         )
         .await?;
-    let (enc_pos, enc_context, enc_query, enc_key) = (encoded.take_f32("pos")?, encoded.take_f32("context")?, encoded.take_f32("query")?, encoded.take_f32("key")?);
-    let quiet = quiet_rank(&mel, &beat_frames);
+    let (enc_pos, enc_context, enc_query, enc_key) = (encoded.take_f32("pos", nb * 24 * cfg.enc)?, encoded.take_f32("context", nb * cfg.ctx)?, encoded.take_f32("query", nb * heads * key)?, encoded.take_f32("key", nb * heads * key)?);
     let mut ids = vec![-1i32; nb];
     let mut figures = vec![0u32; nb];
     let mut tilts = vec![0f32; nb];
@@ -194,10 +194,10 @@ pub async fn decode_rows(io: &Io, models: &Models, features: &[f32], grid: &Grid
                 ],
             )
             .await?;
-        hidden = out.take_f32("hidden_out")?;
-        let gate = out.take_f32("gate")?;
-        let att = out.take_f32("attention")?;
-        let logp = out.take_f32("logp")?;
+        hidden = out.take_f32("hidden_out", cfg.hidden)?;
+        let gate = out.take_f32("gate", heads + 1)?;
+        let att = out.take_f32("attention", heads * (lags + 1))?;
+        let logp = out.take_f32("logp", v_size)?;
         let mut pgen = vec![0f32; v_size];
         let mut p = vec![0f32; v_size];
         let mut ph = vec![0f32; v_size];

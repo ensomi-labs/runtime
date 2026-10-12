@@ -1,3 +1,4 @@
+import { callCore, coreInstance } from './core.js';
 import { exportOsz } from './export.js';
 
 /** Lets queued tasks run, such as the WebGPU result that a graph run is waiting for. */
@@ -24,16 +25,20 @@ export async function generateChart(models, pcm, sampleRate, request, options = 
     const seed = request.seed ?? 0;
     if (typeof seed !== 'number' && typeof seed !== 'bigint' || typeof seed === 'number' && (!Number.isSafeInteger(seed) || seed < 0) || typeof seed === 'bigint' && (seed < 0n || seed > 0xffffffffffffffffn))
         throw new Error('Seed must be an unsigned 64-bit integer; use bigint above the safe-number range');
+    await models.reloadCore();
     const { core, wasm } = models;
     const resamplerFiles = audio.beatthis ? null : core.WasmModels.resamplerFiles(sampleRate);
     const resampler = resamplerFiles ? await Promise.all(Array.from(resamplerFiles, name => models.runtimeSource(name))) : undefined;
     const { seed: _seed, ...rest } = request;
     const clock = options.clock ?? (() => performance.now());
-    const generator = new core.WasmGenerator(wasm, audio.samples, audio.channels, sampleRate, audio.mel, audio.beatthis, resampler, JSON.stringify(rest), BigInt(seed), typeof seed === 'bigint', options.setting, options.audio?.name, clock, options.replay);
+    // decodeAudio passes its Mel stream as the samples too; the core then takes the stream once.
+    const samples = audio.mel && audio.beatthis && audio.samples === audio.mel ? new Float32Array(0) : audio.samples;
+    const generator = callCore(() => new core.WasmGenerator(wasm, samples, audio.channels, sampleRate, audio.mel, audio.beatthis, resampler, JSON.stringify(rest), BigInt(seed), typeof seed === 'bigint', options.setting, options.audio?.name, clock, options.replay));
+    const instance = coreInstance();
     try {
         let outputs;
         for (;;) {
-            const step = generator.step(outputs);
+            const step = callCore(() => generator.step(outputs));
             outputs = undefined;
             if (step.kind === 'progress') {
                 options.onProgress?.({ phase: step.phase });
@@ -47,7 +52,7 @@ export async function generateChart(models, pcm, sampleRate, request, options = 
                 let running = true;
                 const run = models.sessions[step.graph].run(feeds);
                 run.then(() => { running = false; }, () => { running = false; });
-                while (running && generator.work())
+                while (running && callCore(() => generator.work()))
                     await pause();
                 const result = await run;
                 outputs = {};
@@ -62,6 +67,7 @@ export async function generateChart(models, pcm, sampleRate, request, options = 
         }
     }
     finally {
-        generator.free();
+        if (coreInstance() === instance)
+            generator.free();
     }
 }

@@ -21,6 +21,8 @@ mod r2;
 mod random;
 mod rows;
 mod strain;
+#[cfg(test)]
+mod tests;
 
 pub use audio::{resampler_files, Samples};
 pub use export::{Chart, ChartObject};

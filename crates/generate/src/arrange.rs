@@ -159,6 +159,7 @@ pub async fn arrange(a: Arrange<'_>) -> Result<Arrangement, String> {
             if !logp.iter().any(|x| x.is_finite()) {
                 let elapsed: [f64; 4] = std::array::from_fn(|l| head_ms[k] - chart.last_attack[k][l]);
                 let chosen = fallback_action(&legal, heads, &elapsed)?;
+                // `fallback_action` chooses a row with a single head.
                 let lane = heads[chosen].iter().position(|&x| x != 0).unwrap();
                 let mut record = Map::new();
                 record.insert("row".into(), json!(k));

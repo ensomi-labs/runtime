@@ -313,7 +313,7 @@ impl Models {
             .collect::<Result<Vec<_>, String>>()?;
         let r2_initial = raw.state.r2_initial.into_iter().map(|(name, spec)| Ok((name, serde_json::from_value(spec).map_err(|e| invalid("r2_initial", e))?))).collect::<Result<Vec<_>, String>>()?;
         let r2_commit_outputs = raw.state.r2_commit_outputs.into_iter().map(|(out, name)| (out, name.as_str().unwrap_or_default().to_string())).collect();
-        Ok(Models {
+        let models = Models {
             graphs,
             r2_initial,
             r2_commit_outputs,
@@ -329,7 +329,104 @@ impl Models {
             prior: raw.prior,
             default_q: raw.system.default_q,
             files,
-        })
+        };
+        models.check()?;
+        Ok(models)
+    }
+
+    /// Checks once what the pipeline then indexes without checking: the graphs it runs, the R2 state it carries,
+    /// the sizes of the arrays it reads, and for every star band a request can reach the band's calibration, prior
+    /// and default. Graph outputs are checked against the shapes they should have where they are read.
+    fn check(&self) -> Result<(), String> {
+        for graph in ["beatthis", "rows_encoder", "rows_step", "r2_predict", "r2_release", "r2_commit"] {
+            self.graph(graph)?;
+        }
+        let state: Vec<&str> = self.r2_initial.iter().map(|(name, _)| name.as_str()).collect();
+        if !state.contains(&"last") {
+            return Err(invalid("state.r2_initial", "no last"));
+        }
+        // r2_predict consumes `last` before each commit (`R2Stepper::predict`).
+        if let Some(input) = self.graph("r2_commit")?.inputs.iter().find(|i| *i != "history_token" && (*i == "last" || !state.contains(&i.as_str()))) {
+            return Err(invalid("graphs.r2_commit", format!("input {input} is not a state tensor that r2_predict leaves")));
+        }
+        let mut renewed: Vec<&str> = self.r2_commit_outputs.iter().map(|(_, name)| name.as_str()).collect();
+        let mut initial = state.clone();
+        renewed.sort_unstable();
+        initial.sort_unstable();
+        if renewed != initial {
+            return Err(invalid("state.r2_commit_outputs", "the commit must renew each state tensor once"));
+        }
+        for (name, spec) in &self.r2_initial {
+            let width = match spec.dtype.as_str() {
+                "<f4" => 4,
+                "<i8" => 8,
+                other => return Err(invalid("state.r2_initial", format!("{name} has unsupported dtype {other}"))),
+            };
+            let (bytes, needed) = (self.file(&spec.file)?.len(), spec.shape.iter().product::<usize>() * width);
+            if bytes != needed {
+                return Err(format!("{}: {bytes} bytes where state tensor {name} {:?} needs {needed}", spec.file, spec.shape));
+            }
+        }
+        for (window, filter) in [(&self.beatthis_window, &self.beatthis_filter), (&self.rows_window, &self.rows_filter)] {
+            let n = self.file(window)?.len() / 4;
+            let (values, needed) = (self.file(filter)?.len() / 4, (n / 2 + 1) * 128);
+            if n == 0 || values != needed {
+                return Err(format!("{filter}: {values} values where 128 Mel bands over the {n}-point window {window} need {needed}"));
+            }
+        }
+        if self.positions.len() != 24 {
+            return Err(invalid("constants", format!("{} figure positions where a beat has 24", self.positions.len())));
+        }
+        if self.actions.is_empty() {
+            return Err(invalid("constants", "no R2 actions"));
+        }
+        let rows = &self.rows;
+        if rows.config.vocab == 0 || rows.record.vocab.len() != rows.config.vocab {
+            return Err(invalid("rows", format!("{} figures where the config has a vocabulary of {}", rows.record.vocab.len(), rows.config.vocab)));
+        }
+        let map = &rows.record.star_map;
+        if map.star.is_empty() || map.star.len() != map.request.len() {
+            return Err(invalid("rows.record.star_map", "star and request need the same nonzero length"));
+        }
+        if self.calibration.difficulty_fit.domain.len() != 2 {
+            return Err(invalid("calibration.difficulty_fit.domain", "needs two values"));
+        }
+        // `generate` takes the band as the floor of a star in [2, 6), at most 5.
+        for band in ["2", "3", "4", "5"] {
+            let missing = |what: &str| invalid(what, format!("no band {band}"));
+            let masks = self.calibration.masks.get(band).ok_or_else(|| missing("calibration.masks"))?;
+            if masks.jack_run_caps.len() <= masks.gap_tercile_edges_ms.len() {
+                return Err(invalid("calibration.masks", format!("band {band} needs a jack run cap for each gap tercile")));
+            }
+            self.calibration.difficulty.get(band).ok_or_else(|| missing("calibration.difficulty"))?;
+            self.calibration.difficulty_fit.by_band.get(band).ok_or_else(|| missing("calibration.difficulty_fit"))?;
+            self.default_q.get(band).ok_or_else(|| missing("system.default_q"))?;
+            for subtype in ["jumpstream", "chordstream", "chordjack"] {
+                self.calibration.subtypes.get(subtype).and_then(|s| s.bands.get(band)).ok_or_else(|| missing(&format!("calibration.subtypes.{subtype}")))?;
+            }
+            let prior = self.prior.bands.get(band).ok_or_else(|| missing("prior"))?;
+            let fits = match self.prior.method.as_str() {
+                "median" => prior.median.len() >= 5,
+                "linear" => prior.coef.len() >= 5 && prior.coef.iter().all(|row| row.len() >= 5),
+                _ => prior.mean.len() >= 4 && prior.sd.len() >= 4 && prior.table.iter().all(|row| row.len() >= 9),
+            };
+            if !fits {
+                return Err(invalid("prior", format!("band {band} is too small for method {}", self.prior.method)));
+            }
+        }
+        let mut length = None;
+        for name in ["band", "length_s", "median_gap_ms", "S", "J_ex", "jump_share", "hand_share", "chord_share"] {
+            let column = self.calibration.scope_table.columns.iter().find(|c| c.name == name).ok_or_else(|| invalid("calibration.scope_table", format!("no column {name}")))?;
+            if !matches!(column.dtype.as_str(), "<i8" | "<f8") {
+                return Err(invalid("calibration.scope_table", format!("column {name} has unsupported dtype {}", column.dtype)));
+            }
+            let values = self.file(&column.file)?.len() / 8;
+            let expected = *length.get_or_insert(values);
+            if values != expected {
+                return Err(invalid("calibration.scope_table", format!("column {name} has {values} rows, not {expected}")));
+            }
+        }
+        Ok(())
     }
 
     /// The paths, other than graphs, that `Models::new` needs in `files`.

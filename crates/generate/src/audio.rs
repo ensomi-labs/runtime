@@ -63,18 +63,25 @@ pub struct Resampler {
 pub fn load_resampler(files: &[Vec<u8>; 3]) -> Result<Resampler, String> {
     let spec: ResamplerSpec = serde_json::from_slice(&files[0]).map_err(|e| format!("resampler table: {e}"))?;
     let doubles = |bytes: &[u8]| -> Vec<f64> { bytes.as_chunks::<8>().0.iter().map(|c| f64::from_le_bytes(*c)).collect() };
+    let (coefficients, boundary) = (doubles(&files[1]), doubles(&files[2]));
+    if spec.numerator == 0 || spec.phases == 0 || coefficients.len() != spec.phases * (2 * spec.radius + 1) || boundary.len() != spec.boundary_frames * spec.boundary_samples {
+        return Err("resampler table: the coefficient files do not have the sizes its description gives".to_string());
+    }
     Ok(Resampler {
         numerator: spec.numerator,
         phases: spec.phases,
         radius: spec.radius,
         boundary_frames: spec.boundary_frames,
         boundary_samples: spec.boundary_samples,
-        coefficients: doubles(&files[1]),
-        boundary: doubles(&files[2]),
+        coefficients,
+        boundary,
     })
 }
 
-pub fn resample(pcm: &[f64], kernel: &Resampler) -> Vec<f32> {
+pub fn resample<T: Copy>(pcm: &[T], kernel: &Resampler) -> Vec<f32>
+where
+    f64: From<T>,
+{
     let (p, q, r, bf, bs) = (kernel.numerator, kernel.phases, kernel.radius as i64, kernel.boundary_frames, kernel.boundary_samples);
     let (k, b) = (&kernel.coefficients, &kernel.boundary);
     let len = round(pcm.len() as f64 * q as f64 / p as f64) as usize;
@@ -84,7 +91,7 @@ pub fn resample(pcm: &[f64], kernel: &Resampler) -> Vec<f32> {
         let mut v = 0.0;
         if m < bf {
             for j in 0..bs.min(pcm.len()) {
-                v += pcm[j] * b[m * bs + j];
+                v += f64::from(pcm[j]) * b[m * bs + j];
             }
         } else {
             let i = (m * p / q) as i64;
@@ -92,7 +99,7 @@ pub fn resample(pcm: &[f64], kernel: &Resampler) -> Vec<f32> {
             let mut j = (-r).max(-i);
             let end = r.min(pcm.len() as i64 - 1 - i);
             while j <= end {
-                v += pcm[(i + j) as usize] * k[(phase * width + j + r) as usize];
+                v += f64::from(pcm[(i + j) as usize]) * k[(phase * width + j + r) as usize];
                 j += 1;
             }
         }
@@ -210,6 +217,7 @@ pub async fn beat_activations(io: &Io, spect: &[f32]) -> Result<Activations, Str
         s += 1488;
     }
     if frames > 1488 {
+        // The first start, -6, is below frames - 6.
         *starts.last_mut().unwrap() = frames - 1494;
     }
     let mut outputs = Vec::new();
@@ -222,7 +230,7 @@ pub async fn beat_activations(io: &Io, spect: &[f32]) -> Result<Activations, Str
         data[(left * 128) as usize..((left + hi - lo) * 128) as usize].copy_from_slice(&spect[(lo * 128) as usize..(hi * 128) as usize]);
         let rows = data.len() / 128;
         let mut out = io.run("beatthis", vec![("spect", Tensor::f32(&[1, rows, 128], data))]).await?;
-        outputs.push((out.take_f32("beat_logits")?, out.take_f32("downbeat_logits")?));
+        outputs.push((out.take_f32("beat_logits", rows)?, out.take_f32("downbeat_logits", rows)?));
     }
     let mut beat = vec![-1000f32; frames as usize];
     let mut downbeat = vec![-1000f32; frames as usize];
@@ -268,7 +276,10 @@ pub fn features(log_mel: &[f32], beat: &[f32], downbeat: &[f32]) -> Vec<f32> {
 }
 
 /// PCM input has no decoder quantization: pydub's linear rate-conversion convention for Mel.
-pub fn mel_pcm(pcm: &[f64], sample_rate: f64) -> Vec<f32> {
+pub fn mel_pcm<T: Copy>(pcm: &[T], sample_rate: f64) -> Vec<f32>
+where
+    f64: From<T>,
+{
     let length = ((pcm.len() as f64 - 1.0) * 24000.0 / sample_rate).floor() as usize + 1;
     let mut out = vec![0f32; length];
     let mut peak = 0.0f64;
@@ -276,7 +287,8 @@ pub fn mel_pcm(pcm: &[f64], sample_rate: f64) -> Vec<f32> {
         let at = i as f64 * sample_rate / 24000.0;
         let lo = at.floor();
         let hi = (lo as usize + 1).min(pcm.len() - 1);
-        let v = pcm[lo as usize] + (at - lo) * (pcm[hi] - pcm[lo as usize]);
+        let (a, b) = (f64::from(pcm[lo as usize]), f64::from(pcm[hi]));
+        let v = a + (at - lo) * (b - a);
         out[i] = v as f32;
         peak = peak.max((out[i] as f64).abs());
     }
@@ -289,7 +301,10 @@ pub fn mel_pcm(pcm: &[f64], sample_rate: f64) -> Vec<f32> {
 }
 
 /// Windowed-sinc conversion for PCM rates outside the release's soxr table rates.
-pub fn sinc_resample(pcm: &[f64], sample_rate: f64, target_rate: f64) -> Vec<f32> {
+pub fn sinc_resample<T: Copy>(pcm: &[T], sample_rate: f64, target_rate: f64) -> Vec<f32>
+where
+    f64: From<T>,
+{
     use std::f64::consts::PI;
     let ratio = sample_rate / target_rate;
     let scale = f64::min(1.0, 1.0 / ratio) * 0.95;
@@ -306,7 +321,7 @@ pub fn sinc_resample(pcm: &[f64], sample_rate: f64, target_rate: f64) -> Vec<f32
             let sinc = if z == 0.0 { 1.0 } else { libm::sin(z) / z };
             let window = 0.42 + 0.5 * libm::cos(PI * x / radius) + 0.08 * libm::cos(2.0 * PI * x / radius);
             let w = sinc * window * scale;
-            let sample = if j >= 0 && (j as usize) < pcm.len() { pcm[j as usize] } else { 0.0 };
+            let sample = if j >= 0 && (j as usize) < pcm.len() { f64::from(pcm[j as usize]) } else { 0.0 };
             value += sample * w;
             weight += w;
         }

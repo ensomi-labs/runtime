@@ -57,6 +57,19 @@ cd ../ensomi-web/packages/runtime && node --import tsx ../../../ensomi-runtime/j
   --out ../../../ensomi-runtime/conformance/generate/same-as-ts.json
 ```
 
+## Memory in Node
+
+```sh
+node --expose-gc js/checks/memory.mjs --model-dir ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 \
+  --reference ../ensomi-model/artifacts/runtime-ref --core js/pkg/ensomi_generate_wasm_bg.wasm [--browser] adventure
+```
+
+Two generations in a row through the Wasm core. Its linear memory never shrinks, so after a generation it is the
+peak so far. On adventure (200 s), 65.8 MiB after loading the model, then after either generation 174.3 MiB for
+96 kHz mono PCM and 101.0 MiB with `--browser` (the streams `decodeAudio` gives); 285.6 and 119.3 MiB before the
+core read mono PCM where it is, took the browser's Mel stream once and dropped buffers it no longer reads
+(2026-10-12).
+
 ## Numerics
 
 The core computes `exp`, `log`, `log1p`, `log2`, `sin`, `cos`, `atan2` and `hypot` with the `libm` crate: pure

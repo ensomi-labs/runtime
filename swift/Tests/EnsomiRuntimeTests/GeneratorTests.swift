@@ -62,7 +62,7 @@ final class GeneratorTests: XCTestCase {
     func testRefusedRequestCarriesItsProtocolCode() throws {
         let generator = try Paths().open(.cpu)
         XCTAssertThrowsError(try generator.generate(
-            pcm: bytes(noise(seconds: 5)), sampleRate: 22_050, request: GenerateChartRequest(star: 7), listener: nil, cancellation: nil
+            pcm: noise(seconds: 5), sampleRate: 22_050, request: GenerateChartRequest(star: 7), listener: nil, cancellation: nil
         )) { error in
             guard case .Generation(let code, _) = error as? GeneratorError else { return XCTFail("\(error)") }
             XCTAssertEqual(code, "star_out_of_range")
@@ -87,7 +87,7 @@ final class GeneratorTests: XCTestCase {
 
     /// `open` reads the tables from the package's bundle when the options name no directory.
     func testThePackageCarriesTheResamplerTables() throws {
-        let files = try FileManager.default.contentsOfDirectory(atPath: ChartGenerator.bundledResamplerDirectory)
+        let files = try FileManager.default.contentsOfDirectory(atPath: XCTUnwrap(ChartGenerator.bundledResamplerDirectory))
         for rate in [11_025, 16_000, 24_000, 32_000, 44_100, 48_000, 88_200, 96_000, 192_000] {
             for name in ["resample-\(rate).json", "resample-\(rate).bin", "resample-\(rate)-boundary.bin"] {
                 XCTAssert(files.contains(name), name)
@@ -184,10 +184,6 @@ final class GeneratorTests: XCTestCase {
             state = state &* 1_664_525 &+ 1_013_904_223
             return Float(state >> 8) / Float(1 << 24) - 0.5
         }
-    }
-
-    private func bytes(_ pcm: [Float]) -> Data {
-        pcm.withUnsafeBufferPointer { Data(buffer: $0) }
     }
 
     private func firstDifference(_ actual: String, _ expected: String) -> String? {
