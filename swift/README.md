@@ -79,6 +79,9 @@ result.receipt                                      // EnsomiProtocol Generation
   `result.receipt.receiptJson` (`crates/osz`): `generated.osu`, the audio under the name the `.osu` gives it
   (`audio.<extension>`) and `receipt.json`, the layout of the web runtime's `.osz`. The app reads the song and saves
   the archive.
+- R2 arranges the song once. The published Python R2 (`r2-1.0`) arranged it a second time when the first
+  arrangement missed the star's difficulty target by more than the difficulty fit's seed spread, so its chart
+  differs wherever it did; the receipt's `controls.difficulty` records the miss.
 - The same model, PCM, request and seed give the same chart. `generate(pcm:sampleRate:request:progress:)` runs
   on a thread of its own; cancelling its task stops it at the next graph run or phase with
   `GeneratorError.Cancelled`. Refusals carry EnsomiProtocol's error code in `GeneratorError.Generation`; so
@@ -112,10 +115,8 @@ Task { _ = try await scheduler.work() }             // keeps generating ahead of
 scheduler.result()                                  // the whole chart, .osu and receipt once done
 ```
 
-- `.aheadOfPlay` commits a page after each head row of R2's arrangement, with the difficulty check off: one pass
-  with the first multiplier. The chart differs from the whole chart only where the check would have arranged the
-  song again; the receipt's `controls.difficulty.would_repass` says whether it would have. `.wholeChart` keeps the
-  check and commits the chart in one page at the end.
+- `.aheadOfPlay` commits a page after each head row of R2's arrangement; `.wholeChart` commits the chart in one page
+  at the end. Both make the same chart.
 - `.ready(joinMs:)` comes once play from there stays behind the chart to the end:
   c₀ − t₀ ≥ L + max(0, (E − c₀)(p/r − 1)), with the chart committed through c₀, the lead L = max(the ruleset's settle
   lead, `renderLeadMs`) + `marginMs`, the song's end E, the playback rate p from `heard` and the generation's

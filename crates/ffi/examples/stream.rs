@@ -42,11 +42,10 @@ fn run(scheduler: Arc<ChartScheduler>, started: Instant) -> Value {
     assert!(session.coverage_ms().is_infinite());
     assert_eq!(session.visible_objects(f64::NEG_INFINITY, f64::INFINITY).len(), result.chart.objects.len());
     let receipt: Value = serde_json::from_str(&result.receipt.receipt_json).unwrap();
-    let difficulty = &receipt["controls"]["difficulty"];
     json!({
         "ready_seconds": ready_seconds, "done_seconds": done_seconds, "coverage_at_ready_ms": coverage_at_ready,
         "rate_at_ready": rate_at_ready, "rate_at_done": scheduler.rate(), "objects": result.chart.objects.len(),
-        "passes": difficulty["passes"].as_array().map(Vec::len), "would_repass": difficulty["would_repass"], "seconds": receipt["seconds"],
+        "passes": receipt["controls"]["difficulty"]["passes"].as_array().map(Vec::len), "seconds": receipt["seconds"],
         "osu_fnv": format!("{:x}", result.osu.bytes().fold(0xcbf29ce484222325u64, |h, b| (h ^ b as u64).wrapping_mul(0x100000001b3))),
     })
 }

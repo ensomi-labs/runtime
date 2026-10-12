@@ -15,9 +15,9 @@ use std::sync::{Arc, Condvar, Mutex, PoisonError};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, uniffi::Enum)]
 pub enum ScheduleMode {
-    /// The whole chart, with R2's difficulty check, before play starts: for saving or exporting, and play after.
+    /// The whole chart before play starts: for saving or exporting, and play after.
     WholeChart,
-    /// Play while generating: a page per head row with the difficulty check off, play from when the start rule holds.
+    /// Play while generating: the same chart, a page per head row, play from when the start rule holds.
     AheadOfPlay,
 }
 

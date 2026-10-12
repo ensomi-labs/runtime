@@ -79,25 +79,24 @@ fn the_scheduler_puts_the_chart_into_the_session_page_by_page() {
     whole.start(0.0, GameplaySession::streaming(Ruleset { judge: Judge::C }));
     assert_eq!(whole.work().unwrap(), SchedulerAction::Ready { join_ms: 0.0 });
     assert_eq!(whole.work().unwrap(), SchedulerAction::Done);
-    let checked = whole.result().unwrap();
-    assert_eq!(checked.osu, generator.generate(noise(30), 22_050.0, request(), None, None).unwrap().osu);
+    let whole = whole.result().unwrap();
+    assert_eq!(whole.osu, generator.generate(noise(30), 22_050.0, request(), None, None).unwrap().osu);
 
     let streamed = ChartScheduler::from_prepared(generator.clone(), stored, request(), ScheduleMode::AheadOfPlay, lead).unwrap();
     let session = GameplaySession::streaming(Ruleset { judge: Judge::C });
     streamed.start(0.0, session.clone());
     assert_eq!(streamed.work().unwrap(), SchedulerAction::Ready { join_ms: 0.0 });
-    assert!(session.coverage_ms() >= 500.0 && session.coverage_ms() < checked.chart.duration_ms as f64);
+    assert!(session.coverage_ms() >= 500.0 && session.coverage_ms() < whole.chart.duration_ms as f64);
     assert!(streamed.rate().unwrap() > 0.0);
     assert_eq!(streamed.work().unwrap(), SchedulerAction::Done);
     let result = streamed.result().unwrap();
     assert!(session.coverage_ms().is_infinite());
     let objects: Vec<_> = session.visible_objects(f64::NEG_INFINITY, f64::INFINITY).iter().map(|o| (o.lane, o.start_time_ms as u32, o.end_time_ms.map(|e| e as u32))).collect();
     assert_eq!(objects, result.chart.objects.iter().map(|o| (o.lane, o.start_ms, o.end_ms)).collect::<Vec<_>>());
+    // One arrangement in either mode: the streamed chart is the whole one.
     let receipt: serde_json::Value = serde_json::from_str(&result.receipt.receipt_json).unwrap();
-    let difficulty = &receipt["controls"]["difficulty"];
-    assert_eq!(difficulty["passes"].as_array().unwrap().len(), 1);
-    // The streamed chart is the checked one unless the check arranged the song again.
-    assert_eq!(result.chart == checked.chart, difficulty["would_repass"] == false);
+    assert_eq!(receipt["controls"]["difficulty"]["passes"].as_array().unwrap().len(), 1);
+    assert_eq!(result.osu, whole.osu);
 }
 
 #[test]

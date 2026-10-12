@@ -23,9 +23,9 @@ pub enum Source {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Mode {
-    /// The whole chart, with R2's difficulty check, in one page at the end; play starts after it.
+    /// The whole chart in one page at the end; play starts after it.
     WholeChart,
-    /// A page per head row with the difficulty check off; play starts once the start rule holds.
+    /// A page per head row, the same chart; play starts once the start rule holds.
     AheadOfPlay,
 }
 

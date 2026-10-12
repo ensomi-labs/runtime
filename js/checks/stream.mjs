@@ -48,8 +48,8 @@ async function run(source, request, mode, started) {
         const doneSeconds = (performance.now() - started) / 1000;
         if (ready.kind !== 'ready' || ready.joinMs !== 0 || done.kind !== 'done')
             throw new Error(`scheduler: ${JSON.stringify([ready, done.kind])}`);
-        const receipt = JSON.parse(done.result.receipt.receipt_json), difficulty = receipt.controls.difficulty;
-        return { ready_seconds: readySeconds, done_seconds: doneSeconds, pages_at_ready: pagesAtReady, pages, rate_at_ready: rateAtReady, rate_at_done: scheduler.rate ?? null, objects: done.result.chart.objects.length, passes: difficulty.passes.length, would_repass: difficulty.would_repass ?? null, seconds: receipt.seconds };
+        const receipt = JSON.parse(done.result.receipt.receipt_json);
+        return { ready_seconds: readySeconds, done_seconds: doneSeconds, pages_at_ready: pagesAtReady, pages, rate_at_ready: rateAtReady, rate_at_done: scheduler.rate ?? null, objects: done.result.chart.objects.length, passes: receipt.controls.difficulty.passes.length, seconds: receipt.seconds };
     }
     finally {
         scheduler.free();

@@ -41,13 +41,17 @@ Both packages carry the soxr tables in [`assets/resampler`](assets/resampler), w
 rates other than 22050 Hz. Releases: [`RELEASING.md`](RELEASING.md).
 
 Both also run the audio stages alone (`prepare`, whose result is stored as bytes per song) and a scheduler that
-generates for play: R2's arrangement committed per head row with the difficulty check off, and play allowed to start
-once it cannot overtake the chart ([`swift/README.md`](swift/README.md), [`js/README.md`](js/README.md)). The
-scheduler is in the core without IO (`crates/generate/src/schedule.rs`); natively its pages go into the gameplay
-session inside Rust.
+generates for play: R2's arrangement committed per head row, and play allowed to start once it cannot overtake the
+chart ([`swift/README.md`](swift/README.md), [`js/README.md`](js/README.md)). The scheduler is in the core without IO
+(`crates/generate/src/schedule.rs`); natively its pages go into the gameplay session inside Rust.
 
-The TypeScript runtime in `ensomi-web/packages/runtime` retires once the Wasm build of this
-core reproduces its charts.
+The generator arranges a song once, whether it commits per head row or the whole chart at the end, so both give the
+same chart. The published Python R2 (`r2-1.0`) arranged a song a second time when the first arrangement missed the
+star's difficulty target by more than the difficulty fit's seed spread; where it did, its chart differs from this
+runtime's. The receipt's `controls.difficulty` records the miss.
+
+The TypeScript runtime in `ensomi-web/packages/runtime` is retired: ensomi-web serves the Wasm build of this core.
+A comparison with its charts holds only where it arranged the song once, as this runtime always does.
 
 ## Licence
 

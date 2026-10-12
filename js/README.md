@@ -15,6 +15,10 @@ result.osu;      // the chart as an osu!mania beatmap
 result.receipt;  // EnsomiProtocol GenerationReceipt
 ```
 
+R2 arranges the song once. The published Python R2 (`r2-1.0`) arranged it a second time when the first arrangement
+missed the star's difficulty target by more than the difficulty fit's seed spread, so its chart differs wherever it
+did; the receipt's `controls.difficulty` records the miss.
+
 Playing while generating, from the audio stages run when the song was chosen:
 
 ```js
@@ -32,9 +36,8 @@ scheduler.work().then(({ result }) => {});                 // generates ahead of
 // each frame: scheduler.heard(chartMs, performance.now())
 ```
 
-- `'ahead-of-play'` commits a page per head row of R2's arrangement with the difficulty check off (one pass); the
-  receipt's `controls.difficulty.would_repass` says whether the check would have arranged the song again.
-  `'whole-chart'` keeps the check and sends the chart in one page at the end.
+- `'ahead-of-play'` commits a page per head row of R2's arrangement; `'whole-chart'` sends the chart in one page at
+  the end. Both make the same chart.
 - `work()` resolves with `{kind: 'ready', joinMs}` once play from there stays behind the chart to the end, and with
   `{kind: 'done', result}` at the end; while play is far enough ahead it waits for `heard`, `start` or `stop`.
   `start(atMs)` at a position joins at the first time at or after `atMs` plus the lead where no hold is open, and

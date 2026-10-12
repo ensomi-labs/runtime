@@ -4756,11 +4756,11 @@ public func FfiConverterTypePhase_lower(_ value: Phase) -> RustBuffer {
 public enum ScheduleMode: Equatable, Hashable {
     
     /**
-     * The whole chart, with R2's difficulty check, before play starts: for saving or exporting, and play after.
+     * The whole chart before play starts: for saving or exporting, and play after.
      */
     case wholeChart
     /**
-     * Play while generating: a page per head row with the difficulty check off, play from when the start rule holds.
+     * Play while generating: the same chart, a page per head row, play from when the start rule holds.
      */
     case aheadOfPlay
 

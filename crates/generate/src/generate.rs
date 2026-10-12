@@ -1,5 +1,5 @@
 //! generate.ts: the whole pipeline from PCM and a request to the chart, `.osu` text and receipt.
-use crate::arrange::{arrange, Arrange, Arrangement};
+use crate::arrange::{arrange, Arrange};
 use crate::audio::{beat_activations, features, load_resampler, mel_pcm, mono, resample, resampler_files, sinc_resample, spectrogram, Samples, Spectrogram};
 use crate::capabilities::{MODEL_NAME, MODEL_VERSION};
 use crate::controls::{load_scopes, number, resolve_requests, Scope};
@@ -125,16 +125,13 @@ pub enum Trace<'a> {
 
 pub type TraceFn = Box<dyn for<'a> FnMut(Trace<'a>) -> Result<(), String>>;
 
-/// When a generation publishes its chart.
+/// When a generation publishes its chart. Either way R2 arranges the song once, so the chart is the same.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Commit {
-    /// The whole chart at the end, after R2's difficulty check, which arranges the song a second time when the first
-    /// arrangement misses the star's difficulty target by more than the fit's seed spread.
+    /// The whole chart at the end.
     #[default]
     AtEnd,
-    /// A page after each head row ([`crate::Step::Commit`]), from one arrangement with the first multiplier: the
-    /// difficulty check is off. The chart differs from `AtEnd`'s only where the check would have arranged again,
-    /// which the receipt's `controls.difficulty.would_repass` says.
+    /// A page after each head row ([`crate::Step::Commit`]), then the whole chart at the end.
     HeadRow,
 }
 
@@ -230,6 +227,11 @@ fn validate_request(request: &Request, duration: f64) -> Result<(), String> {
 
 /// Starts a generation. Drive the returned [`Generator`] with [`Generator::step`]. The same as [`prepare`]
 /// followed by [`generate_prepared`], with the timings of both stages in one receipt.
+///
+/// R2 arranges the song once, with the multiplier the difficulty fit gives for the star's target; the receipt's
+/// `controls.difficulty` records how far the chart missed the target. The published Python R2 (`r2-1.0`) arranged
+/// the song a second time when the first arrangement missed by more than the fit's seed spread, so its chart differs
+/// from this one wherever it did.
 pub fn generate(models: Arc<Models>, audio: Audio, request: Request, options: Options) -> Generator {
     let io = Io::default();
     let future = run(io.clone(), models, audio, request, options);
@@ -415,51 +417,26 @@ async fn chart_stages(io: Io, models: Arc<Models>, prepared: Arc<Prepared>, requ
     let domain = &models.calibration.difficulty_fit.domain;
     let (lo, hi) = (domain[0], f64::min(domain[1], 1.2));
     let raw = libm::exp((libm::log(target_r) - alpha - gamma * libm::log(base_r)) / beta);
-    let mut multiplier = clip(raw, lo, hi);
-    let mut passes: Vec<Value> = Vec::new();
-    let mut result: Option<Arrangement> = None;
-    let incremental = options.commit == Commit::HeadRow;
-    // With the check off, whether it would have arranged the song again.
-    let mut would_repass = false;
-    for attempt in 0..2 {
-        let pass_start = clock();
-        random.reset(r2_seed32);
-        let pass = attempt + 1;
-        let arrangement = arrange(Arrange {
-            io: &io,
-            models: &models,
-            head_ms: &rows.head_ms,
-            song_ms,
-            grid: grid.clone(),
-            random: &mut *random,
-            target: kappa_targets(&prediction, ln_fraction, multiplier),
-            ln_fraction,
-            requests: &requests,
-            masks: masks.clone(),
-            prefix: format!("r2_pass_{pass}"),
-            trace: &mut options.trace,
-            commit: incremental,
-        })
-        .await?;
-        passes.push(json!({"multiplier": number(multiplier), "achieved": number(arrangement.r), "fallback_count": arrangement.fallback_count, "wall_seconds": number(seconds_since(&*clock, pass_start))}));
-        let achieved = arrangement.r;
-        result = Some(arrangement);
-        if attempt > 0 || (achieved - target_r).abs() <= seed_sd {
-            break;
-        }
-        let corrected_multiplier = clip(multiplier * libm::exp((libm::log(target_r) - libm::log(achieved)) / beta), lo, hi);
-        if corrected_multiplier == multiplier {
-            break;
-        }
-        if incremental {
-            would_repass = true;
-            break;
-        }
-        multiplier = corrected_multiplier;
-    }
-    // The loop ran at least once.
-    let result = result.unwrap();
-    seconds.push(("arrangement", seconds_since(&*clock, start)));
+    let multiplier = clip(raw, lo, hi);
+    random.reset(r2_seed32);
+    let result = arrange(Arrange {
+        io: &io,
+        models: &models,
+        head_ms: &rows.head_ms,
+        song_ms,
+        grid,
+        random: &mut *random,
+        target: kappa_targets(&prediction, ln_fraction, multiplier),
+        ln_fraction,
+        requests: &requests,
+        masks,
+        prefix: "r2_pass_1".to_string(),
+        trace: &mut options.trace,
+        commit: options.commit == Commit::HeadRow,
+    })
+    .await?;
+    let arrangement_seconds = seconds_since(&*clock, start);
+    seconds.push(("arrangement", arrangement_seconds));
     io.progress(Phase::Export).await;
     start = clock();
     let chart = chart_from_decisions(&rows.head_ms, song_ms, &result.chart.actions, &result.chart.gap);
@@ -516,14 +493,10 @@ async fn chart_stages(io: Io, models: Arc<Models>, prepared: Arc<Prepared>, requ
     difficulty.insert("achieved_r".into(), number(result.r));
     difficulty.insert("error".into(), number(result.r - target_r));
     difficulty.insert("within_seed_sd".into(), json!((result.r - target_r).abs() <= seed_sd));
-    difficulty.insert("passes".into(), Value::Array(passes));
+    difficulty.insert("passes".into(), json!([{"multiplier": number(multiplier), "achieved": number(result.r), "fallback_count": result.fallback_count, "wall_seconds": number(arrangement_seconds)}]));
     difficulty.insert("tested_band_q".into(), json!([0.1, 0.75]));
     difficulty.insert("above_tested_band".into(), json!(default_q > 0.75));
     difficulty.insert("default".into(), json!(true));
-    if incremental {
-        difficulty.insert("commit".into(), json!("head_row"));
-        difficulty.insert("would_repass".into(), json!(would_repass));
-    }
     detail.insert(
         "controls".into(),
         json!({

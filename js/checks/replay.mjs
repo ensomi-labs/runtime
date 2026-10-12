@@ -3,13 +3,14 @@
 // every graph call within tolerance, identical sampled choices and hit objects, timing points within 1e-6 ms,
 // all other .osu text identical.
 //
-// With `--check off`, the chart comes from the JavaScript ChartScheduler playing from 0, a page per head row with
-// R2's difficulty check off: the draws used must be the release's up to pass 1, the pages must make the chart, and
-// the chart must be the release's where only one pass ran, else the one pass 1's recorded decisions make. The graphs
-// are not replayed again.
+// The runtime arranges each song once: the draws used must be the release's through pass 1, and the chart the
+// release's where it ran one pass, else the one its recorded pass-1 decisions make.
+//
+// With `--stream`, the chart comes from the JavaScript ChartScheduler playing from 0, a page per head row, and the
+// pages must make the chart. The graphs are not replayed again.
 //
 // Usage: node replay.mjs --model-dir <ensomi-r2> --reference <runtime-ref> --assets <resampler tables> --core <wasm> --out <report.json>
-//        [--check off] [song...]
+//        [--stream] [song...]
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import * as ort from 'onnxruntime-web/wasm';
@@ -19,10 +20,12 @@ import { Recording, chartFromDecisions, difference, firstTextDifference, pagesMa
 
 const args = process.argv.slice(2), option = (name) => { const i = args.indexOf(name); return i < 0 ? undefined : args.splice(i, 2)[1]; };
 const modelDir = option('--model-dir'), referenceDir = option('--reference'), assetsDir = option('--assets'), corePath = option('--core'), out = option('--out');
-const checkOff = option('--check') === 'off';
+const stream = args.includes('--stream');
+if (stream)
+    args.splice(args.indexOf('--stream'), 1);
 const songs = args.length ? args : ['hesitation-snow', 'saigetsu', 'catch-the-moment', 'adventure'];
 const GRAPH_TOLERANCE = 1e-4, BEATTHIS_TOLERANCE = 2e-4, GRID_TOLERANCE_MS = 1e-4, TIMING_TOLERANCE_MS = 1e-6;
-const report = { ort: ort.env.versions?.common ?? '1.23.2', provider: 'wasm', threads: 1, graph_tolerance: { default: GRAPH_TOLERANCE, beatthis: BEATTHIS_TOLERANCE }, timing_tolerance_ms: TIMING_TOLERANCE_MS, scope: 'recorded graph inputs, PCM frontends, full Wasm decode with carried state and replayed random draws, exact exports, own PRNG', check: checkOff ? 'off: ChartScheduler from 0, one pass committed per head row; graphs not replayed again' : 'on', songs: {}, passed: false };
+const report = { ort: ort.env.versions?.common ?? '1.23.2', provider: 'wasm', threads: 1, graph_tolerance: { default: GRAPH_TOLERANCE, beatthis: BEATTHIS_TOLERANCE }, timing_tolerance_ms: TIMING_TOLERANCE_MS, scope: 'recorded graph inputs, PCM frontends, full Wasm decode with carried state and replayed random draws, exact exports, own PRNG', commit: stream ? 'ChartScheduler from 0, a page per head row; graphs not replayed again' : 'the whole chart at the end', songs: {}, passed: false };
 
 /** A chart through the scheduler, playing from 0 with nothing heard, so that it generates to the end; and its pages. */
 async function streamed(source, request, options) {
@@ -72,7 +75,7 @@ try {
         console.log(`${song}: stage 1 graph replay`);
         const recording = await Recording.open(join(referenceDir, 'bulk', song));
         try {
-            if (!checkOff) {
+            if (!stream) {
                 row.stage1 = { passed: true, networks: await networkReplay(recording) };
                 console.log(song, 'stage 1', Object.fromEntries(Object.entries(row.stage1.networks).map(([name, v]) => [name, v.max_abs])));
                 await save();
@@ -90,16 +93,16 @@ try {
             const phases = [];
             const options = { replay, setting: receipt.setting, audio: { name: audioName, bytes: new Uint8Array(0) } };
             let result, prepared;
-            if (checkOff) {
+            if (stream) {
                 const run = await streamed({ pcm, sampleRate }, request, options);
                 ({ result, prepared } = run);
                 row.pages = pagesMakeChart(run.pages, result.chart, expectedRows.head_ms.length);
             }
             else
                 result = await generateChart(models, pcm, sampleRate, request, { ...options, onProgress: p => phases.push(p.phase) });
-            // With the check off, pass 2's draws are left.
+            // Where the release ran pass 2, its draws are left.
             const pass2 = recording.index.draws.filter(d => d.name.startsWith('r2_pass_2/')).length;
-            const expectedDraws = checkOff ? recorded - pass2 : recorded;
+            const expectedDraws = recorded - pass2;
             if (result.replayConsumed !== expectedDraws)
                 throw new Error(`Unconsumed draws: ${result.replayConsumed}/${expectedDraws}`);
             const detail = JSON.parse(result.receipt.receipt_json);
@@ -108,17 +111,11 @@ try {
             row.stage2 = { passed: sameSegments && gridError <= GRID_TOLERANCE_MS, max_offset_error_ms: gridError, segments: grid };
             row.stage3 = { passed: detail.rows.K === expectedRows.head_ms.length, heads: detail.rows.K, recorded_heads: expectedRows.head_ms.length };
             const priorError = Math.max(...['held', 'heads', 'busy_free', 'quad', 'log_r'].map(k => Math.abs(detail.prior.predicted[k] - Number(expectedPrior[k][0]))));
-            row.stage4 = { passed: priorError === 0, prior_max_error: priorError, draws_consumed: result.replayConsumed, draws_recorded: recorded, passes: detail.controls.difficulty.passes };
-            if (checkOff) {
-                // One pass, and the check would have arranged again exactly where the release did.
-                const wouldRepass = detail.controls.difficulty.would_repass;
-                Object.assign(row.stage4, { would_repass: wouldRepass, release_passes: pass2 > 0 ? 2 : 1 });
-                row.stage4.passed &&= detail.controls.difficulty.passes.length === 1 && wouldRepass === pass2 > 0;
-            }
+            row.stage4 = { passed: priorError === 0 && detail.controls.difficulty.passes.length === 1, prior_max_error: priorError, draws_consumed: result.replayConsumed, draws_recorded: recorded, passes: detail.controls.difficulty.passes, release_passes: pass2 > 0 ? 2 : 1 };
             row.replay_seconds = detail.seconds;
             row.phases = phases;
             const expectedObjects = parseOsu(expectedOsu);
-            if (checkOff && pass2 > 0) {
+            if (pass2 > 0) {
                 // The release's chart is pass 2's: the chart must be the one pass 1's recorded decisions make.
                 const actions = [], gaps = [];
                 for (let k = 0; k <= expectedRows.head_ms.length; k++) {
@@ -143,11 +140,11 @@ try {
                 row.stage5 = { passed: timing.same_rows && timing.max_abs_ms <= TIMING_TOLERANCE_MS && restDifference === null, hitobjects_identical: true, objects: result.chart.objects.length, timing_points: timing.rows, timing_max_abs_ms: timing.max_abs_ms, rest_identical: restDifference === null, osu_identical_except_generator: textDifference === null, first_text_difference: textDifference, osz_bytes: result.osz.length };
             }
             console.log(song, 'replay', row.stage5);
-            // The generator's own PRNG, as it runs in production; with the check off, from the stored audio stages.
+            // The generator's own PRNG, as it runs in production; with `--stream`, from the stored audio stages.
             console.log(`${song}: own PRNG run`);
             const wall = performance.now();
             let own, ownPages;
-            if (checkOff) {
+            if (stream) {
                 const run = await streamed(prepared, request, { setting: receipt.setting });
                 own = run.result;
                 ownPages = pagesMakeChart(run.pages, own.chart, JSON.parse(own.receipt.receipt_json).rows.K);
@@ -157,15 +154,15 @@ try {
             const ownDetail = JSON.parse(own.receipt.receipt_json);
             if (!ownDetail.export.replay_finalized)
                 throw new Error(`Own PRNG left an open hold: ${song}`);
-            row.prng = { passed: ownPages?.passed ?? true, algorithm: ownDetail.runtime.random_algorithm, seed: request.seed, objects: own.chart.objects.length, heads: ownDetail.rows.K, fallbacks: ownDetail.fallback_count, seconds: ownDetail.seconds, wall_seconds: (performance.now() - wall) / 1000, ...(checkOff ? { pages: ownPages, would_repass: ownDetail.controls.difficulty.would_repass } : {}) };
+            row.prng = { passed: ownPages?.passed ?? true, algorithm: ownDetail.runtime.random_algorithm, seed: request.seed, objects: own.chart.objects.length, heads: ownDetail.rows.K, fallbacks: ownDetail.fallback_count, seconds: ownDetail.seconds, wall_seconds: (performance.now() - wall) / 1000, ...(stream ? { pages: ownPages } : {}) };
         }
         finally {
             await recording.close();
             await save();
         }
     }
-    const stages = checkOff ? [2, 3, 4, 5] : [1, 2, 3, 4, 5];
-    report.passed = songs.every(song => stages.every(n => report.songs[song][`stage${n}`]?.passed) && report.songs[song].prng?.passed && (!checkOff || report.songs[song].pages?.passed));
+    const stages = stream ? [2, 3, 4, 5] : [1, 2, 3, 4, 5];
+    report.passed = songs.every(song => stages.every(n => report.songs[song][`stage${n}`]?.passed) && report.songs[song].prng?.passed && (!stream || report.songs[song].pages?.passed));
     if (!report.passed)
         process.exitCode = 1;
 }

@@ -1,12 +1,14 @@
 //! Replays the four recorded release songs through the native pipeline and compares every stage
 //! with the Python release: the TypeScript runtime's `checks/parity.ts`, in Rust.
 //!
-//! With `--check off`, the generation commits per head row with R2's difficulty check off, from a `Prepared` made
-//! by its own run of the audio stages: every decision must be pass 1's, the pages must make the chart, and the
-//! chart must be the release's where only one pass ran.
+//! The runtime arranges each song once. Every arrangement decision must be the one the release recorded in its first
+//! pass; where the release arranged the song a second time, its chart is that pass's and is not compared.
+//!
+//! With `--stream`, the generation commits a page per head row, from a `Prepared` made by its own run of the audio
+//! stages, and the pages must make the chart.
 //!
 //! Usage: parity --model-dir <ensomi-r2> --reference <runtime-ref> --assets <resampler tables> --out <report.json>
-//!        [--check off] [song...]
+//!        [--stream] [song...]
 use ensomi_generate::{chart_tokens, generate, generate_prepared, prepare, Audio, ChartObject, Commit, GenerationResult, Generator, Grid, Models, Options, Page, ReplayRandom, Request, Samples, Step, Trace, TraceFn};
 use ensomi_generate_ort::recording::Recording;
 use ensomi_generate_ort::{drive, phase_name, Config, Sessions, Timings};
@@ -171,8 +173,8 @@ fn read_files(paths: &[String], base: &Path) -> Result<HashMap<String, Vec<u8>>,
 struct Context {
     models: Arc<Models>,
     sessions: Sessions,
-    /// R2's difficulty check is off and the chart is committed per head row.
-    check_off: bool,
+    /// The chart is committed per head row, from a `Prepared`.
+    stream: bool,
 }
 
 /// Runs a generator that commits per head row to the end, keeping its pages.
@@ -302,7 +304,7 @@ fn run_song(ctx: &mut Context, model_dir: &Path, reference_dir: &Path, assets: &
         }
         Ok(())
     });
-    // With the check off, the audio stages and the rest are two generators, which share the trace.
+    // With `--stream`, the audio stages and the rest are two generators, which share the trace.
     let trace = Rc::new(RefCell::new(trace));
     let traced = || -> Option<TraceFn> {
         let trace = trace.clone();
@@ -310,7 +312,7 @@ fn run_song(ctx: &mut Context, model_dir: &Path, reference_dir: &Path, assets: &
     };
     let options = Options { random: Some(Box::new(replay)), setting: Some(setting.clone()), audio_name: Some(audio_name.clone()), trace: traced(), clock: clock(), commit: Commit::AtEnd };
     let mut audio_stages = None;
-    let result = if ctx.check_off {
+    let result = if ctx.stream {
         let (prepared, _) = drive(&mut prepare(ctx.models.clone(), audio, Options { trace: traced(), ..Options::new(clock()) }), &mut ctx.sessions)?;
         let prepared = Arc::new(prepared);
         audio_stages = Some(prepared.clone());
@@ -320,9 +322,9 @@ fn run_song(ctx: &mut Context, model_dir: &Path, reference_dir: &Path, assets: &
     } else {
         drive(&mut generate(ctx.models.clone(), audio, request, options), &mut ctx.sessions)?.0
     };
-    // With the check off, pass 2's draws are left.
+    // Where the release ran pass 2, its draws are left.
     let pass_2 = recording.index["draws"].as_array().ok_or("no draws")?.iter().filter(|d| d["name"].as_str().is_some_and(|n| n.starts_with("r2_pass_2/"))).count();
-    let expected_draws = if ctx.check_off { recorded_draws - pass_2 } else { recorded_draws };
+    let expected_draws = recorded_draws - pass_2;
     if consumed.get() != expected_draws {
         return Err(format!("Unconsumed draws: {}/{expected_draws}", consumed.get()));
     }
@@ -334,19 +336,14 @@ fn run_song(ctx: &mut Context, model_dir: &Path, reference_dir: &Path, assets: &
     stage4["draws_consumed"] = json!(consumed.get());
     stage4["draws_recorded"] = json!(recorded_draws);
     stage4["passes"] = detail["controls"]["difficulty"]["passes"].clone();
-    if ctx.check_off {
-        // One pass, and the check would have arranged again exactly where the release did.
-        let would_repass = detail["controls"]["difficulty"]["would_repass"] == true;
-        stage4["would_repass"] = json!(would_repass);
-        stage4["release_passes"] = json!(if pass_2 > 0 { 2 } else { 1 });
-        if detail["controls"]["difficulty"]["passes"].as_array().map(Vec::len) != Some(1) || would_repass != (pass_2 > 0) {
-            return Err(format!("stage 4 {song}: passes {} and would_repass {would_repass} against the release's {}", detail["controls"]["difficulty"]["passes"], if pass_2 > 0 { 2 } else { 1 }));
-        }
+    stage4["release_passes"] = json!(if pass_2 > 0 { 2 } else { 1 });
+    if detail["controls"]["difficulty"]["passes"].as_array().map(Vec::len) != Some(1) {
+        return Err(format!("stage 4 {song}: passes {}", detail["controls"]["difficulty"]["passes"]));
     }
     row.insert("stage4".into(), stage4);
     row.insert("replay_seconds".into(), detail["seconds"].clone());
     let expected_objects = parse_osu(&expected_osu);
-    if ctx.check_off && pass_2 > 0 {
+    if pass_2 > 0 {
         // The release's chart is pass 2's; pass 1's decisions were checked one by one above.
         row.insert("stage5".into(), json!({"passed": true, "compared": false, "reason": "the release ran pass 2", "objects": result.chart.objects.len(), "same_as_release": result.chart.objects == expected_objects}));
     } else if result.chart.objects != expected_objects {
@@ -373,7 +370,7 @@ fn run_song(ctx: &mut Context, model_dir: &Path, reference_dir: &Path, assets: &
         );
     }
     println!("{song} replay {}", row["stage5"]);
-    // The generator's own PRNG, as it runs in production; with the check off, from the same audio stages.
+    // The generator's own PRNG, as it runs in production; with `--stream`, from the same audio stages.
     println!("{song}: own PRNG run");
     let (audio, request, _, _, _) = song_inputs(model_dir, reference_dir, assets, &recording, song)?;
     let options = Options { setting: Some(setting), audio_name: Some(audio_name), ..Options::new(clock()) };
@@ -402,7 +399,7 @@ fn run_song(ctx: &mut Context, model_dir: &Path, reference_dir: &Path, assets: &
         json!({
             "passed": pages_passed, "algorithm": own_detail["runtime"]["random_algorithm"], "objects": own.chart.objects.len(), "heads": own_detail["rows"]["K"],
             "fallbacks": own_detail["fallback_count"], "seconds": own_detail["seconds"], "wall_seconds": wall, "timings": own_timings.as_ref().map(timings_json),
-            "pages": own_pages, "would_repass": own_detail["controls"]["difficulty"]["would_repass"],
+            "pages": own_pages,
         }),
     );
     report.insert(song.to_string(), Value::Object(row));
@@ -434,7 +431,7 @@ impl CloneForCheck for Request {
 fn main() {
     let mut args = std::env::args().skip(1);
     let (mut model_dir, mut reference, mut assets, mut out) = (None, None, None, None);
-    let mut check_off = false;
+    let mut stream = false;
     let mut songs: Vec<String> = Vec::new();
     while let Some(arg) = args.next() {
         match arg.as_str() {
@@ -442,7 +439,7 @@ fn main() {
             "--reference" => reference = args.next().map(PathBuf::from),
             "--assets" => assets = args.next().map(PathBuf::from),
             "--out" => out = args.next().map(PathBuf::from),
-            "--check" => check_off = args.next().as_deref() == Some("off"),
+            "--stream" => stream = true,
             _ => songs.push(arg),
         }
     }
@@ -458,7 +455,7 @@ fn main() {
     report.insert("grid_tolerance_ms".into(), json!(GRID_TOLERANCE_MS));
     report.insert("timing_tolerance_ms".into(), json!(TIMING_TOLERANCE_MS));
     report.insert("scope".into(), json!("recorded graph inputs, PCM frontends, full Rust decode with carried state and replayed random draws, exact exports, own PRNG"));
-    report.insert("check".into(), json!(if check_off { "off: one pass committed per head row from a Prepared; graphs as with the check on, not replayed again" } else { "on" }));
+    report.insert("commit".into(), json!(if stream { "a page per head row from a Prepared; graphs not replayed again" } else { "the whole chart at the end" }));
     let save = |report: &Map<String, Value>| {
         if let Some(parent) = out.parent() {
             std::fs::create_dir_all(parent).unwrap();
@@ -471,10 +468,10 @@ fn main() {
         let files = read_files(&Models::required_files(&manifest), &onnx)?;
         let models = Arc::new(Models::new(manifest, files)?);
         let sessions = Sessions::load(&onnx, &models, &Config::default())?;
-        let mut ctx = Context { models, sessions, check_off };
+        let mut ctx = Context { models, sessions, stream };
         let mut songs_report = Map::new();
         for song in &songs {
-            if check_off {
+            if stream {
                 songs_report.insert(song.clone(), json!({}));
                 continue;
             }
@@ -500,8 +497,8 @@ fn main() {
             save(&report);
             result?;
         }
-        let first = if check_off { 2 } else { 1 };
-        let passed = songs.iter().all(|s| (first..=5).all(|n| songs_report[s][format!("stage{n}")]["passed"] == true) && songs_report[s]["prng"]["passed"] == true && (!check_off || songs_report[s]["pages"]["passed"] == true));
+        let first = if stream { 2 } else { 1 };
+        let passed = songs.iter().all(|s| (first..=5).all(|n| songs_report[s][format!("stage{n}")]["passed"] == true) && songs_report[s]["prng"]["passed"] == true && (!stream || songs_report[s]["pages"]["passed"] == true));
         report.insert("passed".into(), json!(passed));
         if !passed {
             return Err("some stage did not pass".to_string());

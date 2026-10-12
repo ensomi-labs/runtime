@@ -181,8 +181,8 @@ export interface ChartPage {
     end_of_stream: boolean;
 }
 export interface ScheduleOptions extends Omit<GenerateOptions, 'onProgress'> {
-    /** 'ahead-of-play' (default): a page per head row with R2's difficulty check off, play while generating.
-     * 'whole-chart': the whole chart with the check, in one page, before play. */
+    /** 'ahead-of-play' (default): a page per head row, play while generating.
+     * 'whole-chart': the chart in one page, before play. Both make the same chart. */
     mode?: 'ahead-of-play' | 'whole-chart';
     /** The judge of the rules whose settle lead the lead takes; default 'C'. */
     judge?: 'A' | 'B' | 'C' | 'D' | 'E';

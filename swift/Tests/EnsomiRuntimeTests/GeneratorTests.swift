@@ -70,8 +70,8 @@ final class GeneratorTests: XCTestCase {
         XCTAssertEqual(wholeReady, .ready(joinMs: 0))
         let wholeDone = try await whole.work()
         XCTAssertEqual(wholeDone, .done)
-        let checked = try XCTUnwrap(whole.result())
-        XCTAssertNil(firstDifference(checked.osu, expected), "the whole chart from the stored audio stages differs from the native chart")
+        let wholeResult = try XCTUnwrap(whole.result())
+        XCTAssertNil(firstDifference(wholeResult.osu, expected), "the whole chart from the stored audio stages differs from the native chart")
 
         let streamed = try ChartScheduler.fromPcm(
             generator: generator, pcm: pcm, sampleRate: sampleRate, request: request, mode: .aheadOfPlay, lead: lead
@@ -80,18 +80,18 @@ final class GeneratorTests: XCTestCase {
         streamed.start(atMs: 0, session: session)
         let ready = try await streamed.work()
         XCTAssertEqual(ready, .ready(joinMs: 0))
-        XCTAssertLessThan(session.coverageMs(), Double(checked.chart.durationMs))
+        XCTAssertLessThan(session.coverageMs(), Double(wholeResult.chart.durationMs))
         let done = try await streamed.work()
         XCTAssertEqual(done, .done)
         let result = try XCTUnwrap(streamed.result())
         XCTAssertEqual(session.coverageMs(), .infinity)
         XCTAssertEqual(session.visibleObjects(lowerMs: -.infinity, upperMs: .infinity).count, result.chart.objects.count)
         XCTAssertEqual(streamed.prepared()?.bytes(), bytes)
-        // The streamed chart is the checked one unless the check arranged the song again.
+        // One arrangement in either mode: the streamed chart is the whole one.
         let receipt = try JSONSerialization.jsonObject(with: Data(result.receipt.receiptJson.utf8)) as! [String: Any]
         let difficulty = (receipt["controls"] as! [String: Any])["difficulty"] as! [String: Any]
         XCTAssertEqual((difficulty["passes"] as! [Any]).count, 1)
-        XCTAssertEqual(result.osu == checked.osu, difficulty["would_repass"] as? Bool == false)
+        XCTAssertEqual(result.osu, wholeResult.osu)
     }
 
     func testModelFilesAreTheGraphsAndArraysTheConfigNames() throws {
