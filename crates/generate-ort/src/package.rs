@@ -1,5 +1,5 @@
 //! A model directory as a client holds it: the runtime config (`runtime.json`), the files it names and,
-//! when present, the EnsomiProtocol model-package manifest `ensomi-model.json`.
+//! when present, an `ensomi-model.json` manifest (its format is not settled; the released model has none).
 use ensomi_generate::capabilities::{MODEL_NAME, MODEL_VERSION};
 use ensomi_generate::{Models, RUNTIME_VERSION};
 use serde_json::Value;
