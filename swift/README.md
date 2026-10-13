@@ -175,5 +175,7 @@ thread, as the parity recordings were checked.
 
 The xcframework grows from 8 MiB to 128 MiB (43 MiB a slice). In the app (Release, unsigned), EnsomiCore grows by
 31.8 MiB on macOS and 31.5 MiB on iOS, or 21.6 and 21.4 MiB once stripped as an archive strips it. ONNX
-Runtime's licence (MIT) and third-party notices are in [`licenses/onnxruntime`](../licenses/onnxruntime) and
-are copied to `build/apple/licenses`; an app that ships the generator shows them with its acknowledgements.
+Runtime's licence (MIT) and third-party notices are in [`licenses/onnxruntime`](../licenses/onnxruntime); an app that
+ships the generator shows them with its acknowledgements. The package carries them as resources:
+`ChartGenerator.onnxRuntimeLicenseFiles` gives the URLs of `LICENSE` and `ThirdPartyNotices.txt` to read. They are
+also copied to `build/apple/licenses` beside the xcframework.

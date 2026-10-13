@@ -228,6 +228,16 @@ final class GeneratorTests: XCTestCase {
         }
     }
 
+    /// An app finds ONNX Runtime's licence and notices in the package.
+    func testThePackageCarriesOnnxRuntimesLicence() throws {
+        let files = ChartGenerator.onnxRuntimeLicenseFiles
+        XCTAssertEqual(files.map(\.lastPathComponent), ["LICENSE", "ThirdPartyNotices.txt"])
+        for file in files {
+            XCTAssertFalse(try String(contentsOf: file, encoding: .utf8).isEmpty, file.path)
+        }
+        XCTAssertTrue(try String(contentsOf: files[0], encoding: .utf8).contains("MIT License"))
+    }
+
     #if os(macOS)
     /// The archive opens with the system's unzip and holds the files the web runtime's `.osz` holds.
     func testOszOpensWithTheChartTheSongAndTheReceipt() throws {

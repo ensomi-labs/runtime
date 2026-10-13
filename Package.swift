@@ -29,13 +29,13 @@ let package = Package(
     ],
     targets: [
         binary,
-        // The xcframework carries ONNX Runtime, which is C++ and uses Core ML. The resampler tables are the
-        // generator's audio front end, shared with the npm package.
+        // The xcframework carries ONNX Runtime, which is C++ and uses Core ML; its licence and notices are in
+        // licenses/onnxruntime. The resampler tables are the generator's audio front end, shared with the npm package.
         .target(
             name: "EnsomiRuntime",
             dependencies: ["EnsomiRuntimeFFI"],
             path: "swift/Sources/EnsomiRuntime",
-            resources: [.copy("../../../assets/resampler")],
+            resources: [.copy("../../../assets/resampler"), .copy("../../../licenses")],
             linkerSettings: [.linkedLibrary("c++"), .linkedFramework("CoreML"), .linkedFramework("Foundation")]
         ),
         .testTarget(name: "EnsomiRuntimeTests", dependencies: ["EnsomiRuntime"], path: "swift/Tests/EnsomiRuntimeTests"),
