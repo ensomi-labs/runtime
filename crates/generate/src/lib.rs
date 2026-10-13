@@ -17,6 +17,7 @@ mod json;
 mod machine;
 mod math;
 mod models;
+pub mod package;
 mod prepared;
 mod prior;
 mod r2;

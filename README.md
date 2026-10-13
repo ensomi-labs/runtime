@@ -9,7 +9,7 @@ and keep only what is specific to their platform.
 | Layer | Holds | Lives in |
 | --- | --- | --- |
 | Messages between programs | chart, generation, capabilities, chart stream (unreleased) | [EnsomiProtocol](https://github.com/ensomi-labs/protocol) |
-| Model package | `runtime.json` and the files it names; an `ensomi-model.json` manifest is read when present, its format not settled | the released model's `onnx/` directory (`sed-i/ensomi-r2`) |
+| Model package | the manifest `ensomi-package.json`, format `ensomi-package/1` ([`docs/model-package.md`](docs/model-package.md)), which this runtime alone interprets; `runtime.json` and the files it names | the released model's `onnx/` directory (`sed-i/ensomi-r2`) |
 | Conformance fixtures | inputs and expected outputs any implementation must reproduce | `conformance/` |
 | Core | gameplay rules with their ruleset, input events, judgement events and score, clock and offset arithmetic, note layout, chart sources, the generator's host pipeline | `crates/` |
 | Compute | the published ONNX graphs, run by ONNX Runtime with the platform's execution provider | each binding |
@@ -67,6 +67,7 @@ A comparison with its charts holds only where it arranged the song once, as this
 Apache-2.0. The model published at `sed-i/ensomi-r2` is licensed CC BY-NC-SA 4.0, except BeatThis (CPJKU):
 `onnx/beatthis.onnx`, an ONNX export of its `final0` checkpoint, and its front-end arrays
 `onnx/beatthis-mel-filter.bin` and `onnx/beatthis-hann-window.bin` keep BeatThis's MIT licence
-(`onnx/BeatThis-LICENSE.txt`). `runtime.json` names that file as a licence notice, one of the files a client
-downloads with the model, for the app to show: `modelFiles` and `noticeFiles` in Swift, `noticeFiles` and
-`models.notices` from `loadModels` in JavaScript.
+(`onnx/BeatThis-LICENSE.txt`). The package's manifest names that file as a licence notice, one of the files a client
+downloads with the model, for the app to show: `checkPackage` in Swift and JavaScript, and `models.notices` from
+`loadModels`. `runtime.json` names it too, which `modelFiles` and `noticeFiles` read for a directory without the
+manifest.

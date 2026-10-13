@@ -1,5 +1,13 @@
 import { callCore, coreInstance, loadCore, readFile } from './core.js';
 
+/** The package's manifest, at its root beside `runtime.json` (docs/model-package.md). */
+const PACKAGE = 'ensomi-package.json';
+
+/** What a source rejects with for a file it does not have: an error with `code` 'ENOENT', as Node's `readFile` gives. */
+function missingFile(path) {
+    return Object.assign(new Error(`Missing model file: ${path}`), { code: 'ENOENT' });
+}
+
 /** Reads files relative to a base URL: with `fetch`, or from the file system for a `file:` URL in Node. */
 export function urlSource(baseUrl) {
     const base = baseUrl.replace(/\/$/, '') + '/';
@@ -8,6 +16,8 @@ export function urlSource(baseUrl) {
         if (url.protocol === 'file:')
             return readFile(url);
         const response = await fetch(url);
+        if (response.status === 404)
+            throw missingFile(path);
         if (!response.ok)
             throw new Error(`Model download failed: ${path} (${response.status})`);
         return new Uint8Array(await response.arrayBuffer());
@@ -19,9 +29,37 @@ export function localFilesSource(files) {
     return async (path) => {
         const file = entries.get(path) ?? entries.get(path.split('/').pop());
         if (!file)
-            throw new Error(`Missing model file: ${path}`);
+            throw missingFile(path);
         return new Uint8Array(await file.arrayBuffer());
     };
+}
+
+/** Checks an `ensomi-package.json` and resolves to what it describes; rejects naming what is wrong. */
+export async function checkPackage(manifestJson) {
+    return (await loadCore()).checkPackage(manifestJson);
+}
+
+/** Reads the files a checked manifest lists, each checked against its listed size and SHA-256; any other path is
+ * refused. */
+function checkedSource(read, info) {
+    const listed = new Map(info.files.map(file => [file.path, file]));
+    return async (path) => {
+        const file = listed.get(path);
+        if (!file)
+            throw new Error(`${path} is not among the files ${PACKAGE} lists`);
+        const bytes = await read(path);
+        const sha256 = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), b => b.toString(16).padStart(2, '0')).join('');
+        if (bytes.length !== file.size || sha256 !== file.sha256)
+            throw new Error(`${path} does not match ${PACKAGE}: ${bytes.length} bytes with SHA-256 ${sha256}, where it lists ${file.size} bytes with ${file.sha256}`);
+        return bytes;
+    };
+}
+
+/** `promise`, its rejection marked as handled: it is awaited later, and a failure that comes first must not also be
+ * reported as unhandled. */
+function handled(promise) {
+    promise.catch(() => undefined);
+    return promise;
 }
 
 /** Graphs that use WebGPU when it is available. The other graphs run once per beat or head row on small
@@ -42,7 +80,7 @@ export async function noticeFiles(runtimeConfigJson) {
 }
 
 export class Models {
-    constructor(core, wasm, ort, sessions, source, runtimeSource, manifestJson, notices) {
+    constructor(core, wasm, ort, sessions, source, runtimeSource, manifestJson, notices, info) {
         this.core = core;
         this.wasm = wasm;
         this.ort = ort;
@@ -51,6 +89,7 @@ export class Models {
         this.runtimeSource = runtimeSource;
         this.manifestJson = manifestJson;
         this.notices = notices;
+        this.package = info;
         this.instance = coreInstance();
         this.capabilities = JSON.parse(wasm.capabilities());
     }
@@ -76,16 +115,26 @@ function defaultRuntimeSource(path) {
 
 /**
  * Loads the six graphs into ONNX Runtime Web sessions and the rest of the model package into the core, and the
- * licence notices into `models.notices`.
+ * licence notices into `models.notices`. With `ensomi-package.json`, checks it, fetches the files it lists, each checked
+ * against its SHA-256, and reads no other; without it (the source rejects with `code` 'ENOENT'), reads `runtime.json`
+ * and the files it names.
  * `source` is a base URL or an async function `(relativePath) => Uint8Array`.
  * Options: `ort` (the onnxruntime-web module), `session` (SessionOptions), `backend` ('webgpu' | 'wasm'),
  * `wasm` (ORT's `env.wasm` flags), `runtimeSource` (reads the `resample-*` tables), `core` (the Wasm core's
  * bytes, module or URL).
  */
 export async function loadModels(source, options = {}) {
-    const read = typeof source === 'string' ? urlSource(source) : source;
+    const fetchFile = typeof source === 'string' ? urlSource(source) : source;
     const core = await loadCore(options.core);
-    const manifestBytes = await read('runtime.json');
+    const info = await fetchFile(PACKAGE).then(bytes => core.checkPackage(new TextDecoder().decode(bytes)), error => {
+        if (error?.code !== 'ENOENT')
+            throw error;
+    });
+    // With a manifest, every file it lists is fetched at once and checked; the loading below reads those.
+    const checked = info ? checkedSource(fetchFile, info) : fetchFile;
+    const fetched = new Map(info?.files.map(file => [file.path, handled(checked(file.path))]));
+    const read = path => fetched.get(path) ?? checked(path);
+    const manifestBytes = await read(info?.config ?? 'runtime.json');
     const manifestJson = new TextDecoder().decode(manifestBytes);
     const manifest = JSON.parse(manifestJson);
     if (manifest.format !== 'ensomi-onnx-runtime-v1')
@@ -97,9 +146,12 @@ export async function loadModels(source, options = {}) {
     const sessions = {};
     // All files download at once; sessions are created in order, each as soon as its file has arrived.
     const graphs = Object.entries(manifest.graphs), reads = graphs.map(([, graph]) => read(graph.file));
-    // The licence notices are shown with the model, not needed to run it: one the source lacks (a folder installed
-    // without it) is left out.
-    const notices = Promise.all(core.WasmModels.noticeFiles(manifestJson).map(path => read(path).then(bytes => ({ path, text: new TextDecoder().decode(bytes) }), () => undefined)));
+    // The licence notices are shown with the model, not needed to run it. A manifest's notices are among its files;
+    // without one, a notice the source lacks (a folder installed without it) is left out.
+    const notice = (path, bytes) => ({ path, text: new TextDecoder().decode(bytes) });
+    const notices = handled(info
+        ? Promise.all(info.notices.map(path => read(path).then(bytes => notice(path, bytes))))
+        : Promise.all(core.WasmModels.noticeFiles(manifestJson).map(path => read(path).then(bytes => notice(path, bytes), () => undefined))).then(list => list.filter(Boolean)));
     const create = (async () => {
         for (const [i, [name]] of graphs.entries())
             sessions[name] = await ort.InferenceSession.create(await reads[i], options.session ?? { executionProviders: backend === 'webgpu' && GPU_GRAPHS.has(name) ? ['webgpu', 'wasm'] : ['wasm'] });
@@ -112,13 +164,13 @@ export async function loadModels(source, options = {}) {
     try {
         const wasm = await coreModels(core, manifestJson, read);
         try {
-            await Promise.all([create, ...reads]);
+            await Promise.all([create, ...reads, ...fetched.values()]);
         }
         catch (error) {
             wasm.free();
             throw error;
         }
-        return new Models(core, wasm, ort, sessions, read, options.runtimeSource ?? defaultRuntimeSource, manifestJson, (await notices).filter(Boolean));
+        return new Models(core, wasm, ort, sessions, checked, options.runtimeSource ?? defaultRuntimeSource, manifestJson, await notices, info);
     }
     catch (error) {
         await release();

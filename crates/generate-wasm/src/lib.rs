@@ -12,7 +12,7 @@
 //! like the traps of the instance (an exhausted memory or stack). After either, the instance's memory may be
 //! inconsistent, so the JavaScript API replaces the instance (`js/src/core.js`).
 use ensomi_gameplay::{Judge, Ruleset};
-use ensomi_generate::{capabilities, generate, prepare, Action, Audio, Data, Draw, Event, GenerationResult, Generator, Lead, Mode, Models, Options, Page, Prepared, ReplayRandom, Request, Samples, Scheduler, Source, Step, Tensor, Tensors, TokenKind};
+use ensomi_generate::{capabilities, generate, package, prepare, Action, Audio, Data, Draw, Event, GenerationResult, Generator, Lead, Mode, Models, Options, Page, Prepared, ReplayRandom, Request, Samples, Scheduler, Source, Step, Tensor, Tensors, TokenKind};
 use js_sys::{Array, BigInt64Array, Float32Array, Float64Array, Object, Reflect, Uint8Array};
 use std::cell::Cell;
 use std::collections::HashMap;
@@ -305,6 +305,34 @@ impl WasmGenerator {
     pub fn work(&mut self) -> bool {
         self.inner.work()
     }
+}
+
+/// Checks an `ensomi-package.json` (`ensomi_generate::package::check`) and returns what it describes:
+/// `{model: {id, name, version}, license, notices, files: [{path, size, sha256}], totalBytes, config}`. Throws naming
+/// what is wrong.
+#[wasm_bindgen(js_name = checkPackage)]
+pub fn check_package(manifest_json: &str) -> Result<JsValue, JsError> {
+    let info = package::check(manifest_json).map_err(error)?;
+    let model = Object::new();
+    set(&model, "id", info.model.id);
+    set(&model, "name", info.model.name);
+    set(&model, "version", info.model.version);
+    let files = Array::new();
+    for file in info.files {
+        let entry = Object::new();
+        set(&entry, "path", file.path);
+        set(&entry, "size", file.size as f64);
+        set(&entry, "sha256", file.sha256);
+        files.push(&entry);
+    }
+    let object = Object::new();
+    set(&object, "model", model);
+    set(&object, "license", info.license);
+    set(&object, "notices", info.notices.iter().map(|p| JsValue::from_str(p)).collect::<Array>());
+    set(&object, "files", files);
+    set(&object, "totalBytes", info.total_bytes as f64);
+    set(&object, "config", info.config);
+    Ok(object.into())
 }
 
 /// Checks the stored bytes of a `Prepared`; throws for bytes of another format, runtime version or model.

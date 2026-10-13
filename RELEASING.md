@@ -101,17 +101,21 @@ These need data CI does not have. Run them in `~/ensomi/ensomi-runtime` on the c
    ENSOMI_RUNTIME_XCFRAMEWORK=build/apple/EnsomiRuntimeFFI.xcframework swift test
    ```
 
-7. The packed npm package from a clean directory, with only its own Wasm core and resampler tables; it prints
-   `"same_hit_objects":true` and `"notices":["BeatThis-LICENSE.txt"]`:
+7. The packed npm package from a clean directory, with only its own Wasm core and resampler tables; `packed.mjs` prints
+   `"same_hit_objects":true` and `"notices":["BeatThis-LICENSE.txt"]`, and `package.mjs`, which loads the release with
+   and without the published package's manifest (a changed file must be refused), prints `{"passed":true}`:
 
    ```sh
    scripts/wasm-build.sh
    out=$(mktemp -d) && (cd js && npm pack --pack-destination "$out")
    cd "$(mktemp -d)" && npm init -y > /dev/null && npm install "$out"/ensomi-runtime-*.tgz
-   cp ~/ensomi/ensomi-runtime/js/checks/packed.mjs ~/ensomi/ensomi-runtime/js/checks/recording.mjs .
+   cp ~/ensomi/ensomi-runtime/js/checks/packed.mjs ~/ensomi/ensomi-runtime/js/checks/recording.mjs \
+     ~/ensomi/ensomi-runtime/js/checks/package.mjs .
    node packed.mjs --model-dir ~/ensomi/ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2/onnx \
      --recording ~/ensomi/ensomi-model/artifacts/runtime-ref/bulk/hesitation-snow \
      --chart ~/ensomi/ensomi-runtime/conformance/generate/native-charts/hesitation-snow
+   node package.mjs --model-dir ~/ensomi/ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2/onnx \
+     --manifest ~/ensomi/ensomi-runtime/conformance/package/ensomi-package.json
    ```
 
 ## Cutting the release
@@ -138,6 +142,6 @@ and re-run that job from the run page; it publishes the same tarball.
 
 ## Using a release
 
-- Swift: `.package(url: "https://github.com/ensomi-labs/runtime", from: "0.2.1")` and
+- Swift: `.package(url: "https://github.com/ensomi-labs/runtime", from: "0.3.0")` and
   `.product(name: "EnsomiRuntime", package: "runtime")`.
 - npm: `npm install @ensomi/runtime`.

@@ -1,72 +1,50 @@
-use ensomi_generate::{Models, RUNTIME_VERSION};
-use ensomi_generate_ort::package::{open, read_manifest};
+use ensomi_generate::package::check;
+use ensomi_generate::Models;
+use ensomi_generate_ort::package::open;
 use serde_json::{json, Value};
 use std::path::PathBuf;
 
-/// A directory with one 3-byte file and the given `ensomi-model.json`.
-fn package(name: &str, manifest: Value) -> PathBuf {
+/// The published package's manifest (`conformance/package`).
+const PUBLISHED: &str = include_str!("../../../conformance/package/ensomi-package.json");
+
+/// A new empty directory for one test.
+fn directory(name: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("ensomi-package-{name}-{}", std::process::id()));
+    _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
-    std::fs::write(dir.join("beatthis.onnx"), b"abc").unwrap();
-    std::fs::write(dir.join("ensomi-model.json"), manifest.to_string()).unwrap();
     dir
 }
 
-fn manifest(min_version: &str, size: Value) -> Value {
-    json!({
-        "modelName": "Ensomi R2",
-        "modelVersion": "r2-1.0",
-        "license": "CC-BY-NC-SA-4.0",
-        "files": [{"path": "beatthis.onnx", "sha256Hex": "ba7816bf", "sizeBytes": size}],
-        "graphs": [{"name": "beatthis", "file": "beatthis.onnx", "opset": 17}],
-        "runtimeConfigPath": "runtime.json",
-        "runtimeVersions": {"minVersion": min_version},
-    })
+/// A package whose manifest lists one file, a 3-byte `runtime.json`, with `runtime` written as that file, or none.
+fn package_of_one_file(name: &str, runtime: Option<&[u8]>) -> PathBuf {
+    let dir = directory(name);
+    let mut manifest: Value = serde_json::from_str(PUBLISHED).unwrap();
+    manifest["notices"] = json!([]);
+    manifest["files"] = json!([{"path": "runtime.json", "size": 3, "sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"}]);
+    std::fs::write(dir.join("ensomi-package.json"), manifest.to_string()).unwrap();
+    if let Some(bytes) = runtime {
+        std::fs::write(dir.join("runtime.json"), bytes).unwrap();
+    }
+    dir
 }
 
 #[test]
-fn reads_the_proto3_json_manifest() {
-    let read = read_manifest(&package("camel", manifest("0.1.0", json!("3")))).unwrap();
-    assert_eq!(read.license, "CC-BY-NC-SA-4.0");
-    assert_eq!(read.runtime_config_path, "runtime.json");
-    assert_eq!((read.files[0].path.as_str(), read.files[0].sha256_hex.as_str(), read.files[0].size_bytes), ("beatthis.onnx", "ba7816bf", 3));
+fn refuses_a_package_with_a_listed_file_missing_or_of_another_size() {
+    for (name, runtime) in [("missing", None), ("size", Some(&b"abcd"[..]))] {
+        let error = open(&package_of_one_file(name, runtime)).err().unwrap();
+        assert!(error.contains("runtime.json is missing or is not the 3 bytes ensomi-package.json lists"), "{error}");
+    }
+    // At its listed size the file is read as the runtime config, which these three bytes are not.
+    let error = open(&package_of_one_file("listed", Some(&b"abc"[..]))).err().unwrap();
+    assert!(error.starts_with("runtime.json: "), "{error}");
 }
 
 #[test]
-fn accepts_proto_field_names() {
-    let snake = json!({
-        "model_name": "Ensomi R2",
-        "model_version": "r2-1.0",
-        "files": [{"path": "beatthis.onnx", "sha256_hex": "ba7816bf", "size_bytes": 3}],
-        "runtime_config_path": "runtime.json",
-        "runtime_versions": {"min_version": "0.0.1", "max_version_exclusive": "1.0.0"},
-    });
-    assert_eq!(read_manifest(&package("snake", snake)).unwrap().files[0].sha256_hex, "ba7816bf");
-}
-
-#[test]
-fn refuses_a_package_for_a_later_runtime() {
-    let major: u64 = RUNTIME_VERSION.split('.').next().unwrap().parse().unwrap();
-    let later = format!("{}.0.0", major + 1);
-    let error = read_manifest(&package("later", manifest(&later, json!("3")))).err().unwrap();
-    assert!(error.contains(&format!("needs runtime {later}")), "{error}");
-    // The maximum is exclusive.
-    let mut capped = manifest("0.0.1", json!("3"));
-    capped["runtimeVersions"]["maxVersionExclusive"] = json!(RUNTIME_VERSION);
-    assert!(read_manifest(&package("capped", capped)).is_err());
-}
-
-#[test]
-fn refuses_a_file_of_another_size() {
-    let error = read_manifest(&package("size", manifest("0.1.0", json!("4")))).err().unwrap();
-    assert!(error.contains("beatthis.onnx"), "{error}");
-}
-
-#[test]
-fn refuses_another_model() {
-    let mut other = manifest("0.1.0", json!("3"));
-    other["modelVersion"] = json!("r3-1.0");
-    assert!(read_manifest(&package("other", other)).is_err());
+fn refuses_a_package_its_manifest_check_refuses() {
+    let dir = directory("refused");
+    std::fs::write(dir.join("ensomi-package.json"), PUBLISHED.replace("\"version\": 1", "\"version\": 2")).unwrap();
+    let error = open(&dir).err().unwrap();
+    assert!(error.contains("pipeline r2@2"), "{error}");
 }
 
 #[test]
@@ -101,6 +79,26 @@ fn opens_a_release_installed_without_its_notices() {
         std::fs::copy(release_dir.join(&path), dir.join(&path)).unwrap();
     }
     assert_eq!(open(&dir).err(), None);
+}
+
+/// The released files with the published package's manifest beside them open, with the manifest's sizes; the manifest
+/// lists the released runtime config and every file it names.
+#[test]
+fn opens_the_release_with_its_manifest() {
+    let Some((release_dir, release)) = release() else { return };
+    let package = check(PUBLISHED).unwrap();
+    let dir = directory("release");
+    for file in &package.files {
+        std::fs::copy(release_dir.join(&file.path), dir.join(&file.path)).unwrap();
+    }
+    std::fs::write(dir.join("ensomi-package.json"), PUBLISHED).unwrap();
+    let (models, read) = open(&dir).unwrap();
+    assert_eq!(read, Some(package.clone()));
+    let listed: Vec<&str> = package.files.iter().map(|f| f.path.as_str()).collect();
+    let graphs = models.graphs.iter().map(|g| g.file.clone());
+    for path in graphs.chain(Models::required_files(&release)).chain(Models::notice_files(&release)) {
+        assert!(listed.contains(&path.as_str()), "{path}");
+    }
 }
 
 /// A runtime config that does not hold together fails at open, naming what is wrong.
