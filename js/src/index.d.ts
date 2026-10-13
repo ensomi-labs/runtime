@@ -125,6 +125,9 @@ export declare function localFilesSource(files: Iterable<File>): FileSource;
 
 export declare class Models {
     readonly capabilities: ModelCapabilities;
+    /** The licence notices `runtime.json` names, as read with the model, for the app to show with it: BeatThis's MIT
+     * licence. A notice the source lacks is left out. */
+    readonly notices: { path: string; text: string }[];
     readonly ort: Ort;
     readonly sessions: Record<string, ORT.InferenceSession>;
     dispose(): Promise<void>;
@@ -142,6 +145,9 @@ export interface LoadModelsOptions {
     core?: BufferSource | WebAssembly.Module | URL | string;
 }
 export declare function loadModels(source: FileSource | string, options?: LoadModelsOptions): Promise<Models>;
+/** The licence notices a `runtime.json` names, as paths relative to the model directory: files to download and show with
+ * the model, which loading does not need. Loads the package's Wasm core if no `loadModels` has. */
+export declare function noticeFiles(runtimeConfigJson: string): Promise<string[]>;
 
 export interface GenerateOptions {
     onProgress?: (progress: GenerationProgress) => void;

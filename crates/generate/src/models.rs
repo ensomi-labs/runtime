@@ -448,6 +448,13 @@ impl Models {
         paths
     }
 
+    /// The licence notices the manifest names, which a client downloads and shows with the model: BeatThis's
+    /// licence (`frontend_arrays.beatthis_license`). `Models::new` does not need them, so a model directory
+    /// installed without them still opens.
+    pub fn notice_files(manifest: &Value) -> Vec<String> {
+        manifest["frontend_arrays"]["beatthis_license"].as_str().map(str::to_string).into_iter().collect()
+    }
+
     pub fn file(&self, path: &str) -> Result<&[u8], String> {
         self.files.get(path).map(Vec::as_slice).ok_or_else(|| format!("Missing model file: {path}"))
     }

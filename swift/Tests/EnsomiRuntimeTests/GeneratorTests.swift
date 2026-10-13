@@ -122,10 +122,13 @@ final class GeneratorTests: XCTestCase {
         XCTAssertEqual(scheduler.result()?.osu, fresh.osu)
     }
 
-    func testModelFilesAreTheGraphsAndArraysTheConfigNames() throws {
+    func testModelFilesAreTheGraphsArraysAndNoticesTheConfigNames() throws {
         let paths = try Paths()
-        let files = try modelFiles(runtimeConfig: String(contentsOf: paths.model.appendingPathComponent("runtime.json"), encoding: .utf8))
+        let config = try String(contentsOf: paths.model.appendingPathComponent("runtime.json"), encoding: .utf8)
+        let files = try modelFiles(runtimeConfig: config)
         XCTAssertEqual(files.filter { $0.hasSuffix(".onnx") }.count, 6)
+        XCTAssertEqual(try noticeFiles(runtimeConfig: config), ["BeatThis-LICENSE.txt"])
+        XCTAssertTrue(files.contains("BeatThis-LICENSE.txt"))
         for file in files {
             XCTAssertTrue(FileManager.default.fileExists(atPath: paths.model.appendingPathComponent(file).path), file)
         }

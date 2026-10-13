@@ -64,5 +64,9 @@ A comparison with its charts holds only where it arranged the song once, as this
 
 ## Licence
 
-Apache-2.0. The model weights published at `sed-i/ensomi-r2` carry their own licence
-(CC BY-NC-SA 4.0).
+Apache-2.0. The model published at `sed-i/ensomi-r2` is licensed CC BY-NC-SA 4.0, except BeatThis (CPJKU):
+`onnx/beatthis.onnx`, an ONNX export of its `final0` checkpoint, and its front-end arrays
+`onnx/beatthis-mel-filter.bin` and `onnx/beatthis-hann-window.bin` keep BeatThis's MIT licence
+(`onnx/BeatThis-LICENSE.txt`). `runtime.json` names that file as a licence notice, one of the files a client
+downloads with the model, for the app to show: `modelFiles` and `noticeFiles` in Swift, `noticeFiles` and
+`models.notices` from `loadModels` in JavaScript.

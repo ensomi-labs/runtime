@@ -5885,12 +5885,23 @@ public func exportOsz(osu: String, audio: Data, receiptJson: String) -> Data  {
 })
 }
 /**
- * The files a model directory needs besides its runtime config (`runtime.json`): the graphs and the
- * arrays the config names, as paths relative to the directory.
+ * The files a model directory needs besides its runtime config (`runtime.json`): the graphs, the
+ * arrays the config names and its licence notices, as paths relative to the directory.
  */
 public func modelFiles(runtimeConfig: String)throws  -> [String]  {
     return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
     uniffi_ensomi_runtime_ffi_fn_func_model_files(
+        FfiConverterString.lower(runtimeConfig),$0
+    )
+})
+}
+/**
+ * The licence notices among the model files, as paths relative to the directory, for an app to show with
+ * the model: BeatThis's MIT licence. `open` does not read them, so a directory without them still opens.
+ */
+public func noticeFiles(runtimeConfig: String)throws  -> [String]  {
+    return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
+    uniffi_ensomi_runtime_ffi_fn_func_notice_files(
         FfiConverterString.lower(runtimeConfig),$0
     )
 })
@@ -5926,7 +5937,10 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ensomi_runtime_ffi_checksum_func_export_osz() != 11885) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_ensomi_runtime_ffi_checksum_func_model_files() != 8209) {
+    if (uniffi_ensomi_runtime_ffi_checksum_func_model_files() != 4720) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_func_notice_files() != 6381) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_method_gameplayfeedback_advance_judgement_time() != 50584) {

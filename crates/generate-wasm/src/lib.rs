@@ -59,6 +59,13 @@ impl WasmModels {
         Ok(Models::required_files(&manifest).iter().map(|p| JsValue::from_str(p)).collect())
     }
 
+    /// The licence notices this `runtime.json` names, which `new WasmModels` does not need.
+    #[wasm_bindgen(js_name = noticeFiles)]
+    pub fn notice_files(manifest_json: &str) -> Result<Array, JsError> {
+        let manifest: serde_json::Value = serde_json::from_str(manifest_json).map_err(|e| error(e.to_string()))?;
+        Ok(Models::notice_files(&manifest).iter().map(|p| JsValue::from_str(p)).collect())
+    }
+
     /// The three `resample-*` files for a PCM sample rate the release bundles tables for, or null.
     #[wasm_bindgen(js_name = resamplerFiles)]
     pub fn resampler_files(sample_rate: f64) -> JsValue {
