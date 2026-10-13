@@ -335,6 +335,14 @@ pub fn check_package(manifest_json: &str) -> Result<JsValue, JsError> {
     Ok(object.into())
 }
 
+/// Checks that an `ensomi-package.json` lists every file the runtime config it names needs
+/// (`ensomi_generate::package::check_config`); throws naming the first it leaves out.
+#[wasm_bindgen(js_name = checkPackageConfig)]
+pub fn check_package_config(manifest_json: &str, config_json: &str) -> Result<(), JsError> {
+    let config = serde_json::from_str(config_json).map_err(|e| error(e.to_string()))?;
+    package::check_config(&package::check(manifest_json).map_err(error)?, &config).map_err(error)
+}
+
 /// Checks the stored bytes of a `Prepared`; throws for bytes of another format, runtime version or model.
 #[wasm_bindgen(js_name = checkPrepared)]
 pub fn check_prepared(bytes: &[u8]) -> Result<(), JsError> {

@@ -1,7 +1,7 @@
 //! `ensomi-package.json`, the manifest of a model package (format `ensomi-package/1`, `docs/model-package.md`), read
 //! and checked without IO. Opening or downloading the files it lists is the caller's.
 use crate::capabilities::{MODEL_ID, MODEL_NAME, MODEL_VERSION, PIPELINE_ID, PIPELINE_VERSION};
-use crate::RUNTIME_VERSION;
+use crate::{Models, RUNTIME_VERSION};
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -116,4 +116,15 @@ pub fn check(manifest_json: &str) -> Result<PackageInfo, String> {
     }
     let total_bytes = manifest.files.iter().fold(0u64, |total, file| total.saturating_add(file.size));
     Ok(PackageInfo { model: manifest.model, license: manifest.license, notices: manifest.notices, files: manifest.files, total_bytes, config: manifest.config })
+}
+
+/// Checks that a checked manifest lists every file the runtime config it names needs: the graphs, the files
+/// `Models::new` reads and the licence notices. Run on that config once it is read, before the other files.
+pub fn check_config(package: &PackageInfo, config: &Value) -> Result<(), String> {
+    let graphs = config["graphs"].as_object().into_iter().flat_map(|graphs| graphs.values()).filter_map(|graph| graph["file"].as_str().map(str::to_string));
+    let missing = graphs.chain(Models::required_files(config)).chain(Models::notice_files(config)).find(|path| !package.files.iter().any(|file| file.path == *path));
+    match missing {
+        Some(path) => Err(format!("{path} is named by {} but not listed in {MANIFEST}", package.config)),
+        None => Ok(()),
+    }
 }

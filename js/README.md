@@ -51,8 +51,10 @@ scheduler.work().then(({ result }) => {});                 // generates ahead of
 - `pcm` is mono `Float32Array` or `Float64Array`, or `{samples, channels}` with interleaved samples. PCM at a rate
   other than 22050 Hz is resampled with the soxr tables in the package's `resampler/` directory.
 - `loadModels` fetches the package's manifest, `ensomi-package.json` ([docs/model-package.md](../docs/model-package.md)),
-  first. With it, it checks the manifest, fetches the files it lists and checks each one's SHA-256 with
-  `crypto.subtle` (in a browser, a secure context), and reads no other file; a mismatch rejects, naming the file.
+  first. With it, it checks the manifest, fetches the config it names and refuses a manifest that leaves out a file
+  that config names, as Swift's `open` does, before fetching anything else; then it fetches the other files it lists
+  and checks each one's SHA-256 with `crypto.subtle` (in a browser, a secure context), and reads no other file; a
+  mismatch rejects, naming the file.
   `models.package` is the checked manifest and `models.notices` its licence notices, BeatThis's MIT licence
   (`BeatThis-LICENSE.txt`), as `[{path, text}]` for the app to show with the model. `checkPackage(json)` resolves to
   the same checked manifest, `{model, license, notices, files: [{path, size, sha256}], totalBytes, config}`, and

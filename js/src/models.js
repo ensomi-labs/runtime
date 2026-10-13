@@ -115,7 +115,8 @@ function defaultRuntimeSource(path) {
 
 /**
  * Loads the six graphs into ONNX Runtime Web sessions and the rest of the model package into the core, and the
- * licence notices into `models.notices`. With `ensomi-package.json`, checks it, fetches the files it lists, each checked
+ * licence notices into `models.notices`. With `ensomi-package.json`, checks it, fetches the config it names, refuses
+ * the manifest unless it lists every file that config names, then fetches the other files it lists, each checked
  * against its SHA-256, and reads no other; without it (the source rejects with `code` 'ENOENT'), reads `runtime.json`
  * and the files it names.
  * `source` is a base URL or an async function `(relativePath) => Uint8Array`.
@@ -126,19 +127,23 @@ function defaultRuntimeSource(path) {
 export async function loadModels(source, options = {}) {
     const fetchFile = typeof source === 'string' ? urlSource(source) : source;
     const core = await loadCore(options.core);
-    const info = await fetchFile(PACKAGE).then(bytes => core.checkPackage(new TextDecoder().decode(bytes)), error => {
+    const packageJson = await fetchFile(PACKAGE).then(bytes => new TextDecoder().decode(bytes), error => {
         if (error?.code !== 'ENOENT')
             throw error;
     });
-    // With a manifest, every file it lists is fetched at once and checked; the loading below reads those.
+    const info = packageJson === undefined ? undefined : core.checkPackage(packageJson);
     const checked = info ? checkedSource(fetchFile, info) : fetchFile;
-    const fetched = new Map(info?.files.map(file => [file.path, handled(checked(file.path))]));
-    const read = path => fetched.get(path) ?? checked(path);
-    const manifestBytes = await read(info?.config ?? 'runtime.json');
+    const manifestBytes = await checked(info?.config ?? 'runtime.json');
     const manifestJson = new TextDecoder().decode(manifestBytes);
     const manifest = JSON.parse(manifestJson);
     if (manifest.format !== 'ensomi-onnx-runtime-v1')
         throw new Error(`Unsupported runtime format: ${manifest.format}`);
+    // With a manifest, it must list every file the config names; then the other files it lists are fetched at once and
+    // checked, and the loading below reads those.
+    if (info)
+        core.checkPackageConfig(packageJson, manifestJson);
+    const fetched = new Map(info?.files.filter(file => file.path !== info.config).map(file => [file.path, handled(checked(file.path))]));
+    const read = path => fetched.get(path) ?? checked(path);
     const backend = options.backend ?? (typeof navigator !== 'undefined' && 'gpu' in navigator ? 'webgpu' : 'wasm');
     const ort = options.ort ?? (backend === 'webgpu' ? await import('onnxruntime-web/webgpu') : await import('onnxruntime-web/wasm'));
     if (options.wasm)

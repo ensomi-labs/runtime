@@ -70,9 +70,10 @@ result.receipt                                      // EnsomiProtocol Generation
   on `r2` version 1, a path outside the package or out of order, or notices or a config not among the files. A
   downloader fetches the manifest, checks it, then fetches exactly `files` and checks each one's size and SHA-256.
 - `open` with an `ensomi-package.json` in the directory checks it, refuses the directory unless every listed file is
-  there at its listed size (it computes no hashes), and reads the runtime config it names; `capabilities().files` are
-  then the manifest's files with their checksums and sizes. Without the manifest, `open` reads `runtime.json` and the
-  files it names, as 0.2 did.
+  there at its listed size (it computes no hashes), reads the runtime config it names and refuses a manifest that
+  leaves out a file that config names ("`<path>` is named by runtime.json but not listed in ensomi-package.json");
+  `capabilities().files` are then the manifest's files with their checksums and sizes. Without the manifest, `open`
+  reads `runtime.json` and the files it names, as 0.2 did.
 - PCM at a rate other than 22050 Hz is resampled with the runtime's soxr tables, `resample-<rate>.json`,
   `.bin` and `-boundary.bin` for 11025, 16000, 24000, 32000, 44100, 48000, 88200, 96000 and 192000 Hz
   (14 MB). The package carries them ([`assets/resampler`](../assets/resampler)) as a resource, which `open` reads

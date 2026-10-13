@@ -1,7 +1,7 @@
 //! `ensomi-package.json` checks (`docs/model-package.md`) on the published package's manifest (`conformance/package`)
 //! and on copies of it with one thing changed.
 use ensomi_generate::capabilities::{MODEL_ID, MODEL_NAME, MODEL_VERSION, PIPELINE_ID, PIPELINE_VERSION};
-use ensomi_generate::package::check;
+use ensomi_generate::package::{check, check_config};
 use ensomi_generate::RUNTIME_VERSION;
 use serde_json::{json, Value};
 
@@ -115,4 +115,26 @@ fn refuses_a_manifest_without_a_field_it_needs() {
     }
     let error = refusal(|m| _ = m["files"][0].as_object_mut().unwrap().remove("size"));
     assert!(error.contains("missing field `size`"), "{error}");
+}
+
+/// A runtime config naming a graph, an array, a state file, a scope column and a notice, all among the published files.
+fn config() -> Value {
+    json!({
+        "graphs": {"beatthis": {"file": "beatthis.onnx"}},
+        "frontend_arrays": {"beatthis": {"mel_filter": {"path": "beatthis-mel-filter.bin"}}, "beatthis_license": "BeatThis-LICENSE.txt"},
+        "state": {"r2_initial": {"rows": {"file": "r2_initial_rows.bin"}}},
+        "calibration": {"scope_table": {"columns": [{"name": "S", "file": "scopes-S.bin"}]}},
+    })
+}
+
+#[test]
+fn refuses_a_manifest_that_leaves_out_a_file_the_config_names() {
+    assert_eq!(check_config(&check(PUBLISHED).unwrap(), &config()), Ok(()));
+    for path in ["beatthis.onnx", "beatthis-mel-filter.bin", "r2_initial_rows.bin", "scopes-S.bin", "BeatThis-LICENSE.txt"] {
+        let mut manifest = published();
+        manifest["files"].as_array_mut().unwrap().retain(|file| file["path"] != path);
+        manifest["notices"].as_array_mut().unwrap().retain(|notice| notice != path);
+        let package = check(&manifest.to_string()).unwrap();
+        assert_eq!(check_config(&package, &config()), Err(format!("{path} is named by runtime.json but not listed in ensomi-package.json")));
+    }
 }

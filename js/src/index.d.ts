@@ -170,8 +170,9 @@ export interface LoadModelsOptions {
     core?: BufferSource | WebAssembly.Module | URL | string;
 }
 /** Loads the model package at a base URL or from a source. With `ensomi-package.json` it checks the manifest, fetches the
- * files it lists, checks each one's SHA-256 (`crypto.subtle`, a secure context in a browser) and reads no other file; a
- * mismatch rejects, naming the file. Without it, it reads `runtime.json` and the files it names. */
+ * config it names and refuses a manifest that leaves out a file the config names, then fetches the other files it
+ * lists, checks each one's SHA-256 (`crypto.subtle`, a secure context in a browser) and reads no other file; a mismatch
+ * rejects, naming the file. Without it, it reads `runtime.json` and the files it names. */
 export declare function loadModels(source: FileSource | string, options?: LoadModelsOptions): Promise<Models>;
 /** The licence notices a `runtime.json` names, as paths relative to the model directory: files to download and show with
  * the model, which loading does not need, for a package without `ensomi-package.json`. Loads the package's Wasm core if

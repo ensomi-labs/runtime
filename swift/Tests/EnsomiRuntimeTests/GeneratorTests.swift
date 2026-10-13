@@ -150,7 +150,8 @@ final class GeneratorTests: XCTestCase {
     }
 
     /// The released files with the published package's manifest beside them: `open` checks the manifest and the files'
-    /// sizes, and the capabilities list the manifest's files. A listed file of another size, or missing, is refused.
+    /// sizes, and the capabilities list the manifest's files. A manifest that leaves out a file `runtime.json` names is
+    /// refused, and so is a listed file of another size, or missing.
     func testOpenChecksThePackageManifest() throws {
         let paths = try Paths()
         let manifest = try String(contentsOf: Self.publishedManifest, encoding: .utf8)
@@ -168,17 +169,24 @@ final class GeneratorTests: XCTestCase {
         XCTAssertEqual(files.map(\.sha256Hex), package.files.map(\.sha256))
         XCTAssertEqual(files.map(\.sizeBytes), package.files.map { Optional($0.size) })
 
-        func assertRefused(_ what: String) {
+        func assertRefused(_ what: String, _ expected: String) {
             XCTAssertThrowsError(try paths.open(.cpu, directory: directory), what) { error in
                 guard case .Model(let message) = error as? GeneratorError else { return XCTFail("\(error)") }
-                XCTAssertTrue(message.contains("BeatThis-LICENSE.txt is missing or is not the 1113 bytes"), message)
+                XCTAssertTrue(message.contains(expected), message)
             }
         }
+        var unlisted = try JSONSerialization.jsonObject(with: Data(manifest.utf8)) as! [String: Any]
+        unlisted["files"] = (unlisted["files"] as! [[String: Any]]).filter { $0["path"] as? String != "r2_release.onnx" }
+        try JSONSerialization.data(withJSONObject: unlisted).write(to: directory.appendingPathComponent("ensomi-package.json"))
+        assertRefused("a manifest without a graph", "r2_release.onnx is named by runtime.json but not listed in ensomi-package.json")
+        try manifest.write(to: directory.appendingPathComponent("ensomi-package.json"), atomically: true, encoding: .utf8)
+
         let notice = directory.appendingPathComponent("BeatThis-LICENSE.txt")
+        let size = "BeatThis-LICENSE.txt is missing or is not the 1113 bytes"
         try Data("another licence".utf8).write(to: notice)
-        assertRefused("a file of another size")
+        assertRefused("a file of another size", size)
         try FileManager.default.removeItem(at: notice)
-        assertRefused("a missing file")
+        assertRefused("a missing file", size)
     }
 
     /// Without a manifest the capabilities list the graphs `runtime.json` names, with no checksums.

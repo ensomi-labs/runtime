@@ -21,9 +21,9 @@ extension ChartGenerator {
     }
 
     /// Opens a model directory. With an `ensomi-package.json`, checks it (`checkPackage`), requires every file it lists
-    /// at its listed size and reads the runtime config it names; the SHA-256s are the downloader's check. Without it,
-    /// reads `runtime.json` and the files it names. Without `options.resamplerDirectory`, PCM at a rate other than
-    /// 22050 Hz is resampled with the tables the package carries.
+    /// at its listed size, reads the runtime config it names and requires the manifest to list every file that config
+    /// names; the SHA-256s are the downloader's check. Without it, reads `runtime.json` and the files it names. Without
+    /// `options.resamplerDirectory`, PCM at a rate other than 22050 Hz is resampled with the tables the package carries.
     public static func open(modelDirectory: String, options: GeneratorOptions) throws -> ChartGenerator {
         var options = options
         options.resamplerDirectory = options.resamplerDirectory ?? bundledResamplerDirectory

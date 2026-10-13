@@ -51,10 +51,15 @@ version (naming both), whose `model` or `pipeline` this runtime does not run, wh
 break the rule above or whose hashes are not 64 lowercase hex digits, or whose notices or config are not among its
 files. It returns the model, licence, notices, files and their total size, and the config's path.
 
+Once the config is read, a second check (`ensomi_generate::package::check_config`) refuses a manifest that leaves out
+a file the config names (its graphs, the arrays, state files and scope columns `Models::new` reads, and its notices),
+naming the first: "`<path>` is named by runtime.json but not listed in ensomi-package.json". Swift `open` and
+JavaScript `loadModels` both run it before reading any other file.
+
 | When | Who | Checks |
 | --- | --- | --- |
-| Download | the app's downloader with `checkPackage`; JavaScript `loadModels` | the manifest; then every listed file, fetched and compared with its size and SHA-256. `loadModels` reads no file the manifest does not list, and a mismatch fails loading, naming the file. |
-| Open | Swift `ChartGenerator.open` (`crates/generate-ort/src/package.rs`) | the manifest; every listed file present at its listed size; then the config it names. Hashes are not computed at open. |
+| Download | the app's downloader with `checkPackage`; JavaScript `loadModels` | the manifest; then every listed file, fetched and compared with its size and SHA-256. `loadModels` fetches the config first and runs the config check on it before fetching the other files; it reads no file the manifest does not list, and a mismatch fails loading, naming the file. |
+| Open | Swift `ChartGenerator.open` (`crates/generate-ort/src/package.rs`) | the manifest; every listed file present at its listed size; then the config it names and the config check. Hashes are not computed at open. |
 
 ## Without a manifest
 

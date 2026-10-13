@@ -48,6 +48,19 @@ fn refuses_a_package_its_manifest_check_refuses() {
 }
 
 #[test]
+fn refuses_a_package_whose_manifest_leaves_out_a_file_the_config_names() {
+    let runtime = br#"{"graphs": {"beatthis": {"file": "beatthis.onnx"}}}"#;
+    let dir = directory("unlisted");
+    let mut manifest: Value = serde_json::from_str(PUBLISHED).unwrap();
+    manifest["notices"] = json!([]);
+    manifest["files"] = json!([{"path": "runtime.json", "size": runtime.len(), "sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"}]);
+    std::fs::write(dir.join("ensomi-package.json"), manifest.to_string()).unwrap();
+    std::fs::write(dir.join("runtime.json"), runtime).unwrap();
+    std::fs::write(dir.join("beatthis.onnx"), b"onnx").unwrap();
+    assert_eq!(open(&dir).err().unwrap(), "beatthis.onnx is named by runtime.json but not listed in ensomi-package.json");
+}
+
+#[test]
 fn notices_are_the_licences_the_config_names() {
     assert_eq!(Models::notice_files(&json!({"frontend_arrays": {"beatthis_license": "BeatThis-LICENSE.txt"}})), ["BeatThis-LICENSE.txt"]);
     assert!(Models::notice_files(&json!({"frontend_arrays": {}})).is_empty());
