@@ -15,7 +15,7 @@ fn published() -> Value {
 fn refusal(change: impl FnOnce(&mut Value)) -> String {
     let mut manifest = published();
     change(&mut manifest);
-    check(&manifest.to_string()).err().expect("refused")
+    check(&manifest.to_string()).expect_err("refused")
 }
 
 #[test]
