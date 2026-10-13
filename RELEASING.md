@@ -102,7 +102,7 @@ These need data CI does not have. Run them in `~/ensomi/ensomi-runtime` on the c
    ```
 
 7. The packed npm package from a clean directory, with only its own Wasm core and resampler tables; it prints
-   `"same_hit_objects":true`:
+   `"same_hit_objects":true` and `"notices":["BeatThis-LICENSE.txt"]`:
 
    ```sh
    scripts/wasm-build.sh

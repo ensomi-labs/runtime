@@ -50,6 +50,10 @@ scheduler.work().then(({ result }) => {});                 // generates ahead of
 
 - `pcm` is mono `Float32Array` or `Float64Array`, or `{samples, channels}` with interleaved samples. PCM at a rate
   other than 22050 Hz is resampled with the soxr tables in the package's `resampler/` directory.
+- `loadModels` also reads the licence notices `runtime.json` names, BeatThis's MIT licence (`BeatThis-LICENSE.txt`),
+  into `models.notices` as `[{path, text}]`, for the app to show with the model. Running the model does not need
+  them, so a notice the source lacks (a folder installed without it) is left out. `noticeFiles(runtimeConfigJson)`
+  resolves to their paths, for a downloader.
 - `loadModels` reads the Wasm core (`pkg/`) and the tables from beside its own module: with `fetch` in a browser,
   from the file system in Node 22.3 or later. A bundler that moves the module passes `options.core` and
   `options.runtimeSource`. `src/index.d.ts` lists every option.
@@ -58,4 +62,6 @@ scheduler.work().then(({ result }) => {});                 // generates ahead of
   also goes to `console.error`. The core's instance is then replaced, and the next `generateChart` loads the model
   into the new one from `source` again.
 
-Apache-2.0. The model weights carry their own licence (CC BY-NC-SA 4.0).
+Apache-2.0. The model (`sed-i/ensomi-r2`) is licensed CC BY-NC-SA 4.0, except BeatThis (CPJKU): `onnx/beatthis.onnx`,
+an ONNX export of its `final0` checkpoint, and its front-end arrays `onnx/beatthis-mel-filter.bin` and
+`onnx/beatthis-hann-window.bin` keep BeatThis's MIT licence (`onnx/BeatThis-LICENSE.txt`, in `models.notices`).

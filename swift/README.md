@@ -75,7 +75,9 @@ result.receipt                                      // EnsomiProtocol Generation
 - `lowMemory` releases ONNX Runtime's working memory after each graph run: peak footprint 1.3 to 1.6 GiB
   instead of 2.0 to 2.3 GiB, same charts. `nil` turns it on for iOS and off on macOS.
 - `modelFiles(runtimeConfig:)` lists the files a model directory needs besides `runtime.json`, for a
-  downloader.
+  downloader, with the licence notices. `noticeFiles(runtimeConfig:)` lists those notices, BeatThis's MIT licence
+  (`BeatThis-LICENSE.txt`), for the app to show with the model. `open` does not read them, so a directory installed
+  without them still opens.
 - `exportOsz(osu:audio:receiptJson:)` makes the chart's `.osz` from `result.osu`, the song file's bytes and
   `result.receipt.receiptJson` (`crates/osz`): `generated.osu`, the audio under the name the `.osu` gives it
   (`audio.<extension>`) and `receipt.json`, the layout of the web runtime's `.osz`. The app reads the song and saves

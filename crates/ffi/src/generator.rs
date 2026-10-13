@@ -275,15 +275,27 @@ fn session_config(options: &GeneratorOptions) -> Config {
     }
 }
 
-/// The files a model directory needs besides its runtime config (`runtime.json`): the graphs and the
-/// arrays the config names, as paths relative to the directory.
+fn parse_config(runtime_config: &str) -> Result<Value, GeneratorError> {
+    serde_json::from_str(runtime_config).map_err(|e| model_error(format!("runtime config: {e}")))
+}
+
+/// The files a model directory needs besides its runtime config (`runtime.json`): the graphs, the
+/// arrays the config names and its licence notices, as paths relative to the directory.
 #[uniffi::export]
 pub fn model_files(runtime_config: String) -> Result<Vec<String>, GeneratorError> {
-    let config: Value = serde_json::from_str(&runtime_config).map_err(|e| model_error(format!("runtime config: {e}")))?;
+    let config = parse_config(&runtime_config)?;
     let graphs = config["graphs"].as_object().ok_or_else(|| model_error("runtime config: no graphs".to_string()))?;
     let mut files: Vec<String> = graphs.values().filter_map(|g| g["file"].as_str().map(str::to_string)).collect();
     files.extend(Models::required_files(&config));
+    files.extend(Models::notice_files(&config));
     Ok(files)
+}
+
+/// The licence notices among the model files, as paths relative to the directory, for an app to show with
+/// the model: BeatThis's MIT licence. `open` does not read them, so a directory without them still opens.
+#[uniffi::export]
+pub fn notice_files(runtime_config: String) -> Result<Vec<String>, GeneratorError> {
+    Ok(Models::notice_files(&parse_config(&runtime_config)?))
 }
 
 fn capabilities(models: &Models, manifest: Option<&package::Manifest>) -> ModelCapabilities {

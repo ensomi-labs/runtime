@@ -35,8 +35,14 @@ async function coreModels(core, manifestJson, read) {
     return callCore(() => new core.WasmModels(manifestJson, Object.fromEntries(paths.map((path, i) => [path, bytes[i]]))));
 }
 
+/** The licence notices a `runtime.json` names, as paths relative to the model directory: files to download and show
+ * with the model, which `loadModels` reads into `models.notices` but does not need. */
+export async function noticeFiles(runtimeConfigJson) {
+    return (await loadCore()).WasmModels.noticeFiles(runtimeConfigJson);
+}
+
 export class Models {
-    constructor(core, wasm, ort, sessions, source, runtimeSource, manifestJson) {
+    constructor(core, wasm, ort, sessions, source, runtimeSource, manifestJson, notices) {
         this.core = core;
         this.wasm = wasm;
         this.ort = ort;
@@ -44,6 +50,7 @@ export class Models {
         this.source = source;
         this.runtimeSource = runtimeSource;
         this.manifestJson = manifestJson;
+        this.notices = notices;
         this.instance = coreInstance();
         this.capabilities = JSON.parse(wasm.capabilities());
     }
@@ -68,7 +75,8 @@ function defaultRuntimeSource(path) {
 }
 
 /**
- * Loads the six graphs into ONNX Runtime Web sessions and the rest of the model package into the core.
+ * Loads the six graphs into ONNX Runtime Web sessions and the rest of the model package into the core, and the
+ * licence notices into `models.notices`.
  * `source` is a base URL or an async function `(relativePath) => Uint8Array`.
  * Options: `ort` (the onnxruntime-web module), `session` (SessionOptions), `backend` ('webgpu' | 'wasm'),
  * `wasm` (ORT's `env.wasm` flags), `runtimeSource` (reads the `resample-*` tables), `core` (the Wasm core's
@@ -89,6 +97,9 @@ export async function loadModels(source, options = {}) {
     const sessions = {};
     // All files download at once; sessions are created in order, each as soon as its file has arrived.
     const graphs = Object.entries(manifest.graphs), reads = graphs.map(([, graph]) => read(graph.file));
+    // The licence notices are shown with the model, not needed to run it: one the source lacks (a folder installed
+    // without it) is left out.
+    const notices = Promise.all(core.WasmModels.noticeFiles(manifestJson).map(path => read(path).then(bytes => ({ path, text: new TextDecoder().decode(bytes) }), () => undefined)));
     const create = (async () => {
         for (const [i, [name]] of graphs.entries())
             sessions[name] = await ort.InferenceSession.create(await reads[i], options.session ?? { executionProviders: backend === 'webgpu' && GPU_GRAPHS.has(name) ? ['webgpu', 'wasm'] : ['wasm'] });
@@ -107,7 +118,7 @@ export async function loadModels(source, options = {}) {
             wasm.free();
             throw error;
         }
-        return new Models(core, wasm, ort, sessions, read, options.runtimeSource ?? defaultRuntimeSource, manifestJson);
+        return new Models(core, wasm, ort, sessions, read, options.runtimeSource ?? defaultRuntimeSource, manifestJson, (await notices).filter(Boolean));
     }
     catch (error) {
         await release();
