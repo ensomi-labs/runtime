@@ -11,9 +11,10 @@ extension ChartGenerator {
         return (copies.first ?? Bundle.module).url(forResource: "resampler", withExtension: nil)?.path
     }()
 
-    /// Opens a model directory: `runtime.json` and the files it names, or the runtime config an EnsomiProtocol
-    /// `ensomi-model.json` names. Without `options.resamplerDirectory`, PCM at a rate other than 22050 Hz is
-    /// resampled with the tables the package carries.
+    /// Opens a model directory: `runtime.json` and the files it names, or the runtime config an optional
+    /// `ensomi-model.json` manifest names (its format is not settled; the released model has none). Without
+    /// `options.resamplerDirectory`, PCM at a rate other than 22050 Hz is resampled with the tables the package
+    /// carries.
     public static func open(modelDirectory: String, options: GeneratorOptions) throws -> ChartGenerator {
         var options = options
         options.resamplerDirectory = options.resamplerDirectory ?? bundledResamplerDirectory

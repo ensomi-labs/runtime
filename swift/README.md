@@ -63,10 +63,11 @@ result.osu                                          // the chart as an osu!mania
 result.receipt                                      // EnsomiProtocol GenerationReceipt
 ```
 
-- `open` reads `runtime.json` and the files it names. When the directory also holds an EnsomiProtocol
-  `ensomi-model.json`, `open` reads the runtime config it names and refuses the package unless this runtime is
-  in its runtime range, it is Ensomi R2 `r2-1.0` and every file it lists has its listed size; the downloader
-  checks each file's SHA-256. `capabilities().files` then carry the manifest's checksums and sizes.
+- `open` reads `runtime.json` and the files it names. When the directory also holds an `ensomi-model.json`
+  manifest (its format is not settled; the released model has none), `open` reads the runtime config it names and
+  refuses the package unless this runtime is in its runtime range, it is Ensomi R2 `r2-1.0` and every file it lists
+  has its listed size; the downloader checks each file's SHA-256. `capabilities().files` then carry the manifest's
+  checksums and sizes.
 - PCM at a rate other than 22050 Hz is resampled with the runtime's soxr tables, `resample-<rate>.json`,
   `.bin` and `-boundary.bin` for 11025, 16000, 24000, 32000, 44100, 48000, 88200, 96000 and 192000 Hz
   (14 MB). The package carries them ([`assets/resampler`](../assets/resampler)) as a resource, which `open` reads
