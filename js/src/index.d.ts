@@ -118,16 +118,41 @@ export interface EncodedAudio {
 }
 
 export type Ort = typeof ORT;
+/** Reads a file of the model package. For a file it does not have it rejects with an error whose `code` is 'ENOENT', as
+ * Node's `readFile` does: `loadModels` then loads a package without `ensomi-package.json` from its `runtime.json`. */
 export type FileSource = (relativePath: string) => Promise<Uint8Array>;
-/** Reads files relative to a base URL, with `fetch` or, for a `file:` URL in Node, from the file system. */
+/** Reads files relative to a base URL, with `fetch` or, for a `file:` URL in Node, from the file system. An HTTP 404
+ * rejects with `code` 'ENOENT'. */
 export declare function urlSource(baseUrl: string): FileSource;
+/** Reads picked files by name; one not picked rejects with `code` 'ENOENT'. */
 export declare function localFilesSource(files: Iterable<File>): FileSource;
+
+/** A checked `ensomi-package.json`, the model package's manifest (docs/model-package.md). */
+export interface PackageInfo {
+    model: { id: string; name: string; version: string };
+    /** An SPDX licence expression. */
+    license: string;
+    /** The licence notices among `files`, for the app to show with the model. */
+    notices: string[];
+    /** Every file of the package but the manifest, sorted by path: what a downloader fetches and checks. */
+    files: { path: string; size: number; sha256: string }[];
+    /** The sum of the files' sizes. */
+    totalBytes: number;
+    /** The runtime config (`runtime.json`), one of `files`. */
+    config: string;
+}
+/** Checks an `ensomi-package.json`: its format, that this runtime is at least its `min_runtime`, that it names the model
+ * and pipeline this runtime runs, its paths, and its notices and config among its files. Rejects naming what is wrong.
+ * Loads the package's Wasm core if no `loadModels` has. */
+export declare function checkPackage(manifestJson: string): Promise<PackageInfo>;
 
 export declare class Models {
     readonly capabilities: ModelCapabilities;
-    /** The licence notices `runtime.json` names, as read with the model, for the app to show with it: BeatThis's MIT
-     * licence. A notice the source lacks is left out. */
+    /** The licence notices, as read with the model, for the app to show with it: BeatThis's MIT licence. With a manifest
+     * they are its `notices`; without one, those `runtime.json` names, leaving out a notice the source lacks. */
     readonly notices: { path: string; text: string }[];
+    /** The package's checked `ensomi-package.json`, or undefined for a package without one. */
+    readonly package?: PackageInfo;
     readonly ort: Ort;
     readonly sessions: Record<string, ORT.InferenceSession>;
     dispose(): Promise<void>;
@@ -144,9 +169,14 @@ export interface LoadModelsOptions {
     /** The Wasm core: bytes, a `WebAssembly.Module` or a URL. Default: the package's `pkg/ensomi_generate_wasm_bg.wasm`. */
     core?: BufferSource | WebAssembly.Module | URL | string;
 }
+/** Loads the model package at a base URL or from a source. With `ensomi-package.json` it checks the manifest, fetches the
+ * config it names and refuses a manifest that leaves out a file the config names, then fetches the other files it
+ * lists, checks each one's SHA-256 (`crypto.subtle`, a secure context in a browser) and reads no other file; a mismatch
+ * rejects, naming the file. Without it, it reads `runtime.json` and the files it names. */
 export declare function loadModels(source: FileSource | string, options?: LoadModelsOptions): Promise<Models>;
 /** The licence notices a `runtime.json` names, as paths relative to the model directory: files to download and show with
- * the model, which loading does not need. Loads the package's Wasm core if no `loadModels` has. */
+ * the model, which loading does not need, for a package without `ensomi-package.json`. Loads the package's Wasm core if
+ * no `loadModels` has. */
 export declare function noticeFiles(runtimeConfigJson: string): Promise<string[]>;
 
 export interface GenerateOptions {

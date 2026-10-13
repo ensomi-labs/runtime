@@ -7,6 +7,7 @@
 
 use ensomi_gameplay::{Chart, ChartObject};
 use ensomi_generate::capabilities::capabilities as core_capabilities;
+use ensomi_generate::package::{self as core_package, PackageFile, PackageInfo, PackageModel};
 use ensomi_generate::{generate, prepare, resampler_files, Audio, Models, Options, Phase, Request, Samples};
 use ensomi_generate_ort::{drive_observed, package, Config, Sessions};
 use serde_json::{json, Value};
@@ -61,9 +62,42 @@ pub struct ControlCapability {
 pub struct ModelFile {
     /// Relative to the model directory.
     pub path: String,
-    /// Empty when the directory has no `ensomi-model.json`.
+    /// Empty when the directory has no `ensomi-package.json`.
     pub sha256_hex: String,
     pub size_bytes: Option<u64>,
+}
+
+#[uniffi::remote(Record)]
+pub struct PackageModel {
+    pub id: String,
+    pub name: String,
+    pub version: String,
+}
+
+/// One file of a model package, as its `ensomi-package.json` lists it.
+#[uniffi::remote(Record)]
+pub struct PackageFile {
+    /// Relative to the manifest, `/`-separated.
+    pub path: String,
+    pub size: u64,
+    /// Lowercase hex SHA-256 of the file.
+    pub sha256: String,
+}
+
+/// A checked `ensomi-package.json` (`docs/model-package.md`).
+#[uniffi::remote(Record)]
+pub struct PackageInfo {
+    pub model: PackageModel,
+    /// An SPDX licence expression.
+    pub license: String,
+    /// The licence notices among `files`, for the app to show with the model.
+    pub notices: Vec<String>,
+    /// Every file of the package but the manifest, sorted by path: what a downloader fetches and checks.
+    pub files: Vec<PackageFile>,
+    /// The sum of the files' sizes.
+    pub total_bytes: u64,
+    /// The runtime config (`runtime.json`), one of `files`.
+    pub config: String,
 }
 
 /// EnsomiProtocol's `ModelCapabilities`.
@@ -180,8 +214,8 @@ pub fn export_osz(osu: String, audio: Vec<u8>, receipt_json: String) -> Vec<u8> 
 
 #[derive(Debug, uniffi::Error)]
 pub enum GeneratorError {
-    /// A file of the model directory or a resampler table is missing or unreadable, or the directory holds
-    /// a model this runtime does not run.
+    /// A file of the model directory or a resampler table is missing or unreadable, the directory holds
+    /// a model this runtime does not run, or a package manifest (`ensomi-package.json`) is refused.
     Model { message: String },
     /// The generation was refused or failed. `code` is EnsomiProtocol's `ErrorEvent.code`:
     /// `star_out_of_range`, `unsupported_control` or `generation_failed`.
@@ -279,8 +313,17 @@ fn parse_config(runtime_config: &str) -> Result<Value, GeneratorError> {
     serde_json::from_str(runtime_config).map_err(|e| model_error(format!("runtime config: {e}")))
 }
 
-/// The files a model directory needs besides its runtime config (`runtime.json`): the graphs, the
-/// arrays the config names and its licence notices, as paths relative to the directory.
+/// Checks a model package's `ensomi-package.json`: its format, that this runtime is at least its `min_runtime`, that it
+/// names the model and pipeline this runtime runs, its paths, and its notices and config among its files. Throws
+/// `GeneratorError.Model` naming what is wrong. A downloader fetches exactly `files` and checks each one's size and
+/// SHA-256 before `open`.
+#[uniffi::export]
+pub fn check_package(manifest_json: String) -> Result<PackageInfo, GeneratorError> {
+    core_package::check(&manifest_json).map_err(model_error)
+}
+
+/// The files a model directory without `ensomi-package.json` needs besides its runtime config (`runtime.json`): the
+/// graphs, the arrays the config names and its licence notices, as paths relative to the directory.
 #[uniffi::export]
 pub fn model_files(runtime_config: String) -> Result<Vec<String>, GeneratorError> {
     let config = parse_config(&runtime_config)?;
@@ -298,12 +341,12 @@ pub fn notice_files(runtime_config: String) -> Result<Vec<String>, GeneratorErro
     Ok(Models::notice_files(&parse_config(&runtime_config)?))
 }
 
-fn capabilities(models: &Models, manifest: Option<&package::Manifest>) -> ModelCapabilities {
+fn capabilities(models: &Models, package: Option<&PackageInfo>) -> ModelCapabilities {
     let paths: Vec<String> = models.graphs.iter().map(|g| g.file.clone()).collect();
     let core = core_capabilities(&paths);
     let text = |v: &Value| v.as_str().unwrap_or_default().to_string();
-    let files = match manifest {
-        Some(m) => m.files.iter().map(|f| ModelFile { path: f.path.clone(), sha256_hex: f.sha256_hex.clone(), size_bytes: Some(f.size_bytes) }).collect(),
+    let files = match package {
+        Some(p) => p.files.iter().map(|f| ModelFile { path: f.path.clone(), sha256_hex: f.sha256.clone(), size_bytes: Some(f.size) }).collect(),
         None => paths.into_iter().map(|path| ModelFile { path, sha256_hex: String::new(), size_bytes: None }).collect(),
     };
     let controls = core["controls"]
@@ -385,16 +428,16 @@ fn chart(chart: &ensomi_generate::Chart) -> Chart {
 
 #[uniffi::export]
 impl ChartGenerator {
-    /// Opens a model directory: `runtime.json` and the files it names, or, when the directory has an
-    /// `ensomi-model.json`, the runtime config that manifest names after checking the runtime range,
-    /// the model and the size of every file it lists.
+    /// Opens a model directory. When it has an `ensomi-package.json`, checks it (`check_package`), requires every
+    /// file it lists at its listed size and reads the runtime config it names; the SHA-256s are checked when the
+    /// package arrives, not here. Without the manifest, reads `runtime.json`. Then the files the config names.
     #[uniffi::constructor]
     pub fn open(model_directory: String, options: GeneratorOptions) -> Result<Arc<Self>, GeneratorError> {
         let directory = Path::new(&model_directory);
-        let (models, manifest) = package::open(directory).map_err(model_error)?;
+        let (models, package) = package::open(directory).map_err(model_error)?;
         let sessions = Sessions::load(directory, &models, &session_config(&options)).map_err(model_error)?;
         Ok(Arc::new(Self {
-            capabilities: capabilities(&models, manifest.as_ref()),
+            capabilities: capabilities(&models, package.as_ref()),
             resampler_directory: options.resampler_directory.map(PathBuf::from),
             models: Arc::new(models),
             sessions: Mutex::new(sessions),

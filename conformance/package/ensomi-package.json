@@ -1,0 +1,170 @@
+{
+  "format": "ensomi-package/1",
+  "model": {
+    "id": "ensomi-r2",
+    "name": "Ensomi R2",
+    "version": "r2-1.0"
+  },
+  "license": "CC-BY-NC-SA-4.0 AND MIT",
+  "notices": [
+    "BeatThis-LICENSE.txt"
+  ],
+  "pipeline": {
+    "id": "r2",
+    "version": 1
+  },
+  "min_runtime": "0.3.0",
+  "config": "runtime.json",
+  "files": [
+    {
+      "path": "BeatThis-LICENSE.txt",
+      "size": 1113,
+      "sha256": "909ab6549794a18e9bb243aacfadda4a5f308436fc2846f350755c53c4f06ae1"
+    },
+    {
+      "path": "beatthis-hann-window.bin",
+      "size": 4096,
+      "sha256": "d7eea073e5f5f88615d8e140802bf8710115c6819a233caecf27cbe746aaf170"
+    },
+    {
+      "path": "beatthis-mel-filter.bin",
+      "size": 262656,
+      "sha256": "57cf87a6ccce2c80898823c13ce260ec5a43b957c0671cfd9233d269f8dc14f2"
+    },
+    {
+      "path": "beatthis.onnx",
+      "size": 82098878,
+      "sha256": "e347136d07c45301ae869d3d1011b8746bad55cf2389424af2aac1fd62de8d83"
+    },
+    {
+      "path": "r2_commit.onnx",
+      "size": 8018082,
+      "sha256": "6c8516a79ca419e5ca8ddce7331b1db4872a25a4b07468e24554952ad52c5d34"
+    },
+    {
+      "path": "r2_initial_buffer_0.bin",
+      "size": 2048,
+      "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad"
+    },
+    {
+      "path": "r2_initial_buffer_1.bin",
+      "size": 4096,
+      "sha256": "ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7"
+    },
+    {
+      "path": "r2_initial_buffer_2.bin",
+      "size": 8192,
+      "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47"
+    },
+    {
+      "path": "r2_initial_buffer_3.bin",
+      "size": 16384,
+      "sha256": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe"
+    },
+    {
+      "path": "r2_initial_buffer_4.bin",
+      "size": 32768,
+      "sha256": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479"
+    },
+    {
+      "path": "r2_initial_buffer_5.bin",
+      "size": 65536,
+      "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+    },
+    {
+      "path": "r2_initial_buffer_6.bin",
+      "size": 131072,
+      "sha256": "fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471"
+    },
+    {
+      "path": "r2_initial_buffer_7.bin",
+      "size": 262144,
+      "sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90"
+    },
+    {
+      "path": "r2_initial_last.bin",
+      "size": 1024,
+      "sha256": "94a61253aa4c90673fb7183ae429f1c509d17fc5eb731442e088c7c0a15a1d26"
+    },
+    {
+      "path": "r2_initial_rows.bin",
+      "size": 8,
+      "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc"
+    },
+    {
+      "path": "r2_predict.onnx",
+      "size": 682810,
+      "sha256": "1a0ed3f90ee1147ba13961bf57fc63ea380dfc7ecdb4698b275355128c20c652"
+    },
+    {
+      "path": "r2_release.onnx",
+      "size": 499987,
+      "sha256": "9e0c8969b7130f5db54e730a7ac963b6215104a264093a01ddc5675f508e41c4"
+    },
+    {
+      "path": "rows-hann-window.bin",
+      "size": 3840,
+      "sha256": "22049b62ec98f480fdef9b77dbb819c62660651cd8e208e544326db960d6034d"
+    },
+    {
+      "path": "rows-mel-filter.bin",
+      "size": 246272,
+      "sha256": "a814279754ed386887bc2619a7b3cf855bcd1b01ca0a0def7f1cf3c9ec48a0f3"
+    },
+    {
+      "path": "rows_encoder.onnx",
+      "size": 2278715,
+      "sha256": "b49a3f0eae1fcdaa7fe4a3b200b087bf41c436561498fa624a65439c46378394"
+    },
+    {
+      "path": "rows_step.onnx",
+      "size": 12412935,
+      "sha256": "eee2517f7785e9ee9c6ec1b6096d91062a0745892fa9b7554834388f1d4d6e1d"
+    },
+    {
+      "path": "runtime.json",
+      "size": 4893196,
+      "sha256": "0e9de83b6049f5c15f4f5a0ea45c93bcbcda4007f51c186588c0b0d24dc9c2e7"
+    },
+    {
+      "path": "scopes-J_ex.bin",
+      "size": 1056424,
+      "sha256": "030c1c97f876b197d926cc7abd8bd5b56a243fdb22f687766b24f7ef3574dd17"
+    },
+    {
+      "path": "scopes-S.bin",
+      "size": 1056424,
+      "sha256": "27dd0264425a2aa2a0c8707089f33e4363dbb916e5146ee6cdb7de4e11f84da3"
+    },
+    {
+      "path": "scopes-band.bin",
+      "size": 1056424,
+      "sha256": "f9286ad7db7ab9123bd2507be9bb209e104b59d14ef123491d72630fde81ef89"
+    },
+    {
+      "path": "scopes-chord_share.bin",
+      "size": 1056424,
+      "sha256": "917319ac4aa0132fd9271f76e5e92663e0e724c0aaeab1569b35ce66a91efd97"
+    },
+    {
+      "path": "scopes-hand_share.bin",
+      "size": 1056424,
+      "sha256": "d21dfcef6075e41b9bab67444950462c85a85ae7fcdd73d4401b4e5fb06b7221"
+    },
+    {
+      "path": "scopes-jump_share.bin",
+      "size": 1056424,
+      "sha256": "90b4a567bcf234343b965b673e56b0f401b65abf09054d0dad54f09ecdd3d114"
+    },
+    {
+      "path": "scopes-length_s.bin",
+      "size": 1056424,
+      "sha256": "4d7ab00ee2aa38ab5d0c97ad0061352c5fc5a1c8f327a9900940827d48787074"
+    },
+    {
+      "path": "scopes-median_gap_ms.bin",
+      "size": 1056424,
+      "sha256": "d19c68b065b072156710dcea387692a4918b54b6b873376bb202ba2d51eaada4"
+    }
+  ]
+}

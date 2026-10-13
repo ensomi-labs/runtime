@@ -810,9 +810,9 @@ open class ChartGenerator: ChartGeneratorProtocol, @unchecked Sendable {
 
     
     /**
-     * Opens a model directory: `runtime.json` and the files it names, or, when the directory has an
-     * `ensomi-model.json`, the runtime config that manifest names after checking the runtime range,
-     * the model and the size of every file it lists.
+     * Opens a model directory. When it has an `ensomi-package.json`, checks it (`check_package`), requires every
+     * file it lists at its listed size and reads the runtime config it names; the SHA-256s are checked when the
+     * package arrives, not here. Without the manifest, reads `runtime.json`. Then the files the config names.
      */
 public static func ffiOpen(modelDirectory: String, options: GeneratorOptions)throws  -> ChartGenerator  {
     return try  FfiConverterTypeChartGenerator_lift(try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
@@ -3203,7 +3203,7 @@ public struct ModelFile: Equatable, Hashable {
      */
     public var path: String
     /**
-     * Empty when the directory has no `ensomi-model.json`.
+     * Empty when the directory has no `ensomi-package.json`.
      */
     public var sha256Hex: String
     public var sizeBytes: UInt64?
@@ -3215,7 +3215,7 @@ public struct ModelFile: Equatable, Hashable {
          * Relative to the model directory.
          */path: String, 
         /**
-         * Empty when the directory has no `ensomi-model.json`.
+         * Empty when the directory has no `ensomi-package.json`.
          */sha256Hex: String, sizeBytes: UInt64?) {
         self.path = path
         self.sha256Hex = sha256Hex
@@ -3322,6 +3322,240 @@ public func FfiConverterTypeOsuBeatmap_lift(_ buf: RustBuffer) throws -> OsuBeat
 #endif
 public func FfiConverterTypeOsuBeatmap_lower(_ value: OsuBeatmap) -> RustBuffer {
     return FfiConverterTypeOsuBeatmap.lower(value)
+}
+
+
+/**
+ * One file of a model package, as its `ensomi-package.json` lists it.
+ */
+public struct PackageFile: Equatable, Hashable {
+    /**
+     * Relative to the manifest, `/`-separated.
+     */
+    public var path: String
+    public var size: UInt64
+    /**
+     * Lowercase hex SHA-256 of the file.
+     */
+    public var sha256: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Relative to the manifest, `/`-separated.
+         */path: String, size: UInt64, 
+        /**
+         * Lowercase hex SHA-256 of the file.
+         */sha256: String) {
+        self.path = path
+        self.size = size
+        self.sha256 = sha256
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension PackageFile: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePackageFile: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PackageFile {
+        return
+            try PackageFile(
+                path: FfiConverterString.read(from: &buf), 
+                size: FfiConverterUInt64.read(from: &buf), 
+                sha256: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: PackageFile, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.path, into: &buf)
+        FfiConverterUInt64.write(value.size, into: &buf)
+        FfiConverterString.write(value.sha256, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePackageFile_lift(_ buf: RustBuffer) throws -> PackageFile {
+    return try FfiConverterTypePackageFile.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePackageFile_lower(_ value: PackageFile) -> RustBuffer {
+    return FfiConverterTypePackageFile.lower(value)
+}
+
+
+/**
+ * A checked `ensomi-package.json` (`docs/model-package.md`).
+ */
+public struct PackageInfo: Equatable, Hashable {
+    public var model: PackageModel
+    /**
+     * An SPDX licence expression.
+     */
+    public var license: String
+    /**
+     * The licence notices among `files`, for the app to show with the model.
+     */
+    public var notices: [String]
+    /**
+     * Every file of the package but the manifest, sorted by path: what a downloader fetches and checks.
+     */
+    public var files: [PackageFile]
+    /**
+     * The sum of the files' sizes.
+     */
+    public var totalBytes: UInt64
+    /**
+     * The runtime config (`runtime.json`), one of `files`.
+     */
+    public var config: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(model: PackageModel, 
+        /**
+         * An SPDX licence expression.
+         */license: String, 
+        /**
+         * The licence notices among `files`, for the app to show with the model.
+         */notices: [String], 
+        /**
+         * Every file of the package but the manifest, sorted by path: what a downloader fetches and checks.
+         */files: [PackageFile], 
+        /**
+         * The sum of the files' sizes.
+         */totalBytes: UInt64, 
+        /**
+         * The runtime config (`runtime.json`), one of `files`.
+         */config: String) {
+        self.model = model
+        self.license = license
+        self.notices = notices
+        self.files = files
+        self.totalBytes = totalBytes
+        self.config = config
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension PackageInfo: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePackageInfo: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PackageInfo {
+        return
+            try PackageInfo(
+                model: FfiConverterTypePackageModel.read(from: &buf), 
+                license: FfiConverterString.read(from: &buf), 
+                notices: FfiConverterSequenceString.read(from: &buf), 
+                files: FfiConverterSequenceTypePackageFile.read(from: &buf), 
+                totalBytes: FfiConverterUInt64.read(from: &buf), 
+                config: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: PackageInfo, into buf: inout [UInt8]) {
+        FfiConverterTypePackageModel.write(value.model, into: &buf)
+        FfiConverterString.write(value.license, into: &buf)
+        FfiConverterSequenceString.write(value.notices, into: &buf)
+        FfiConverterSequenceTypePackageFile.write(value.files, into: &buf)
+        FfiConverterUInt64.write(value.totalBytes, into: &buf)
+        FfiConverterString.write(value.config, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePackageInfo_lift(_ buf: RustBuffer) throws -> PackageInfo {
+    return try FfiConverterTypePackageInfo.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePackageInfo_lower(_ value: PackageInfo) -> RustBuffer {
+    return FfiConverterTypePackageInfo.lower(value)
+}
+
+
+public struct PackageModel: Equatable, Hashable {
+    public var id: String
+    public var name: String
+    public var version: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(id: String, name: String, version: String) {
+        self.id = id
+        self.name = name
+        self.version = version
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension PackageModel: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePackageModel: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PackageModel {
+        return
+            try PackageModel(
+                id: FfiConverterString.read(from: &buf), 
+                name: FfiConverterString.read(from: &buf), 
+                version: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: PackageModel, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.id, into: &buf)
+        FfiConverterString.write(value.name, into: &buf)
+        FfiConverterString.write(value.version, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePackageModel_lift(_ buf: RustBuffer) throws -> PackageModel {
+    return try FfiConverterTypePackageModel.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePackageModel_lower(_ value: PackageModel) -> RustBuffer {
+    return FfiConverterTypePackageModel.lower(value)
 }
 
 
@@ -4047,8 +4281,8 @@ public enum GeneratorError: Swift.Error, Equatable, Hashable, Foundation.Localiz
     
     
     /**
-     * A file of the model directory or a resampler table is missing or unreadable, or the directory holds
-     * a model this runtime does not run.
+     * A file of the model directory or a resampler table is missing or unreadable, the directory holds
+     * a model this runtime does not run, or a package manifest (`ensomi-package.json`) is refused.
      */
     case Model(message: String
     )
@@ -5781,6 +6015,31 @@ fileprivate struct FfiConverterSequenceTypeModelFile: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterSequenceTypePackageFile: FfiConverterRustBuffer {
+    typealias SwiftType = [PackageFile]
+
+    public static func write(_ value: [PackageFile], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypePackageFile.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [PackageFile] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [PackageFile]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypePackageFile.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeSectionRequest: FfiConverterRustBuffer {
     typealias SwiftType = [SectionRequest]
 
@@ -5871,6 +6130,19 @@ public func tierJudgement(tier: Tier) -> Judgement  {
 })
 }
 /**
+ * Checks a model package's `ensomi-package.json`: its format, that this runtime is at least its `min_runtime`, that it
+ * names the model and pipeline this runtime runs, its paths, and its notices and config among its files. Throws
+ * `GeneratorError.Model` naming what is wrong. A downloader fetches exactly `files` and checks each one's size and
+ * SHA-256 before `open`.
+ */
+public func checkPackage(manifestJson: String)throws  -> PackageInfo  {
+    return try  FfiConverterTypePackageInfo_lift(try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
+    uniffi_ensomi_runtime_ffi_fn_func_check_package(
+        FfiConverterString.lower(manifestJson),$0
+    )
+})
+}
+/**
  * The `.osz` of a generated chart: `generated.osu`, the song's audio file under the name the `.osu` gives it, and
  * `receipt.json` from the receipt's JSON; see `ensomi_osz::osz`. Bytes in, bytes out: the caller reads the song and
  * saves the archive.
@@ -5885,8 +6157,8 @@ public func exportOsz(osu: String, audio: Data, receiptJson: String) -> Data  {
 })
 }
 /**
- * The files a model directory needs besides its runtime config (`runtime.json`): the graphs, the
- * arrays the config names and its licence notices, as paths relative to the directory.
+ * The files a model directory without `ensomi-package.json` needs besides its runtime config (`runtime.json`): the
+ * graphs, the arrays the config names and its licence notices, as paths relative to the directory.
  */
 public func modelFiles(runtimeConfig: String)throws  -> [String]  {
     return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
@@ -5934,10 +6206,13 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ensomi_runtime_ffi_checksum_func_tier_judgement() != 59231) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_ensomi_runtime_ffi_checksum_func_check_package() != 52192) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_ensomi_runtime_ffi_checksum_func_export_osz() != 11885) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_ensomi_runtime_ffi_checksum_func_model_files() != 4720) {
+    if (uniffi_ensomi_runtime_ffi_checksum_func_model_files() != 47412) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_func_notice_files() != 6381) {
@@ -6054,7 +6329,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ensomi_runtime_ffi_checksum_constructor_cancellation_new() != 60988) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_ensomi_runtime_ffi_checksum_constructor_chartgenerator_open() != 15501) {
+    if (uniffi_ensomi_runtime_ffi_checksum_constructor_chartgenerator_open() != 6196) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_constructor_prepared_new() != 62881) {

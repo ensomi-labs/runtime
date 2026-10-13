@@ -134,6 +134,62 @@ final class GeneratorTests: XCTestCase {
         }
     }
 
+    /// The published package's manifest (conformance/package), read without the model.
+    func testCheckPackageReadsThePublishedManifest() throws {
+        let manifest = try String(contentsOf: Self.publishedManifest, encoding: .utf8)
+        let package = try checkPackage(manifestJson: manifest)
+        XCTAssertEqual(package.model, PackageModel(id: "ensomi-r2", name: "Ensomi R2", version: "r2-1.0"))
+        XCTAssertEqual(package.notices, ["BeatThis-LICENSE.txt"])
+        XCTAssertEqual(package.config, "runtime.json")
+        XCTAssertEqual(package.files.count, 30)
+        XCTAssertEqual(package.totalBytes, package.files.reduce(0) { $0 + $1.size })
+        XCTAssertThrowsError(try checkPackage(manifestJson: manifest.replacingOccurrences(of: "ensomi-package/1", with: "ensomi-package/2"))) { error in
+            guard case .Model(let message) = error as? GeneratorError else { return XCTFail("\(error)") }
+            XCTAssertTrue(message.contains("ensomi-package/2"), message)
+        }
+    }
+
+    /// The released files with the published package's manifest beside them: `open` checks the manifest and the files'
+    /// sizes, and the capabilities list the manifest's files. A manifest that leaves out a file `runtime.json` names is
+    /// refused, and so is a listed file of another size, or missing.
+    func testOpenChecksThePackageManifest() throws {
+        let paths = try Paths()
+        let manifest = try String(contentsOf: Self.publishedManifest, encoding: .utf8)
+        let package = try checkPackage(manifestJson: manifest)
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        for file in package.files {
+            try FileManager.default.copyItem(at: paths.model.appendingPathComponent(file.path), to: directory.appendingPathComponent(file.path))
+        }
+        try manifest.write(to: directory.appendingPathComponent("ensomi-package.json"), atomically: true, encoding: .utf8)
+
+        let files = try paths.open(.cpu, directory: directory).capabilities().files
+        XCTAssertEqual(files.map(\.path), package.files.map(\.path))
+        XCTAssertEqual(files.map(\.sha256Hex), package.files.map(\.sha256))
+        XCTAssertEqual(files.map(\.sizeBytes), package.files.map { Optional($0.size) })
+
+        func assertRefused(_ what: String, _ expected: String) {
+            XCTAssertThrowsError(try paths.open(.cpu, directory: directory), what) { error in
+                guard case .Model(let message) = error as? GeneratorError else { return XCTFail("\(error)") }
+                XCTAssertTrue(message.contains(expected), message)
+            }
+        }
+        var unlisted = try JSONSerialization.jsonObject(with: Data(manifest.utf8)) as! [String: Any]
+        unlisted["files"] = (unlisted["files"] as! [[String: Any]]).filter { $0["path"] as? String != "r2_release.onnx" }
+        try JSONSerialization.data(withJSONObject: unlisted).write(to: directory.appendingPathComponent("ensomi-package.json"))
+        assertRefused("a manifest without a graph", "r2_release.onnx is named by runtime.json but not listed in ensomi-package.json")
+        try manifest.write(to: directory.appendingPathComponent("ensomi-package.json"), atomically: true, encoding: .utf8)
+
+        let notice = directory.appendingPathComponent("BeatThis-LICENSE.txt")
+        let size = "BeatThis-LICENSE.txt is missing or is not the 1113 bytes"
+        try Data("another licence".utf8).write(to: notice)
+        assertRefused("a file of another size", size)
+        try FileManager.default.removeItem(at: notice)
+        assertRefused("a missing file", size)
+    }
+
+    /// Without a manifest the capabilities list the graphs `runtime.json` names, with no checksums.
     func testCapabilitiesDescribeTheModel() throws {
         let capabilities = try Paths().open(.cpu).capabilities()
         XCTAssertEqual(capabilities.modelName, "Ensomi R2")
@@ -180,6 +236,16 @@ final class GeneratorTests: XCTestCase {
         }
     }
 
+    /// An app finds ONNX Runtime's licence and notices in the package.
+    func testThePackageCarriesOnnxRuntimesLicence() throws {
+        let files = ChartGenerator.onnxRuntimeLicenseFiles
+        XCTAssertEqual(files.map(\.lastPathComponent), ["LICENSE", "ThirdPartyNotices.txt"])
+        for file in files {
+            XCTAssertFalse(try String(contentsOf: file, encoding: .utf8).isEmpty, file.path)
+        }
+        XCTAssertTrue(try String(contentsOf: files[0], encoding: .utf8).contains("MIT License"))
+    }
+
     #if os(macOS)
     /// The archive opens with the system's unzip and holds the files the web runtime's `.osz` holds.
     func testOszOpensWithTheChartTheSongAndTheReceipt() throws {
@@ -208,14 +274,17 @@ final class GeneratorTests: XCTestCase {
 
     // MARK: Inputs
 
+    // .../swift/Tests/EnsomiRuntimeTests/GeneratorTests.swift -> repository root
+    private static let root = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent().deletingLastPathComponent()
+        .deletingLastPathComponent().deletingLastPathComponent()
+    private static let publishedManifest = root.appendingPathComponent("conformance/package/ensomi-package.json")
+
     private struct Paths {
         let model, recordings, charts: URL
 
         init() throws {
-            // .../swift/Tests/EnsomiRuntimeTests/GeneratorTests.swift -> repository root
-            let root = URL(fileURLWithPath: #filePath)
-                .deletingLastPathComponent().deletingLastPathComponent()
-                .deletingLastPathComponent().deletingLastPathComponent()
+            let root = GeneratorTests.root
             let workspace = root.deletingLastPathComponent()
             model = workspace.appendingPathComponent("ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2/onnx")
             recordings = workspace.appendingPathComponent("ensomi-model/artifacts/runtime-ref/bulk")
@@ -225,9 +294,9 @@ final class GeneratorTests: XCTestCase {
             }
         }
 
-        func open(_ provider: ExecutionProvider, lowMemory: Bool? = nil) throws -> ChartGenerator {
+        func open(_ provider: ExecutionProvider, lowMemory: Bool? = nil, directory: URL? = nil) throws -> ChartGenerator {
             try ChartGenerator.open(
-                modelDirectory: model.path,
+                modelDirectory: (directory ?? model).path,
                 options: GeneratorOptions(provider: provider, lowMemory: lowMemory)
             )
         }

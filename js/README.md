@@ -7,7 +7,7 @@ run by ONNX Runtime Web.
 ```js
 import { loadModels, generateChart } from '@ensomi/runtime';
 
-// The model's onnx/ directory (sed-i/ensomi-r2): runtime.json and the files it names.
+// The model's onnx/ directory (sed-i/ensomi-r2): ensomi-package.json and the files it lists.
 const models = await loadModels(modelBaseUrl);
 const result = await generateChart(models, pcm, sampleRate, { star: 3.5, seed: 7, title: 'Song', artist: 'Artist' });
 result.chart;    // EnsomiProtocol chart: {duration_ms, objects: [{lane, start_ms, end_ms?}]}
@@ -50,10 +50,21 @@ scheduler.work().then(({ result }) => {});                 // generates ahead of
 
 - `pcm` is mono `Float32Array` or `Float64Array`, or `{samples, channels}` with interleaved samples. PCM at a rate
   other than 22050 Hz is resampled with the soxr tables in the package's `resampler/` directory.
-- `loadModels` also reads the licence notices `runtime.json` names, BeatThis's MIT licence (`BeatThis-LICENSE.txt`),
-  into `models.notices` as `[{path, text}]`, for the app to show with the model. Running the model does not need
-  them, so a notice the source lacks (a folder installed without it) is left out. `noticeFiles(runtimeConfigJson)`
-  resolves to their paths, for a downloader.
+- `loadModels` fetches the package's manifest, `ensomi-package.json` ([docs/model-package.md](../docs/model-package.md)),
+  first. With it, it checks the manifest, fetches the config it names and refuses a manifest that leaves out a file
+  that config names, as Swift's `open` does, before fetching anything else; then it fetches the other files it lists
+  and checks each one's SHA-256 with `crypto.subtle` (in a browser, a secure context), and reads no other file; a
+  mismatch rejects, naming the file.
+  `models.package` is the checked manifest and `models.notices` its licence notices, BeatThis's MIT licence
+  (`BeatThis-LICENSE.txt`), as `[{path, text}]` for the app to show with the model. `checkPackage(json)` resolves to
+  the same checked manifest, `{model, license, notices, files: [{path, size, sha256}], totalBytes, config}`, and
+  rejects a format other than `ensomi-package/1`, a `min_runtime` above this runtime's version, another model or
+  pipeline, a path outside the package or out of order, or notices or a config not among the files.
+- Without the manifest, `loadModels` reads `runtime.json` and the files it names, as 0.2 did: a source signals a file
+  it does not have by rejecting with an error whose `code` is `'ENOENT'`, as Node's `readFile` does, and `urlSource`
+  does so for an HTTP 404 and `localFilesSource` for a file not picked. A source of your own that rejects otherwise
+  for the manifest fails loading. `models.notices` are then the notices `runtime.json` names, leaving out one the
+  source lacks (a folder installed without it), and `noticeFiles(runtimeConfigJson)` resolves to their paths.
 - `loadModels` reads the Wasm core (`pkg/`) and the tables from beside its own module: with `fetch` in a browser,
   from the file system in Node 22.3 or later. A bundler that moves the module passes `options.core` and
   `options.runtimeSource`. `src/index.d.ts` lists every option.

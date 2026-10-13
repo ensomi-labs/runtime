@@ -1,4 +1,4 @@
-export { loadModels, noticeFiles, urlSource, localFilesSource, Models } from './models.js';
+export { loadModels, checkPackage, noticeFiles, urlSource, localFilesSource, Models } from './models.js';
 export { generateChart, prepare, Prepared } from './generate.js';
 export { ChartScheduler } from './schedule.js';
 export { decodeAudio } from './decode_audio.js';

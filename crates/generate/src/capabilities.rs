@@ -7,6 +7,10 @@ const NOT_WORKING: u32 = 3;
 
 pub const MODEL_NAME: &str = "Ensomi R2";
 pub const MODEL_VERSION: &str = "r2-1.0";
+/// The model and pipeline a package's manifest must name (`package::check`): the R2 pipeline built into this runtime.
+pub const MODEL_ID: &str = "ensomi-r2";
+pub const PIPELINE_ID: &str = "r2";
+pub const PIPELINE_VERSION: u64 = 1;
 
 pub fn capabilities(paths: &[String]) -> Value {
     let control = |name: &str, status: u32, note: &str| json!({"name": name, "status": status, "note": note});

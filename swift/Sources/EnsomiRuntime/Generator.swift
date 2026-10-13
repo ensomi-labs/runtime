@@ -1,20 +1,29 @@
 import Foundation
 
 extension ChartGenerator {
-    /// The resampler tables the package carries: `resample-<rate>.json`, `.bin` and `-boundary.bin`. Xcode copies
-    /// the package's resource bundle into the app or test bundle that links the package, where `Bundle.module`, which
-    /// aborts when it finds nothing, does not look if a framework links the package; so the loaded bundles come first.
-    static let bundledResamplerDirectory: String? = {
+    /// The package's resource bundle. Xcode copies it into the app or test bundle that links the package, where
+    /// `Bundle.module`, which aborts when it finds nothing, does not look if a framework links the package; so the
+    /// loaded bundles come first.
+    private static let resources: Bundle = {
         let copies = (Bundle.allBundles + Bundle.allFrameworks).lazy.compactMap { bundle in
             bundle.resourceURL.flatMap { Bundle(url: $0.appendingPathComponent("EnsomiRuntime_EnsomiRuntime.bundle")) }
         }
-        return (copies.first ?? Bundle.module).url(forResource: "resampler", withExtension: nil)?.path
+        return copies.first ?? Bundle.module
     }()
 
-    /// Opens a model directory: `runtime.json` and the files it names, or the runtime config an optional
-    /// `ensomi-model.json` manifest names (its format is not settled; the released model has none). Without
-    /// `options.resamplerDirectory`, PCM at a rate other than 22050 Hz is resampled with the tables the package
-    /// carries.
+    /// The resampler tables the package carries: `resample-<rate>.json`, `.bin` and `-boundary.bin`.
+    static let bundledResamplerDirectory: String? = resources.url(forResource: "resampler", withExtension: nil)?.path
+
+    /// ONNX Runtime's licence (MIT) and third-party notices, `LICENSE` and `ThirdPartyNotices.txt`, which the package
+    /// carries: an app that ships the generator, and with it ONNX Runtime, shows them with its acknowledgements.
+    public static let onnxRuntimeLicenseFiles: [URL] = ["LICENSE", "ThirdPartyNotices.txt"].compactMap {
+        resources.url(forResource: $0, withExtension: nil, subdirectory: "licenses/onnxruntime")
+    }
+
+    /// Opens a model directory. With an `ensomi-package.json`, checks it (`checkPackage`), requires every file it lists
+    /// at its listed size, reads the runtime config it names and requires the manifest to list every file that config
+    /// names; the SHA-256s are the downloader's check. Without it, reads `runtime.json` and the files it names. Without
+    /// `options.resamplerDirectory`, PCM at a rate other than 22050 Hz is resampled with the tables the package carries.
     public static func open(modelDirectory: String, options: GeneratorOptions) throws -> ChartGenerator {
         var options = options
         options.resamplerDirectory = options.resamplerDirectory ?? bundledResamplerDirectory

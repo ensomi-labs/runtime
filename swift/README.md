@@ -5,7 +5,7 @@ macOS 14 and iOS 17. The manifest is [`Package.swift`](../Package.swift) at the 
 looks for it. An app pins a release:
 
 ```swift
-.package(url: "https://github.com/ensomi-labs/runtime", from: "0.2.1")
+.package(url: "https://github.com/ensomi-labs/runtime", from: "0.3.0")
 // target dependency: .product(name: "EnsomiRuntime", package: "runtime")
 ```
 
@@ -50,7 +50,7 @@ runs the graphs, so a chart is one call.
 
 ```swift
 let generator = try ChartGenerator.open(
-    modelDirectory: onnx.path,                     // sed-i/ensomi-r2 onnx/: runtime.json and the files it names
+    modelDirectory: onnx.path,                     // sed-i/ensomi-r2 onnx/: ensomi-package.json and the files it lists
     options: GeneratorOptions(provider: .cpu)
 )
 let capabilities = generator.capabilities()        // EnsomiProtocol ModelCapabilities
@@ -63,21 +63,27 @@ result.osu                                          // the chart as an osu!mania
 result.receipt                                      // EnsomiProtocol GenerationReceipt
 ```
 
-- `open` reads `runtime.json` and the files it names. When the directory also holds an `ensomi-model.json`
-  manifest (its format is not settled; the released model has none), `open` reads the runtime config it names and
-  refuses the package unless this runtime is in its runtime range, it is Ensomi R2 `r2-1.0` and every file it lists
-  has its listed size; the downloader checks each file's SHA-256. `capabilities().files` then carry the manifest's
-  checksums and sizes.
+- The model package's manifest is `ensomi-package.json` ([`docs/model-package.md`](../docs/model-package.md)).
+  `checkPackage(manifestJson:)` checks one and returns its `PackageInfo`: `model`, `license`, `notices`, `files`
+  (`path`, `size`, `sha256`), `totalBytes` and `config`; it throws `GeneratorError.Model` for a format other than
+  `ensomi-package/1`, a `min_runtime` above this runtime's version, another model or pipeline than Ensomi R2 `r2-1.0`
+  on `r2` version 1, a path outside the package or out of order, or notices or a config not among the files. A
+  downloader fetches the manifest, checks it, then fetches exactly `files` and checks each one's size and SHA-256.
+- `open` with an `ensomi-package.json` in the directory checks it, refuses the directory unless every listed file is
+  there at its listed size (it computes no hashes), reads the runtime config it names and refuses a manifest that
+  leaves out a file that config names ("`<path>` is named by runtime.json but not listed in ensomi-package.json");
+  `capabilities().files` are then the manifest's files with their checksums and sizes. Without the manifest, `open`
+  reads `runtime.json` and the files it names, as 0.2 did.
 - PCM at a rate other than 22050 Hz is resampled with the runtime's soxr tables, `resample-<rate>.json`,
   `.bin` and `-boundary.bin` for 11025, 16000, 24000, 32000, 44100, 48000, 88200, 96000 and 192000 Hz
   (14 MB). The package carries them ([`assets/resampler`](../assets/resampler)) as a resource, which `open` reads
   unless `resamplerDirectory` names another directory; an app bundles nothing for them.
 - `lowMemory` releases ONNX Runtime's working memory after each graph run: peak footprint 1.3 to 1.6 GiB
   instead of 2.0 to 2.3 GiB, same charts. `nil` turns it on for iOS and off on macOS.
-- `modelFiles(runtimeConfig:)` lists the files a model directory needs besides `runtime.json`, for a
-  downloader, with the licence notices. `noticeFiles(runtimeConfig:)` lists those notices, BeatThis's MIT licence
-  (`BeatThis-LICENSE.txt`), for the app to show with the model. `open` does not read them, so a directory installed
-  without them still opens.
+- For a directory without the manifest, `modelFiles(runtimeConfig:)` lists the files it needs besides
+  `runtime.json`, with the licence notices, and `noticeFiles(runtimeConfig:)` lists those notices, BeatThis's MIT
+  licence (`BeatThis-LICENSE.txt`), for the app to show with the model. `open` does not read them, so a directory
+  installed without them still opens.
 - `exportOsz(osu:audio:receiptJson:)` makes the chart's `.osz` from `result.osu`, the song file's bytes and
   `result.receipt.receiptJson` (`crates/osz`): `generated.osu`, the audio under the name the `.osu` gives it
   (`audio.<extension>`) and `receipt.json`, the layout of the web runtime's `.osz`. The app reads the song and saves
@@ -170,5 +176,7 @@ thread, as the parity recordings were checked.
 
 The xcframework grows from 8 MiB to 128 MiB (43 MiB a slice). In the app (Release, unsigned), EnsomiCore grows by
 31.8 MiB on macOS and 31.5 MiB on iOS, or 21.6 and 21.4 MiB once stripped as an archive strips it. ONNX
-Runtime's licence (MIT) and third-party notices are in [`licenses/onnxruntime`](../licenses/onnxruntime) and
-are copied to `build/apple/licenses`; an app that ships the generator shows them with its acknowledgements.
+Runtime's licence (MIT) and third-party notices are in [`licenses/onnxruntime`](../licenses/onnxruntime); an app that
+ships the generator shows them with its acknowledgements. The package carries them as resources:
+`ChartGenerator.onnxRuntimeLicenseFiles` gives the URLs of `LICENSE` and `ThirdPartyNotices.txt` to read. They are
+also copied to `build/apple/licenses` beside the xcframework.
