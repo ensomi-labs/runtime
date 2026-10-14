@@ -100,8 +100,9 @@ These need data CI does not have. Run them in `~/ensomi/ensomi-runtime` on the c
 
    ```sh
    CARGO_TARGET_DIR=target/generate cargo run --release -p ensomi-generate-ort --example providers -- --configs cpu \
-     --model-dir ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 --reference ../ensomi-model/artifacts/runtime-ref \
-     --assets assets/resampler --out conformance/generate/bulk/providers-cpu.json --charts conformance/generate/bulk/charts
+     --model-dir ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 \
+     --reference ../ensomi-model/artifacts/runtime-ref --assets assets/resampler \
+     --out conformance/generate/bulk/providers-cpu.json --charts conformance/generate/bulk/charts
    ../ensomi-model/.venv/bin/python -m ensomi_model.evaluation.self_snap conformance/generate/bulk/charts/*.osu \
      conformance/generate/native-charts/*.osu
    ```
