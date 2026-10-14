@@ -17,7 +17,7 @@
         "networks": {
           "beatthis": {
             "calls": 6,
-            "seconds": 3.7199898330000005,
+            "seconds": 3.8098977500000006,
             "max_abs": 0.00007224082946777344,
             "outputs": {
               "beat_logits": {
@@ -46,7 +46,7 @@
           },
           "rows_encoder": {
             "calls": 1,
-            "seconds": 0.031473417,
+            "seconds": 0.035137375,
             "max_abs": 0.000026941299438476562,
             "outputs": {
               "pos": {
@@ -97,7 +97,7 @@
           },
           "rows_step": {
             "calls": 374,
-            "seconds": 0.03727061899999998,
+            "seconds": 0.03876733799999996,
             "max_abs": 0.000030517578125,
             "outputs": {
               "hidden_out": {
@@ -181,7 +181,7 @@
           },
           "r2_predict": {
             "calls": 898,
-            "seconds": 0.03268305700000001,
+            "seconds": 0.03404866300000001,
             "max_abs": 0.00001430511474609375,
             "outputs": {
               "hands": {
@@ -210,7 +210,7 @@
           },
           "r2_commit": {
             "calls": 897,
-            "seconds": 0.3593806630000001,
+            "seconds": 0.370637767,
             "max_abs": 5.7220458984375e-6,
             "outputs": {
               "next_last": {
@@ -327,7 +327,7 @@
           },
           "r2_release": {
             "calls": 2,
-            "seconds": 0.000300374,
+            "seconds": 0.00031733399999999995,
             "max_abs": 9.5367431640625e-6,
             "outputs": {
               "release_scores": {
@@ -408,22 +408,22 @@
             "multiplier": 1.0115911606943524,
             "achieved": 1.3455830579580628,
             "fallback_count": 0,
-            "wall_seconds": 0.4187964170000005
+            "wall_seconds": 0.39773691699999925
           }
         ],
         "release_passes": 1
       },
       "replay_seconds": {
-        "pcm": 0.5422252919999999,
-        "spectrogram": 0.12034495800000002,
-        "beatthis": 3.5869957500000003,
-        "mel": 0.3333310419999998,
-        "grid": 0.15490662499999963,
-        "rows": 0.09226858399999946,
-        "prior": 0.00007345799999984592,
-        "arrangement": 0.4187964170000005,
-        "export": 0.0003664170000001832,
-        "total": 5.25349975
+        "pcm": 0.554384417,
+        "spectrogram": 0.12753995899999995,
+        "beatthis": 4.07576025,
+        "mel": 0.3637420000000002,
+        "grid": 0.17097404199999983,
+        "rows": 0.09499145799999952,
+        "prior": 0.00009200000000055297,
+        "arrangement": 0.39773691699999925,
+        "export": 0.0003411250000008295,
+        "total": 5.7891699580000004
       },
       "stage5": {
         "passed": true,
@@ -442,69 +442,69 @@
         "heads": 767,
         "fallbacks": 0,
         "seconds": {
-          "pcm": 0.539319333,
-          "spectrogram": 0.12061587499999996,
-          "beatthis": 3.5896507089999994,
-          "mel": 0.33110129100000085,
-          "grid": 0.15406016699999964,
-          "rows": 0.0989985829999996,
-          "prior": 0.00006950000000051659,
-          "arrangement": 0.3547555830000001,
-          "export": 0.0003224170000003141,
-          "total": 5.188903625
+          "pcm": 0.5543405,
+          "spectrogram": 0.12243020799999987,
+          "beatthis": 4.473456917,
+          "mel": 0.3664836660000001,
+          "grid": 0.16412891600000057,
+          "rows": 0.09798883400000068,
+          "prior": 0.00007241700000031414,
+          "arrangement": 0.4512185410000002,
+          "export": 0.000377332999999453,
+          "total": 6.230507708
         },
-        "wall_seconds": 5.193924208,
+        "wall_seconds": 6.235376083,
         "timings": {
           "by_phase": {
             "validate": {
-              "core_seconds": 0.004990292,
+              "core_seconds": 0.004833625,
               "graph_seconds": 0.0
             },
             "loading": {
-              "core_seconds": 0.539322709,
+              "core_seconds": 0.554345041,
               "graph_seconds": 0.0
             },
             "timing": {
-              "core_seconds": 0.606412585,
-              "graph_seconds": 3.5890172909999998
+              "core_seconds": 0.653536001,
+              "graph_seconds": 4.472962877
             },
             "rows": {
-              "core_seconds": 0.027826970999999985,
-              "graph_seconds": 0.07114867300000007
+              "core_seconds": 0.028307863000000027,
+              "graph_seconds": 0.06965808699999995
             },
             "arrangement": {
-              "core_seconds": 0.00926107799999997,
-              "graph_seconds": 0.3454820260000001
+              "core_seconds": 0.013093099000000009,
+              "graph_seconds": 0.43806604200000104
             },
             "export": {
-              "core_seconds": 0.000348458,
+              "core_seconds": 0.000410625,
               "graph_seconds": 0.0
             }
           },
           "by_graph": {
             "beatthis": {
               "calls": 6,
-              "seconds": 3.5890172909999998
+              "seconds": 4.472962877
             },
             "r2_commit": {
               "calls": 767,
-              "seconds": 0.31812432000000007
+              "seconds": 0.40240783700000043
             },
             "r2_predict": {
               "calls": 768,
-              "seconds": 0.026494205999999985
+              "seconds": 0.03459583200000001
             },
             "r2_release": {
               "calls": 11,
-              "seconds": 0.0008635
+              "seconds": 0.001062373
             },
             "rows_encoder": {
               "calls": 1,
-              "seconds": 0.031780875
+              "seconds": 0.032336583
             },
             "rows_step": {
               "calls": 374,
-              "seconds": 0.039367798000000016
+              "seconds": 0.037321504000000054
             }
           }
         },
@@ -517,7 +517,7 @@
         "networks": {
           "beatthis": {
             "calls": 5,
-            "seconds": 3.0128164990000004,
+            "seconds": 3.314140334,
             "max_abs": 0.0000858306884765625,
             "outputs": {
               "beat_logits": {
@@ -546,7 +546,7 @@
           },
           "rows_encoder": {
             "calls": 1,
-            "seconds": 0.023244334,
+            "seconds": 0.025803792,
             "max_abs": 0.000019490718841552734,
             "outputs": {
               "pos": {
@@ -597,7 +597,7 @@
           },
           "rows_step": {
             "calls": 228,
-            "seconds": 0.022655664999999995,
+            "seconds": 0.023120796000000002,
             "max_abs": 0.0000152587890625,
             "outputs": {
               "hidden_out": {
@@ -681,7 +681,7 @@
           },
           "r2_predict": {
             "calls": 1572,
-            "seconds": 0.05727024300000001,
+            "seconds": 0.059021497999999895,
             "max_abs": 0.00001430511474609375,
             "outputs": {
               "hands": {
@@ -710,7 +710,7 @@
           },
           "r2_commit": {
             "calls": 1570,
-            "seconds": 0.6266806069999996,
+            "seconds": 0.6396956340000005,
             "max_abs": 6.794929504394531e-6,
             "outputs": {
               "next_last": {
@@ -827,7 +827,7 @@
           },
           "r2_release": {
             "calls": 8,
-            "seconds": 0.0006827080000000001,
+            "seconds": 0.000695585,
             "max_abs": 0.000011444091796875,
             "outputs": {
               "release_scores": {
@@ -908,22 +908,22 @@
             "multiplier": 0.9365579816442061,
             "achieved": 1.4391102764195374,
             "fallback_count": 0,
-            "wall_seconds": 0.3661640000000002
+            "wall_seconds": 0.3483559580000001
           }
         ],
         "release_passes": 2
       },
       "replay_seconds": {
-        "pcm": 0.390906459,
-        "spectrogram": 0.09681337499999995,
-        "beatthis": 2.992950875,
-        "mel": 0.26982687499999974,
-        "grid": 0.06454799999999977,
-        "rows": 0.0606753749999998,
-        "prior": 0.00006437499999992724,
-        "arrangement": 0.3661640000000002,
-        "export": 0.0003210830000007263,
-        "total": 4.245797916
+        "pcm": 0.6064955419999999,
+        "spectrogram": 0.1682259580000001,
+        "beatthis": 3.6530644999999997,
+        "mel": 0.2886144169999998,
+        "grid": 0.07599391699999979,
+        "rows": 0.06727545800000098,
+        "prior": 0.0000711250000003929,
+        "arrangement": 0.3483559580000001,
+        "export": 0.0003617919999996957,
+        "total": 5.211451667
       },
       "stage5": {
         "passed": true,
@@ -939,69 +939,69 @@
         "heads": 805,
         "fallbacks": 0,
         "seconds": {
-          "pcm": 0.388638334,
-          "spectrogram": 0.09757700000000005,
-          "beatthis": 2.990265917,
-          "mel": 0.265078833,
-          "grid": 0.06428387500000007,
-          "rows": 0.06505879099999948,
-          "prior": 0.00006300000000010186,
-          "arrangement": 0.3714928330000007,
-          "export": 0.0003130000000001019,
-          "total": 4.24278025
+          "pcm": 0.41585870900000005,
+          "spectrogram": 0.10185674999999998,
+          "beatthis": 3.9994015830000005,
+          "mel": 0.28061920800000006,
+          "grid": 0.06750470800000039,
+          "rows": 0.06566737499999908,
+          "prior": 0.00006554100000084873,
+          "arrangement": 0.3422578339999991,
+          "export": 0.0003508749999991778,
+          "total": 5.273592374999999
         },
-        "wall_seconds": 4.246443792,
+        "wall_seconds": 5.277583208,
         "timings": {
           "by_phase": {
             "validate": {
-              "core_seconds": 0.003633334,
+              "core_seconds": 0.0039625,
               "graph_seconds": 0.0
             },
             "loading": {
-              "core_seconds": 0.388641292,
+              "core_seconds": 0.415861042,
               "graph_seconds": 0.0
             },
             "timing": {
-              "core_seconds": 0.427486791,
-              "graph_seconds": 2.9897212920000005
+              "core_seconds": 0.450531334,
+              "graph_seconds": 3.998852835
             },
             "rows": {
-              "core_seconds": 0.017089918999999995,
-              "graph_seconds": 0.047955338999999965
+              "core_seconds": 0.017922878000000007,
+              "graph_seconds": 0.047730369000000016
             },
             "arrangement": {
-              "core_seconds": 0.009565154999999985,
-              "graph_seconds": 0.36190495899999964
+              "core_seconds": 0.009996726999999983,
+              "graph_seconds": 0.3322424930000008
             },
             "export": {
-              "core_seconds": 0.000337584,
+              "core_seconds": 0.000378083,
               "graph_seconds": 0.0
             }
           },
           "by_graph": {
             "beatthis": {
               "calls": 5,
-              "seconds": 2.9897212920000005
+              "seconds": 3.998852835
             },
             "r2_commit": {
               "calls": 805,
-              "seconds": 0.33347383100000016
+              "seconds": 0.3070483720000003
             },
             "r2_predict": {
               "calls": 806,
-              "seconds": 0.027785501999999993
+              "seconds": 0.02461053900000003
             },
             "r2_release": {
               "calls": 10,
-              "seconds": 0.000645626
+              "seconds": 0.000583582
             },
             "rows_encoder": {
               "calls": 1,
-              "seconds": 0.023834834
+              "seconds": 0.024969083
             },
             "rows_step": {
               "calls": 228,
-              "seconds": 0.024120504999999993
+              "seconds": 0.022761286
             }
           }
         },
@@ -1014,7 +1014,7 @@
         "networks": {
           "beatthis": {
             "calls": 5,
-            "seconds": 3.010873499,
+            "seconds": 3.2564021240000005,
             "max_abs": 0.00013494491577148438,
             "outputs": {
               "beat_logits": {
@@ -1043,7 +1043,7 @@
           },
           "rows_encoder": {
             "calls": 1,
-            "seconds": 0.021050375,
+            "seconds": 0.02337725,
             "max_abs": 0.00001728534698486328,
             "outputs": {
               "pos": {
@@ -1094,7 +1094,7 @@
           },
           "rows_step": {
             "calls": 201,
-            "seconds": 0.020587047000000004,
+            "seconds": 0.020173875999999997,
             "max_abs": 0.00002288818359375,
             "outputs": {
               "hidden_out": {
@@ -1178,7 +1178,7 @@
           },
           "r2_predict": {
             "calls": 1458,
-            "seconds": 0.0551683299999999,
+            "seconds": 0.055417066,
             "max_abs": 0.0000152587890625,
             "outputs": {
               "hands": {
@@ -1207,7 +1207,7 @@
           },
           "r2_commit": {
             "calls": 1456,
-            "seconds": 0.5996535000000002,
+            "seconds": 0.6026321280000004,
             "max_abs": 6.198883056640625e-6,
             "outputs": {
               "next_last": {
@@ -1324,7 +1324,7 @@
           },
           "r2_release": {
             "calls": 28,
-            "seconds": 0.002747169,
+            "seconds": 0.002707996,
             "max_abs": 0.000011444091796875,
             "outputs": {
               "release_scores": {
@@ -1413,22 +1413,22 @@
             "multiplier": 0.9864770276584522,
             "achieved": 1.4419794005024615,
             "fallback_count": 0,
-            "wall_seconds": 0.33916987500000007
+            "wall_seconds": 0.3156783749999995
           }
         ],
         "release_passes": 2
       },
       "replay_seconds": {
-        "pcm": 0.353905125,
-        "spectrogram": 0.08845791600000001,
-        "beatthis": 2.996569208,
-        "mel": 0.2439754170000001,
-        "grid": 0.09336008300000004,
-        "rows": 0.05441300000000047,
-        "prior": 0.00006550000000015643,
-        "arrangement": 0.33916987500000007,
-        "export": 0.0002975830000004862,
-        "total": 4.173228208
+        "pcm": 0.35786399999999996,
+        "spectrogram": 0.08827658300000002,
+        "beatthis": 3.4680506250000005,
+        "mel": 0.2798672080000006,
+        "grid": 0.10548645799999941,
+        "rows": 0.05560337500000059,
+        "prior": 0.00007262499999978899,
+        "arrangement": 0.3156783749999995,
+        "export": 0.00033166699999947016,
+        "total": 4.674183375
       },
       "stage5": {
         "passed": true,
@@ -1444,69 +1444,69 @@
         "heads": 670,
         "fallbacks": 0,
         "seconds": {
-          "pcm": 0.353350625,
-          "spectrogram": 0.08789895800000005,
-          "beatthis": 2.994030792,
-          "mel": 0.24357541600000013,
-          "grid": 0.09247579199999972,
-          "rows": 0.057973250000000004,
-          "prior": 0.00006283299999995506,
-          "arrangement": 0.308176375,
-          "export": 0.00031079200000021955,
-          "total": 4.137864749999999
+          "pcm": 0.371918541,
+          "spectrogram": 0.09026387499999998,
+          "beatthis": 3.3543130000000003,
+          "mel": 0.2656924170000007,
+          "grid": 0.10317879099999891,
+          "rows": 0.05927995800000008,
+          "prior": 0.00006908299999940937,
+          "arrangement": 0.3098816670000006,
+          "export": 0.00032445799999914014,
+          "total": 4.554928083
         },
-        "wall_seconds": 4.141221583,
+        "wall_seconds": 4.558619333,
         "timings": {
           "by_phase": {
             "validate": {
-              "core_seconds": 0.00332325,
+              "core_seconds": 0.003659459,
               "graph_seconds": 0.0
             },
             "loading": {
-              "core_seconds": 0.353353708,
+              "core_seconds": 0.371919916,
               "graph_seconds": 0.0
             },
             "timing": {
-              "core_seconds": 0.42446979100000004,
-              "graph_seconds": 2.993513375
+              "core_seconds": 0.459451667,
+              "graph_seconds": 3.353996709
             },
             "rows": {
-              "core_seconds": 0.015203867999999995,
-              "graph_seconds": 0.042757343000000024
+              "core_seconds": 0.015940872999999994,
+              "graph_seconds": 0.04332574099999999
             },
             "arrangement": {
-              "core_seconds": 0.008300579000000002,
-              "graph_seconds": 0.2998705399999999
+              "core_seconds": 0.009455597000000034,
+              "graph_seconds": 0.30041926100000005
             },
             "export": {
-              "core_seconds": 0.000339667,
+              "core_seconds": 0.000354584,
               "graph_seconds": 0.0
             }
           },
           "by_graph": {
             "beatthis": {
               "calls": 5,
-              "seconds": 2.993513375
+              "seconds": 3.353996709
             },
             "r2_commit": {
               "calls": 670,
-              "seconds": 0.275646845
+              "seconds": 0.27730904700000014
             },
             "r2_predict": {
               "calls": 671,
-              "seconds": 0.02317332099999997
+              "seconds": 0.02202313000000003
             },
             "r2_release": {
               "calls": 16,
-              "seconds": 0.0010503739999999998
+              "seconds": 0.001087084
             },
             "rows_encoder": {
               "calls": 1,
-              "seconds": 0.021516791
+              "seconds": 0.022942584
             },
             "rows_step": {
               "calls": 201,
-              "seconds": 0.021240552000000006
+              "seconds": 0.020383157
             }
           }
         },
@@ -1519,7 +1519,7 @@
         "networks": {
           "beatthis": {
             "calls": 7,
-            "seconds": 4.196958790999999,
+            "seconds": 4.603620416,
             "max_abs": 0.00008869171142578125,
             "outputs": {
               "beat_logits": {
@@ -1548,7 +1548,7 @@
           },
           "rows_encoder": {
             "calls": 1,
-            "seconds": 0.037668583,
+            "seconds": 0.042489209,
             "max_abs": 0.00002193450927734375,
             "outputs": {
               "pos": {
@@ -1599,7 +1599,7 @@
           },
           "rows_step": {
             "calls": 427,
-            "seconds": 0.04305628,
+            "seconds": 0.043714502,
             "max_abs": 0.000019073486328125,
             "outputs": {
               "hidden_out": {
@@ -1683,7 +1683,7 @@
           },
           "r2_predict": {
             "calls": 1704,
-            "seconds": 0.06263236300000008,
+            "seconds": 0.06191792099999999,
             "max_abs": 0.0000133514404296875,
             "outputs": {
               "hands": {
@@ -1712,7 +1712,7 @@
           },
           "r2_commit": {
             "calls": 1703,
-            "seconds": 0.6965444039999996,
+            "seconds": 0.6626611190000007,
             "max_abs": 7.62939453125e-6,
             "outputs": {
               "next_last": {
@@ -1829,7 +1829,7 @@
           },
           "r2_release": {
             "calls": 15,
-            "seconds": 0.0014244160000000002,
+            "seconds": 0.001289332,
             "max_abs": 0.000019073486328125,
             "outputs": {
               "release_scores": {
@@ -1910,22 +1910,22 @@
             "multiplier": 1.0227338165214293,
             "achieved": 1.502286623823186,
             "fallback_count": 0,
-            "wall_seconds": 0.8005450419999998
+            "wall_seconds": 0.7198513329999996
           }
         ],
         "release_passes": 1
       },
       "replay_seconds": {
-        "pcm": 1.2932785,
-        "spectrogram": 0.14532999999999993,
-        "beatthis": 4.198871291000001,
-        "mel": 0.40043145899999943,
-        "grid": 0.2063252909999992,
-        "rows": 0.10990441600000031,
-        "prior": 0.00007825000000048021,
-        "arrangement": 0.8005450419999998,
-        "export": 0.0006033749999996872,
-        "total": 7.160427083
+        "pcm": 1.303761583,
+        "spectrogram": 0.14480570799999964,
+        "beatthis": 4.8200072920000006,
+        "mel": 0.437216958,
+        "grid": 0.21421766599999956,
+        "rows": 0.10182004099999994,
+        "prior": 0.00007404200000109994,
+        "arrangement": 0.7198513329999996,
+        "export": 0.000622707999999875,
+        "total": 7.748067625
       },
       "stage5": {
         "passed": true,
@@ -1944,69 +1944,69 @@
         "heads": 1399,
         "fallbacks": 1,
         "seconds": {
-          "pcm": 1.291726084,
-          "spectrogram": 0.1461613749999999,
-          "beatthis": 4.211380334,
-          "mel": 0.40673775000000023,
-          "grid": 0.20270291600000018,
-          "rows": 0.1159814580000002,
-          "prior": 0.00006750000000010914,
-          "arrangement": 0.658618457999999,
-          "export": 0.0005469170000005761,
-          "total": 7.033932542
+          "pcm": 1.3204062920000001,
+          "spectrogram": 0.14676600000000006,
+          "beatthis": 4.80623975,
+          "mel": 0.42970695799999975,
+          "grid": 0.21275379100000008,
+          "rows": 0.10835475000000042,
+          "prior": 0.00006825000000026194,
+          "arrangement": 0.5979295419999998,
+          "export": 0.0005435829999996713,
+          "total": 7.622778458000001
         },
-        "wall_seconds": 7.044480666,
+        "wall_seconds": 7.633555834,
         "timings": {
           "by_phase": {
             "validate": {
-              "core_seconds": 0.010512791,
+              "core_seconds": 0.010742458,
               "graph_seconds": 0.0
             },
             "loading": {
-              "core_seconds": 1.291728708,
+              "core_seconds": 1.320409667,
               "graph_seconds": 0.0
             },
             "timing": {
-              "core_seconds": 0.756512042,
-              "graph_seconds": 4.210471832
+              "core_seconds": 0.790276378,
+              "graph_seconds": 4.805189584
             },
             "rows": {
-              "core_seconds": 0.031716170999999974,
-              "graph_seconds": 0.08423565700000016
+              "core_seconds": 0.03132878700000001,
+              "graph_seconds": 0.07700371600000004
             },
             "arrangement": {
-              "core_seconds": 0.017620381999999952,
-              "graph_seconds": 0.6409073879999965
+              "core_seconds": 0.018145901000000034,
+              "graph_seconds": 0.5796931629999986
             },
             "export": {
-              "core_seconds": 0.000576416,
+              "core_seconds": 0.000577458,
               "graph_seconds": 0.0
             }
           },
           "by_graph": {
             "beatthis": {
               "calls": 7,
-              "seconds": 4.210471832
+              "seconds": 4.805189584
             },
             "r2_commit": {
               "calls": 1399,
-              "seconds": 0.5803106499999989
+              "seconds": 0.5263384509999993
             },
             "r2_predict": {
               "calls": 1400,
-              "seconds": 0.04833932300000003
+              "seconds": 0.042808288000000014
             },
             "r2_release": {
               "calls": 203,
-              "seconds": 0.012257414999999995
+              "seconds": 0.010546423999999999
             },
             "rows_encoder": {
               "calls": 1,
-              "seconds": 0.039309875
+              "seconds": 0.039335458
             },
             "rows_step": {
               "calls": 427,
-              "seconds": 0.04492578199999996
+              "seconds": 0.03766825800000009
             }
           }
         },

@@ -44,17 +44,17 @@
             "multiplier": 1.0115911606943524,
             "achieved": 1.3455830579580628,
             "fallback_count": 0,
-            "wall_seconds": 1.1930187499999994
+            "wall_seconds": 1.2867681669999984
           }
         ],
         "release_passes": 1
       },
       "replay_seconds": {
-        "rows": 0.1726453330000004,
-        "prior": 0.00045945800000117743,
-        "arrangement": 1.1930187499999994,
-        "export": 0.0015415839999986928,
-        "total": 1.3682088750000003
+        "rows": 0.19996750000000246,
+        "prior": 0.0005230420000007143,
+        "arrangement": 1.2867681669999984,
+        "export": 0.0016747920000016166,
+        "total": 1.4895611250000003
       },
       "phases": [],
       "stage5": {
@@ -66,7 +66,7 @@
         "rest_identical": true,
         "osu_identical_except_generator": true,
         "first_text_difference": null,
-        "osz_bytes": 5810
+        "osz_bytes": 5809
       },
       "prng": {
         "passed": true,
@@ -76,13 +76,13 @@
         "heads": 767,
         "fallbacks": 0,
         "seconds": {
-          "rows": 0.16086870800000178,
-          "prior": 0.00017395899999974064,
-          "arrangement": 1.0076967909999985,
-          "export": 0.0007238749999996799,
-          "total": 1.17002275
+          "rows": 0.17134470899999724,
+          "prior": 0.0001904580000009446,
+          "arrangement": 1.0317955419999998,
+          "export": 0.0007827089999991586,
+          "total": 1.2047016250000016
         },
-        "wall_seconds": 1.1735327910000015,
+        "wall_seconds": 1.2083711660000007,
         "pages": {
           "passed": true,
           "pages": 768,
@@ -126,17 +126,17 @@
             "multiplier": 0.9365579816442061,
             "achieved": 1.4391102764195374,
             "fallback_count": 0,
-            "wall_seconds": 1.0164507499999964
+            "wall_seconds": 1.0839339160000017
           }
         ],
         "release_passes": 2
       },
       "replay_seconds": {
-        "rows": 0.09495874999999797,
-        "prior": 0.00015541700000176205,
-        "arrangement": 1.0164507499999964,
-        "export": 0.0005247919999965233,
-        "total": 1.1120931670000063
+        "rows": 0.1018861670000042,
+        "prior": 0.00016316700000606942,
+        "arrangement": 1.0839339160000017,
+        "export": 0.0005794580000001588,
+        "total": 1.1865658330000006
       },
       "phases": [],
       "stage5": {
@@ -153,13 +153,13 @@
         "heads": 805,
         "fallbacks": 0,
         "seconds": {
-          "rows": 0.10454170899999736,
-          "prior": 0.00012687500000174622,
-          "arrangement": 1.0542413329999982,
-          "export": 0.0005409589999981108,
-          "total": 1.1594545419999995
+          "rows": 0.1132515840000051,
+          "prior": 0.00014508300000306917,
+          "arrangement": 1.1412222079999992,
+          "export": 0.0006139580000017304,
+          "total": 1.2552357919999995
         },
-        "wall_seconds": 1.161320040999999,
+        "wall_seconds": 1.2574332499999945,
         "pages": {
           "passed": true,
           "pages": 806,
@@ -213,17 +213,17 @@
             "multiplier": 0.9864770276584522,
             "achieved": 1.4419794005024615,
             "fallback_count": 0,
-            "wall_seconds": 0.9446577919999981
+            "wall_seconds": 0.9912723330000008
           }
         ],
         "release_passes": 2
       },
       "replay_seconds": {
-        "rows": 0.08575645899999654,
-        "prior": 0.00013900000000285217,
-        "arrangement": 0.9446577919999981,
-        "export": 0.0005144169999985025,
-        "total": 1.0310705420000013
+        "rows": 0.08898633300000074,
+        "prior": 0.0001392919999998412,
+        "arrangement": 0.9912723330000008,
+        "export": 0.0005364589999953751,
+        "total": 1.0809381670000002
       },
       "phases": [],
       "stage5": {
@@ -240,13 +240,13 @@
         "heads": 670,
         "fallbacks": 0,
         "seconds": {
-          "rows": 0.08995591700000659,
-          "prior": 0.00010216699999728008,
-          "arrangement": 0.8810322910000031,
-          "export": 0.0005193330000038259,
-          "total": 0.9716160420000015
+          "rows": 0.10074920799999382,
+          "prior": 0.00010912500000267756,
+          "arrangement": 0.9234535000000033,
+          "export": 0.0005660409999982221,
+          "total": 1.024881500000003
         },
-        "wall_seconds": 0.9734960830000055,
+        "wall_seconds": 1.0267152920000007,
         "pages": {
           "passed": true,
           "pages": 671,
@@ -290,17 +290,17 @@
             "multiplier": 1.0227338165214293,
             "achieved": 1.502286623823186,
             "fallback_count": 0,
-            "wall_seconds": 2.236605666000003
+            "wall_seconds": 2.3776729999999953
           }
         ],
         "release_passes": 1
       },
       "replay_seconds": {
-        "rows": 0.1692950000000128,
-        "prior": 0.00012366699999256524,
-        "arrangement": 2.236605666000003,
-        "export": 0.0009568329999892739,
-        "total": 2.4069848749999947
+        "rows": 0.18133379199999036,
+        "prior": 0.00012383299999055452,
+        "arrangement": 2.3776729999999953,
+        "export": 0.0010267920000042068,
+        "total": 2.560161708999993
       },
       "phases": [],
       "stage5": {
@@ -312,7 +312,7 @@
         "rest_identical": true,
         "osu_identical_except_generator": true,
         "first_text_difference": null,
-        "osz_bytes": 11159
+        "osz_bytes": 11157
       },
       "prng": {
         "passed": true,
@@ -322,13 +322,13 @@
         "heads": 1399,
         "fallbacks": 1,
         "seconds": {
-          "rows": 0.18807941700000083,
-          "prior": 0.00010091700000339188,
-          "arrangement": 1.8688233330000075,
-          "export": 0.0008537499999947613,
-          "total": 2.057860916000005
+          "rows": 0.20130779199999232,
+          "prior": 0.00011004200000024866,
+          "arrangement": 1.973646207999991,
+          "export": 0.0008950000000040745,
+          "total": 2.175961958
         },
-        "wall_seconds": 2.060973291999995,
+        "wall_seconds": 2.179150624999995,
         "pages": {
           "passed": true,
           "pages": 1400,
@@ -340,5 +340,5 @@
     }
   },
   "passed": true,
-  "load_seconds": 0.561281084
+  "load_seconds": 0.6036528329999999
 }

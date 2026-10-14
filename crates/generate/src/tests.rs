@@ -13,6 +13,7 @@ use crate::json::{number_string, stringify};
 use crate::models::Masks;
 use crate::r2::ChartState;
 use crate::random::{RandomSource, SeededRandom};
+use crate::rows::available_positions;
 use serde_json::json;
 use std::rc::Rc;
 
@@ -621,4 +622,36 @@ fn whole_beats_start_every_segment_on_a_whole_beat() {
     }
     let one = Grid::new(&[Segment { offset_ms: 100.0, beat_length_ms: 500.0 }]);
     assert_eq!(one.whole_beats().origins, one.origins);
+}
+
+#[test]
+fn a_beat_cut_short_keeps_its_positions_a_sixteenth_of_a_beat_before_the_next_segment() {
+    // 500 ms beats from 100 ms, then 430 ms beats from 8.95 beats later: the boundary cuts beat 8 at 475 ms, so its
+    // 11/12 and 15/16 positions lie 17 and 6 ms before the next segment's first (rowsgen.available_positions).
+    let positions: Vec<f64> = (0..48).filter(|p| p % 3 == 0 || p % 4 == 0).map(f64::from).collect();
+    let song_ms = 12_000.0;
+    // A middle segment of 0.3 beat gets no beat; the cut beat stops before it all the same.
+    let first = Segment { offset_ms: 100.0, beat_length_ms: 500.0 };
+    let second = Segment { offset_ms: 100.0 + 500.0 * 8.95, beat_length_ms: 430.0 };
+    let third = Segment { offset_ms: second.offset_ms + 129.0, beat_length_ms: 600.0 };
+    for segments in [vec![first, second], vec![first, second, third], vec![first]] {
+        let grid = Grid::new(&segments).whole_beats();
+        let b0 = grid.beat(0.0).floor();
+        let nb = ((grid.beat(song_ms)).ceil() - b0) as usize;
+        let edges: Vec<f64> = (0..=nb).map(|i| grid.time(b0 + i as f64)).collect();
+        let mut position_ms = Vec::new();
+        for b in 0..nb {
+            position_ms.extend(positions.iter().map(|p| grid.time(b0 + b as f64 + p / 48.0)));
+        }
+        let available = available_positions(&grid, &edges, &position_ms, song_ms);
+        let cut = (8.0 - b0) as usize;
+        for (i, &x) in position_ms.iter().enumerate() {
+            let inside = x >= 0.0 && x <= song_ms - 2.0;
+            let expected = if segments.len() > 1 && i / 24 == cut { inside && positions[i % 24] <= 42.0 } else { inside };
+            assert_eq!(available[i], expected, "beat {} position {}", i / 24, positions[i % 24]);
+        }
+        if segments.len() > 1 {
+            assert_eq!(edges[cut + 1], segments[segments.len() - 1].offset_ms);
+        }
+    }
 }

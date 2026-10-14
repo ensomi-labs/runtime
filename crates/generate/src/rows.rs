@@ -1,6 +1,6 @@
 //! audio_rows/rowsgen.py: song encoder, GRU, copy mixture, quiet rests and section tilt. Beats are the grid's whole
-//! beats (`Grid::whole_beats`), so every position lies on its own segment's beat lines; a position less than 2 ms
-//! before the next beat, which only a beat that the next segment cuts short has, is not available.
+//! beats (`Grid::whole_beats`), so every position lies on its own segment's beat lines; a beat that the next segment
+//! cuts short keeps only its positions at least a sixteenth of a beat before it (`available_positions`).
 use crate::grid::Grid;
 use crate::machine::{Io, Tensor};
 use crate::math::{clip, f32r, interp, modp, round, sum};
@@ -68,6 +68,25 @@ fn song_inputs(models: &Models, grid: &Grid, song_ms: f64, request: f64, section
     SongInputs { nb, edges, position_ms, extra, target }
 }
 
+/// rowsgen.available_positions: [nb * 24] positions a figure may use, inside [0, T - 2 ms] and at least a sixteenth of
+/// its segment's beat before the next beat or the next segment starts, whichever is first. A whole beat's last position
+/// (15/16) is exactly that far from the next beat, so only a beat cut short by the next segment loses positions, and
+/// none lands nearer that segment's first one; a segment under half a beat long, which has no beat of its own, stops
+/// the beat before it all the same. 1e-6 ms absorbs the float error at 15/16.
+pub(crate) fn available_positions(grid: &Grid, edges: &[f64], position_ms: &[f64], song_ms: f64) -> Vec<bool> {
+    let mut available = vec![false; position_ms.len()];
+    for b in 0..edges.len() - 1 {
+        let s = grid.segment(edges[b]);
+        let next_offset = grid.offsets.get(s + 1).copied().unwrap_or(f64::INFINITY);
+        let end = f64::min(edges[b + 1], next_offset) - grid.lengths[s] / 16.0 + 1e-6;
+        for p in 0..24 {
+            let x = position_ms[b * 24 + p];
+            available[b * 24 + p] = x >= 0.0 && x <= song_ms - 2.0 && x <= end;
+        }
+    }
+    available
+}
+
 /// How quiet each beat is relative to the song, as a rank in [0, 1].
 fn quiet_rank(mel: &[f32], beat_frames: &[i64]) -> Vec<f64> {
     let window = 4usize;
@@ -128,15 +147,11 @@ pub async fn decode_rows(io: &Io, models: &Models, features: &[f32], grid: &Grid
     let pos_frames: Vec<i64> = position_ms.iter().map(|&x| clip((x / 10.0).trunc(), 0.0, nf as f64 - 1.0) as i64).collect();
     let bf: Vec<i64> = edges.iter().map(|&x| clip((x / 10.0).trunc(), 0.0, nf as f64) as i64).collect();
     let mut beat_frames = vec![0i64; nb * 2];
-    let mut available = vec![false; nb * 24];
     for b in 0..nb {
         beat_frames[b * 2] = bf[b];
         beat_frames[b * 2 + 1] = (nf as i64).min(bf[b + 1].max(bf[b] + 1));
     }
-    for i in 0..position_ms.len() {
-        let x = position_ms[i];
-        available[i] = x >= 0.0 && x <= song_ms - 2.0 && x <= edges[i / 24 + 1] - 2.0;
-    }
+    let available = available_positions(grid, &edges, &position_ms, song_ms);
     let quiet = quiet_rank(&mel, &beat_frames);
     let mut encoded = io
         .run(
