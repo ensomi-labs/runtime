@@ -73,6 +73,7 @@ scheduler.work().then(({ result }) => {});                 // generates ahead of
   also goes to `console.error`. The core's instance is then replaced, and the next `generateChart` loads the model
   into the new one from `source` again.
 
-Apache-2.0. The model (`sed-i/ensomi-r2`) is licensed CC BY-NC-SA 4.0, except BeatThis (CPJKU): `onnx/beatthis.onnx`,
-an ONNX export of its `final0` checkpoint, and its front-end arrays `onnx/beatthis-mel-filter.bin` and
-`onnx/beatthis-hann-window.bin` keep BeatThis's MIT licence (`onnx/BeatThis-LICENSE.txt`, in `models.notices`).
+Apache-2.0. The model (`sed-i/ensomi-r2`) is licensed MIT, as its [card](https://huggingface.co/sed-i/ensomi-r2)
+states; BeatThis (CPJKU) keeps its own MIT notice (`onnx/BeatThis-LICENSE.txt`, in `models.notices`) for
+`onnx/beatthis.onnx`, an ONNX export of its `final0` checkpoint, and its front-end arrays
+`onnx/beatthis-mel-filter.bin` and `onnx/beatthis-hann-window.bin`.

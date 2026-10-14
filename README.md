@@ -64,10 +64,10 @@ A comparison with its charts holds only where it arranged the song once, as this
 
 ## Licence
 
-Apache-2.0. The model published at `sed-i/ensomi-r2` is licensed CC BY-NC-SA 4.0, except BeatThis (CPJKU):
-`onnx/beatthis.onnx`, an ONNX export of its `final0` checkpoint, and its front-end arrays
-`onnx/beatthis-mel-filter.bin` and `onnx/beatthis-hann-window.bin` keep BeatThis's MIT licence
-(`onnx/BeatThis-LICENSE.txt`). The package's manifest names that file as a licence notice, one of the files a client
-downloads with the model, for the app to show: `checkPackage` in Swift and JavaScript, and `models.notices` from
-`loadModels`. `runtime.json` names it too, which `modelFiles` and `noticeFiles` read for a directory without the
-manifest.
+Apache-2.0. The model published at `sed-i/ensomi-r2` is licensed MIT, as its
+[card](https://huggingface.co/sed-i/ensomi-r2) states; BeatThis (CPJKU) keeps its own MIT notice
+(`onnx/BeatThis-LICENSE.txt`) for `onnx/beatthis.onnx`, an ONNX export of its `final0` checkpoint, and its front-end
+arrays `onnx/beatthis-mel-filter.bin` and `onnx/beatthis-hann-window.bin`. The package's manifest names that file as a
+licence notice, one of the files a client downloads with the model, for the app to show: `checkPackage` in Swift and
+JavaScript, and `models.notices` from `loadModels`. `runtime.json` names it too, which `modelFiles` and `noticeFiles`
+read for a directory without the manifest.
