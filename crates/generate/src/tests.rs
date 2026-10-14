@@ -607,3 +607,18 @@ fn playability_rejects_reattacks_quads_and_jack_runs() {
     }
     assert_eq!(guard.rejections(&chart, 4, &candidates), [bits("110011"), bits("000000"), bits("100010")]);
 }
+
+#[test]
+fn whole_beats_start_every_segment_on_a_whole_beat() {
+    // 500 ms beats from 100 ms, then 430 ms beats from 8.3, 8.5 or 8.7 beats later: the leftover of 0.3 beat gets no
+    // beat, and 0.5 or more is a beat cut short at the second offset (GridArrays.whole_beats).
+    for (beats, whole) in [(8.3, 8.0), (8.5, 9.0), (8.7, 9.0)] {
+        let second = Segment { offset_ms: 100.0 + 500.0 * beats, beat_length_ms: 430.0 };
+        let grid = Grid::new(&[Segment { offset_ms: 100.0, beat_length_ms: 500.0 }, second]).whole_beats();
+        assert_eq!(grid.origins, [0.0, whole]);
+        assert_eq!(grid.time(whole - 1.0), 100.0 + 500.0 * (whole - 1.0));
+        assert_eq!(grid.time(whole), second.offset_ms);
+    }
+    let one = Grid::new(&[Segment { offset_ms: 100.0, beat_length_ms: 500.0 }]);
+    assert_eq!(one.whole_beats().origins, one.origins);
+}

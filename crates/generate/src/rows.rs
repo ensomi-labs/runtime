@@ -1,4 +1,6 @@
-//! audio_rows/rowsgen.py: song encoder, GRU, copy mixture, quiet rests and section tilt.
+//! audio_rows/rowsgen.py: song encoder, GRU, copy mixture, quiet rests and section tilt. Beats are the grid's whole
+//! beats (`Grid::whole_beats`), so every position lies on its own segment's beat lines; a position less than 2 ms
+//! before the next beat, which only a beat that the next segment cuts short has, is not available.
 use crate::grid::Grid;
 use crate::machine::{Io, Tensor};
 use crate::math::{clip, f32r, interp, modp, round, sum};
@@ -116,6 +118,7 @@ pub async fn decode_rows(io: &Io, models: &Models, features: &[f32], grid: &Grid
     let record = &models.rows.record;
     let (v_size, lags, heads, key) = (cfg.vocab, cfg.lags, cfg.heads, cfg.key);
     let request = star_request(models, star);
+    let grid = &grid.whole_beats();
     let SongInputs { nb, edges, position_ms, extra, target } = song_inputs(models, grid, song_ms, request, sections);
     let nf = features.len() / 130;
     let mut mel = vec![0f32; nf * 128];
@@ -131,7 +134,8 @@ pub async fn decode_rows(io: &Io, models: &Models, features: &[f32], grid: &Grid
         beat_frames[b * 2 + 1] = (nf as i64).min(bf[b + 1].max(bf[b] + 1));
     }
     for i in 0..position_ms.len() {
-        available[i] = position_ms[i] >= 0.0 && position_ms[i] <= song_ms - 2.0;
+        let x = position_ms[i];
+        available[i] = x >= 0.0 && x <= song_ms - 2.0 && x <= edges[i / 24 + 1] - 2.0;
     }
     let quiet = quiet_rank(&mel, &beat_frames);
     let mut encoded = io

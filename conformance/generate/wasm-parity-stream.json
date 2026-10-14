@@ -44,17 +44,17 @@
             "multiplier": 1.0115911606943524,
             "achieved": 1.3455830579580628,
             "fallback_count": 0,
-            "wall_seconds": 1.2073704999999972
+            "wall_seconds": 1.1930187499999994
           }
         ],
         "release_passes": 1
       },
       "replay_seconds": {
-        "rows": 0.17366937499999768,
-        "prior": 0.0004489580000008573,
-        "arrangement": 1.2073704999999972,
-        "export": 0.0015187499999992724,
-        "total": 1.3835227080000003
+        "rows": 0.1726453330000004,
+        "prior": 0.00045945800000117743,
+        "arrangement": 1.1930187499999994,
+        "export": 0.0015415839999986928,
+        "total": 1.3682088750000003
       },
       "phases": [],
       "stage5": {
@@ -66,7 +66,7 @@
         "rest_identical": true,
         "osu_identical_except_generator": true,
         "first_text_difference": null,
-        "osz_bytes": 5806
+        "osz_bytes": 5810
       },
       "prng": {
         "passed": true,
@@ -76,13 +76,13 @@
         "heads": 767,
         "fallbacks": 0,
         "seconds": {
-          "rows": 0.16411325000000215,
-          "prior": 0.0001835830000018177,
-          "arrangement": 1.0024264169999988,
-          "export": 0.0007564579999998387,
-          "total": 1.1680543340000005
+          "rows": 0.16086870800000178,
+          "prior": 0.00017395899999974064,
+          "arrangement": 1.0076967909999985,
+          "export": 0.0007238749999996799,
+          "total": 1.17002275
         },
-        "wall_seconds": 1.1725176250000005,
+        "wall_seconds": 1.1735327910000015,
         "pages": {
           "passed": true,
           "pages": 768,
@@ -126,17 +126,17 @@
             "multiplier": 0.9365579816442061,
             "achieved": 1.4391102764195374,
             "fallback_count": 0,
-            "wall_seconds": 1.0303432080000057
+            "wall_seconds": 1.0164507499999964
           }
         ],
         "release_passes": 2
       },
       "replay_seconds": {
-        "rows": 0.10251604200000293,
-        "prior": 0.00016991599999892059,
-        "arrangement": 1.0303432080000057,
-        "export": 0.0005244579999998677,
-        "total": 1.133557209000006
+        "rows": 0.09495874999999797,
+        "prior": 0.00015541700000176205,
+        "arrangement": 1.0164507499999964,
+        "export": 0.0005247919999965233,
+        "total": 1.1120931670000063
       },
       "phases": [],
       "stage5": {
@@ -153,13 +153,13 @@
         "heads": 805,
         "fallbacks": 0,
         "seconds": {
-          "rows": 0.10645004199999676,
-          "prior": 0.0001345839999994496,
-          "arrangement": 1.0566998339999991,
-          "export": 0.0005370839999959572,
-          "total": 1.1638248749999984
+          "rows": 0.10454170899999736,
+          "prior": 0.00012687500000174622,
+          "arrangement": 1.0542413329999982,
+          "export": 0.0005409589999981108,
+          "total": 1.1594545419999995
         },
-        "wall_seconds": 1.1659984580000018,
+        "wall_seconds": 1.161320040999999,
         "pages": {
           "passed": true,
           "pages": 806,
@@ -172,8 +172,8 @@
     "catch-the-moment": {
       "pages": {
         "passed": true,
-        "pages": 774,
-        "tokens": 1227,
+        "pages": 729,
+        "tokens": 1133,
         "coverage_rising": true,
         "one_end_of_stream": true
       },
@@ -200,57 +200,57 @@
       },
       "stage3": {
         "passed": true,
-        "heads": 773,
-        "recorded_heads": 773
+        "heads": 728,
+        "recorded_heads": 728
       },
       "stage4": {
         "passed": true,
         "prior_max_error": 0,
-        "draws_consumed": 1767,
-        "draws_recorded": 3331,
+        "draws_consumed": 1666,
+        "draws_recorded": 3145,
         "passes": [
           {
-            "multiplier": 0.9864209795304626,
-            "achieved": 1.437874697048943,
+            "multiplier": 0.9864770276584522,
+            "achieved": 1.4419794005024615,
             "fallback_count": 0,
-            "wall_seconds": 1.0238240829999996
+            "wall_seconds": 0.9446577919999981
           }
         ],
         "release_passes": 2
       },
       "replay_seconds": {
-        "rows": 0.08730516699999862,
-        "prior": 0.00014229100000375184,
-        "arrangement": 1.0238240829999996,
-        "export": 0.0005259999999980209,
-        "total": 1.1118011250000055
+        "rows": 0.08575645899999654,
+        "prior": 0.00013900000000285217,
+        "arrangement": 0.9446577919999981,
+        "export": 0.0005144169999985025,
+        "total": 1.0310705420000013
       },
       "phases": [],
       "stage5": {
         "passed": true,
         "compared": "with the chart of the recorded pass-1 decisions",
-        "objects": 1126,
+        "objects": 1052,
         "same_as_release": false
       },
       "prng": {
         "passed": true,
         "algorithm": "mulberry32-u53-v1",
         "seed": 0,
-        "objects": 976,
-        "heads": 631,
+        "objects": 1004,
+        "heads": 670,
         "fallbacks": 0,
         "seconds": {
-          "rows": 0.0929675830000051,
-          "prior": 0.00011099999999714783,
-          "arrangement": 0.8351352079999997,
-          "export": 0.0005264170000009471,
-          "total": 0.9287442080000037
+          "rows": 0.08995591700000659,
+          "prior": 0.00010216699999728008,
+          "arrangement": 0.8810322910000031,
+          "export": 0.0005193330000038259,
+          "total": 0.9716160420000015
         },
-        "wall_seconds": 0.9304470829999991,
+        "wall_seconds": 0.9734960830000055,
         "pages": {
           "passed": true,
-          "pages": 632,
-          "tokens": 1202,
+          "pages": 671,
+          "tokens": 1247,
           "coverage_rising": true,
           "one_end_of_stream": true
         }
@@ -290,17 +290,17 @@
             "multiplier": 1.0227338165214293,
             "achieved": 1.502286623823186,
             "fallback_count": 0,
-            "wall_seconds": 2.2506340829999973
+            "wall_seconds": 2.236605666000003
           }
         ],
         "release_passes": 1
       },
       "replay_seconds": {
-        "rows": 0.1716916249999922,
-        "prior": 0.00011458299998776056,
-        "arrangement": 2.2506340829999973,
-        "export": 0.0009657919999881415,
-        "total": 2.4234083749999993
+        "rows": 0.1692950000000128,
+        "prior": 0.00012366699999256524,
+        "arrangement": 2.236605666000003,
+        "export": 0.0009568329999892739,
+        "total": 2.4069848749999947
       },
       "phases": [],
       "stage5": {
@@ -312,7 +312,7 @@
         "rest_identical": true,
         "osu_identical_except_generator": true,
         "first_text_difference": null,
-        "osz_bytes": 11157
+        "osz_bytes": 11159
       },
       "prng": {
         "passed": true,
@@ -322,13 +322,13 @@
         "heads": 1399,
         "fallbacks": 1,
         "seconds": {
-          "rows": 0.19022716699999,
-          "prior": 0.00010524999999324791,
-          "arrangement": 1.864304833000002,
-          "export": 0.000875,
-          "total": 2.055515749999991
+          "rows": 0.18807941700000083,
+          "prior": 0.00010091700000339188,
+          "arrangement": 1.8688233330000075,
+          "export": 0.0008537499999947613,
+          "total": 2.057860916000005
         },
-        "wall_seconds": 2.0584869999999937,
+        "wall_seconds": 2.060973291999995,
         "pages": {
           "passed": true,
           "pages": 1400,
@@ -340,5 +340,5 @@
     }
   },
   "passed": true,
-  "load_seconds": 0.53066125
+  "load_seconds": 0.561281084
 }
