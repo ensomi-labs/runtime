@@ -94,6 +94,19 @@ These need data CI does not have. Run them in `~/ensomi/ensomi-runtime` on the c
      --core js/pkg/ensomi_generate_wasm_bg.wasm --out conformance/generate/bulk/wasm-parity-stream.json
    ```
 
+   Then the runtime's own charts: ensomi-model's self-snap check on the four songs' CPU charts from the providers
+   example and on `native-charts` prints `"off_snap": 0, "close_rows": 0` for each (no note off its red line's snaps,
+   no head rows nearer than a sixteenth of a beat) and exits with 0:
+
+   ```sh
+   CARGO_TARGET_DIR=target/generate cargo run --release -p ensomi-generate-ort --example providers -- --configs cpu \
+     --model-dir ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 \
+     --reference ../ensomi-model/artifacts/runtime-ref --assets assets/resampler \
+     --out conformance/generate/bulk/providers-cpu.json --charts conformance/generate/bulk/charts
+   ../ensomi-model/.venv/bin/python -m ensomi_model.evaluation.self_snap conformance/generate/bulk/charts/*.osu \
+     conformance/generate/native-charts/*.osu
+   ```
+
 6. The Swift generator tests, which CI skips without the model; all pass:
 
    ```sh

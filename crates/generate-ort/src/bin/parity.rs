@@ -247,9 +247,12 @@ fn run_song(ctx: &mut Context, model_dir: &Path, reference_dir: &Path, assets: &
     let trace: TraceFn = Box::new(move |event| {
         match event {
             Trace::Listener { spectrogram, log_mel, beat_logits, segments, grid, song_ms, .. } => {
-                let grid: &Grid = grid;
+                let grid: &Grid = &grid.whole_beats();
                 let b0 = grid.beat(0.0).floor();
                 let nb = f64::max((grid.beat(song_ms)).ceil() - b0, 1.0) as usize;
+                if grid_positions.len() != nb * 24 {
+                    return Err(format!("stage 2 failed: {} recorded positions, {} on this grid", grid_positions.len(), nb * 24));
+                }
                 let (mut max_grid_ms, mut whole_ms, mut frames) = (0.0f64, 0usize, 0usize);
                 for b in 0..nb {
                     for p in 0..24 {

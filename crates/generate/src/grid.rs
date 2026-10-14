@@ -41,6 +41,9 @@ pub fn corrected_grid(segments: &[Segment], song_ms: f64) -> Vec<Segment> {
         .collect()
 }
 
+/// r2/common.GridArrays. `new` numbers beats continuously, as R2 reads them: a segment's origin is the previous
+/// origin plus the previous segment's length in beats, usually fractional. The rows model places its positions on
+/// `whole_beats`.
 pub struct Grid {
     pub offsets: Vec<f64>,
     pub lengths: Vec<f64>,
@@ -58,6 +61,18 @@ impl Grid {
             origins.push(origins[i - 1] + (offsets[i] - offsets[i - 1]) / lengths[i - 1]);
         }
         Self { offsets, lengths, origins, meters }
+    }
+
+    /// GridArrays.whole_beats: the same segments, each starting on a whole beat, a segment's length in beats rounded
+    /// half up. Whole beats then lie on their own segment's beat lines. A leftover under half a beat before a boundary
+    /// gets no beat; one of half a beat or more is a beat that the next segment's offset cuts short, and `time`
+    /// continues that beat past the offset. One segment gives the same grid.
+    pub fn whole_beats(&self) -> Self {
+        let mut origins = vec![0.0];
+        for i in 1..self.offsets.len() {
+            origins.push(origins[i - 1] + ((self.offsets[i] - self.offsets[i - 1]) / self.lengths[i - 1] + 0.5).floor());
+        }
+        Self { offsets: self.offsets.clone(), lengths: self.lengths.clone(), origins, meters: self.meters.clone() }
     }
 
     fn index(values: &[f64], x: f64) -> usize {
