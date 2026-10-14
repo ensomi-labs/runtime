@@ -73,9 +73,10 @@ Here a placeholder takes the hand-published slot, so that 0.1.0 is already the C
 
 These need data CI does not have. Run them in `~/ensomi/ensomi-runtime` on the commit to be tagged.
 
-5. Generator replay parity on the four release recordings (4.3 GB in `ensomi-model/artifacts/runtime-ref`), native
-   and Wasm, each for the whole chart and streamed (`--stream`: R2's arrangement committed per head row); all four
-   reports end with `"passed": true` ([`conformance/generate`](conformance/generate/README.md) has the criteria):
+5. Generator replay parity on the four release recordings (4.2 GB in `ensomi-model/artifacts/runtime-ref`, recorded
+   from ensomi-model `r2-1.0.1`), native and Wasm, each for the whole chart and streamed (`--stream`: R2's arrangement
+   committed per head row); all four reports end with `"passed": true`
+   ([`conformance/generate`](conformance/generate/README.md) has the criteria):
 
    ```sh
    CARGO_TARGET_DIR=target/generate cargo run --release -p ensomi-generate-ort --bin parity -- \
@@ -155,6 +156,6 @@ and re-run that job from the run page; it publishes the same tarball.
 
 ## Using a release
 
-- Swift: `.package(url: "https://github.com/ensomi-labs/runtime", from: "0.3.0")` and
+- Swift: `.package(url: "https://github.com/ensomi-labs/runtime", from: "0.3.1")` and
   `.product(name: "EnsomiRuntime", package: "runtime")`.
 - npm: `npm install @ensomi/runtime`.

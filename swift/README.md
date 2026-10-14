@@ -5,7 +5,7 @@ macOS 14 and iOS 17. The manifest is [`Package.swift`](../Package.swift) at the 
 looks for it. An app pins a release:
 
 ```swift
-.package(url: "https://github.com/ensomi-labs/runtime", from: "0.3.0")
+.package(url: "https://github.com/ensomi-labs/runtime", from: "0.3.1")
 // target dependency: .product(name: "EnsomiRuntime", package: "runtime")
 ```
 
