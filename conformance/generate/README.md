@@ -63,7 +63,9 @@ cp conformance/generate/bulk/charts/hesitation-snow.* conformance/generate/nativ
 
 The input is what a client passes: the recorded PCM averaged to mono float32 at its recorded rate, without
 the recorded frontend streams, with the release example's star, seed, title and artist. Each configuration
-and song runs in a process of its own, which generates twice.
+and song runs in a process of its own, which generates twice. `cpu` runs every graph on one thread, as the replays
+do; `cpu-beatthis-threads` is the Swift package's `.cpu` since 0.3.2, BeatThis on the performance cores
+(`performance_cores` in `crates/generate-ort`) and the other graphs on one thread.
 
 ## Wasm replay
 
@@ -117,3 +119,9 @@ a second time where the difficulty check asked; they now differ wherever the Typ
 and that comparison is retired with it. On other input a last-bit difference can show in receipt digits or, at a
 near-tie, in a sampled choice. The Python release stays the reference: the replays above compare with its recorded
 values.
+
+The graphs run in ONNX Runtime, outside the core. The replays and the `cpu` charts run every graph on one intra-op
+thread. The native clients run BeatThis on the device's performance cores: on one Mac (Mac17,3, 4 performance and 6
+efficiency cores, macOS 27.0, 2026-10-16) its outputs over the recorded chunks were bitwise equal at 1, 2 and 4
+threads and at ONNX Runtime's own choice. Other thread counts, core counts and devices are not measured, and a chart
+made on one device is not claimed equal to another device's.

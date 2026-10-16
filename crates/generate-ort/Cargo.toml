@@ -17,5 +17,9 @@ ensomi-generate = { path = "../generate" }
 ort = { version = "=2.0.0-rc.11" }
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
 
+[target.'cfg(target_vendor = "apple")'.dependencies]
+# sysctlbyname, for the performance cores.
+libc = "0.2"
+
 [dev-dependencies]
 libc = "0.2"

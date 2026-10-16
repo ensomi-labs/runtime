@@ -6,7 +6,8 @@ import XCTest
 /// repository, where bings-mac keeps them (conformance/generate/README.md); the tests skip without them. The
 /// resampler tables are the package's own.
 final class GeneratorTests: XCTestCase {
-    /// The chart the native driver made from the same PCM, request and seed: conformance/generate/native-charts.
+    /// The chart the native driver made from the same PCM, request and seed, every graph on one thread:
+    /// conformance/generate/native-charts. BeatThis runs on the performance cores unless `beatthisThreads` is set.
     func testGeneratesTheNativeChartFromRecordedPCM() async throws {
         let paths = try Paths()
         let song = "hesitation-snow"
@@ -24,14 +25,17 @@ final class GeneratorTests: XCTestCase {
         let (pcm, sampleRate) = try recordedPCM(paths.recordings.appendingPathComponent(song))
         XCTAssertEqual(sampleRate, (fixture["sample_rate"] as! NSNumber).doubleValue)
 
-        for lowMemory in [false, true] {
-            let generator = try paths.open(.cpu, lowMemory: lowMemory)
+        let cases: [(lowMemory: Bool, beatthisThreads: UInt32?)] = [(false, nil), (true, nil), (false, 1)]
+        for (lowMemory, beatthisThreads) in cases {
+            let generator = try paths.open(.cpu, lowMemory: lowMemory, beatthisThreads: beatthisThreads)
             let phases = Phases()
             let started = Date()
             let result = try await generator.generate(pcm: pcm, sampleRate: sampleRate, request: request) { phases.append($0) }
-            print("GENERATE \(song), low memory \(lowMemory): \(String(format: "%.2f", Date().timeIntervalSince(started))) s")
+            let threads = beatthisThreads.map { "\($0)" } ?? "default"
+            let label = "low memory \(lowMemory), BeatThis threads \(threads)"
+            print("GENERATE \(song), \(label): \(String(format: "%.2f", Date().timeIntervalSince(started))) s")
 
-            XCTAssertNil(firstDifference(result.osu, expected), "the .osu differs from the native chart, low memory \(lowMemory)")
+            XCTAssertNil(firstDifference(result.osu, expected), "the .osu differs from the native chart, \(label)")
             XCTAssertEqual(result.chart.objects.count, (fixture["objects"] as! NSNumber).intValue)
             XCTAssertEqual(phases.all, [.loading, .timing, .rows, .arrangement, .export])
             XCTAssertEqual(result.receipt.seed, request.seed)
@@ -294,10 +298,12 @@ final class GeneratorTests: XCTestCase {
             }
         }
 
-        func open(_ provider: ExecutionProvider, lowMemory: Bool? = nil, directory: URL? = nil) throws -> ChartGenerator {
+        func open(
+            _ provider: ExecutionProvider, lowMemory: Bool? = nil, beatthisThreads: UInt32? = nil, directory: URL? = nil
+        ) throws -> ChartGenerator {
             try ChartGenerator.open(
                 modelDirectory: (directory ?? model).path,
-                options: GeneratorOptions(provider: provider, lowMemory: lowMemory)
+                options: GeneratorOptions(provider: provider, lowMemory: lowMemory, beatthisThreads: beatthisThreads)
             )
         }
     }

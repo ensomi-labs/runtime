@@ -5,7 +5,7 @@ macOS 14 and iOS 17. The manifest is [`Package.swift`](../Package.swift) at the 
 looks for it. An app pins a release:
 
 ```swift
-.package(url: "https://github.com/ensomi-labs/runtime", from: "0.3.1")
+.package(url: "https://github.com/ensomi-labs/runtime", from: "0.3.2")
 // target dependency: .product(name: "EnsomiRuntime", package: "runtime")
 ```
 
@@ -79,7 +79,8 @@ result.receipt                                      // EnsomiProtocol Generation
   (14 MB). The package carries them ([`assets/resampler`](../assets/resampler)) as a resource, which `open` reads
   unless `resamplerDirectory` names another directory; an app bundles nothing for them.
 - `lowMemory` releases ONNX Runtime's working memory after each graph run: peak footprint 1.3 to 1.6 GiB
-  instead of 2.0 to 2.3 GiB, same charts. `nil` turns it on for iOS and off on macOS.
+  instead of 2.0 to 2.3 GiB, same charts (measured with every graph on one thread). `nil` turns it on for iOS and off
+  on macOS.
 - For a directory without the manifest, `modelFiles(runtimeConfig:)` lists the files it needs besides
   `runtime.json`, with the licence notices, and `noticeFiles(runtimeConfig:)` lists those notices, BeatThis's MIT
   licence (`BeatThis-LICENSE.txt`), for the app to show with the model. `open` does not read them, so a directory
@@ -91,8 +92,9 @@ result.receipt                                      // EnsomiProtocol Generation
 - R2 arranges the song once. The published Python R2 (`r2-1.0`) arranged it a second time when the first
   arrangement missed the star's difficulty target by more than the difficulty fit's seed spread, so its chart
   differs wherever it did; the receipt's `controls.difficulty` records the miss.
-- The same model, PCM, request and seed give the same chart. `generate(pcm:sampleRate:request:progress:)` runs
-  on a thread of its own; cancelling its task stops it at the next graph run or phase with
+- The same model, PCM, request and seed give the same chart on one device with the same options; charts from two
+  devices are not claimed equal ([Execution provider](#execution-provider)). `generate(pcm:sampleRate:request:progress:)`
+  runs on a thread of its own; cancelling its task stops it at the next graph run or phase with
   `GeneratorError.Cancelled`. Refusals carry EnsomiProtocol's error code in `GeneratorError.Generation`; so
   does a panic in the core (`generation_failed`, "internal error: ..."), after which the generator still works.
   The blocking `generate(pcm:sampleRate:request:listener:cancellation:)` underneath passes the `[Float]` as
@@ -146,7 +148,27 @@ scheduler.result()                                  // the whole chart, .osu and
 
 ### Execution provider
 
-Use `.cpu`. Measured on bings-mac (M5) with `crates/generate-ort/examples/providers.rs`
+Use `.cpu`. Since 0.3.2 it runs BeatThis, most of a generation's time, on the device's performance cores
+(`hw.perflevel0.physicalcpu`; elsewhere the available parallelism up to 4) and every other graph on one intra-op and
+one inter-op thread. `beatthisThreads` sets BeatThis's count instead: 1 as the parity replays run, 0 to let ONNX
+Runtime choose. BeatThis alone over the recorded chunks of two release songs, on a Mac with 4 performance and 6
+efficiency cores (Mac17,3, macOS 27.0, runtime 0.3.1 at `ca1053a`, 2026-10-16), in seconds: median and range over
+two rounds of five timed passes, one process per arm.
+
+| BeatThis intra-op threads | saigetsu | adventure |
+| --- | --- | --- |
+| 1, `.cpu` before 0.3.2 | 3.60 (3.02 to 4.40) | 5.30 (4.26 to 6.23) |
+| 4, this Mac's performance cores: `.cpu` since 0.3.2 | 2.86 (2.09 to 3.69) | 4.08 (2.92 to 5.36) |
+| 0, ONNX Runtime's choice | 2.76 (1.92 to 4.15) | 4.16 (2.94 to 5.32) |
+
+On that Mac BeatThis's outputs were bitwise equal at 1, 2 and 4 threads and at ONNX Runtime's choice, and within
+2e-4 of the recording. Other thread counts, core counts and devices are not measured, so a device that runs BeatThis
+on another count may give other last bits and, at a near-tie, another chart. Running the chunks concurrently in 2 to
+6 one-thread sessions was slower and peaked at 3.5 to 10.7 GiB. ONNX Runtime's choice for every graph (`cpu-threads`
+below) made the arrangement 33 to 45% slower, so only BeatThis has more than one thread.
+
+The table and footprints below are from before 0.3.2, every graph on one thread. Measured on bings-mac (M5) with
+`crates/generate-ort/examples/providers.rs`
 ([`conformance/generate/apple-providers.json`](../conformance/generate/apple-providers.json), runtime 0.2.0, with no
 other job on the machine): seconds of the second generation in a process, and the process's peak physical
 footprint. When generation starts the footprint is 0.25 to 0.4 GiB: the opened model (0.2 GiB) and the recording
@@ -168,9 +190,9 @@ for every graph fails on the rows graphs' dynamic sequence length. No compute un
 Most of the CPU footprint is BeatThis's working memory, which ONNX Runtime keeps after the first run: the
 footprint grows by 1.6 GiB during the timing phase on every song. The `providers` configuration `cpu-lean`
 (no CPU arena and no memory patterns), `lowMemory` here, brings the peak to 1.25 to 1.45 GiB with the same
-charts and times within 0.2 s of `.cpu`. `cpu-threads` is not exposed (ONNX Runtime picks the thread count),
-which took the four songs from 4.2 to 6.9 s down to 3.4 to 6.0 s with the same charts; sessions run on one
-thread, as the parity recordings were checked.
+charts and times within 0.2 s of `.cpu`. `cpu-threads`, ONNX Runtime's thread count for every graph, took the four
+songs from 4.2 to 6.9 s down to 3.4 to 6.0 s with the same charts, though the arrangement took 33 to 45% longer;
+`cpu-beatthis-threads` is `.cpu` since 0.3.2.
 
 ### Size
 

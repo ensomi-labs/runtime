@@ -1,5 +1,5 @@
 //! Runs the Ensomi chart generator's graphs with ONNX Runtime and drives its state machine.
-use ensomi_generate::{Data, Generator, Models, Phase, Step, Tensor, Tensors};
+use ensomi_generate::{Data, Generator, Models, Phase, Step, Tensor, Tensors, BEATTHIS_GRAPH};
 use ort::session::Session;
 use ort::tensor::TensorElementType;
 use ort::value::{DynValue, Tensor as OrtTensor};
@@ -24,18 +24,58 @@ pub struct Config {
     pub coreml_units: String,
     /// Core ML `ModelFormat`: `MLProgram` or `NeuralNetwork`.
     pub coreml_format: String,
-    /// Intra-op threads of each session; 0 lets ONNX Runtime choose.
+    /// Intra-op threads of each session but those in `graph_threads`; 0 lets ONNX Runtime choose. Every session has
+    /// one inter-op thread.
     pub threads: usize,
+    /// Intra-op threads of the named graphs' sessions, in place of `threads`. The native clients give BeatThis
+    /// ([`BEATTHIS_GRAPH`]) the device's performance cores ([`performance_cores`]).
+    pub graph_threads: BTreeMap<String, usize>,
     /// Whether ONNX Runtime keeps memory for the next run (the CPU arena and memory patterns, its
     /// defaults). Off lowers the peak footprint.
     pub reuse_memory: bool,
 }
 
 impl Default for Config {
-    /// CPU only, one intra-op and one inter-op thread, as the parity recordings were checked.
+    /// CPU only, one intra-op and one inter-op thread for every graph, as the parity recordings were checked.
     fn default() -> Self {
-        Config { coreml_graphs: Vec::new(), coreml_units: "ALL".to_string(), coreml_format: "MLProgram".to_string(), threads: 1, reuse_memory: true }
+        Config { coreml_graphs: Vec::new(), coreml_units: "ALL".to_string(), coreml_format: "MLProgram".to_string(), threads: 1, graph_threads: BTreeMap::new(), reuse_memory: true }
     }
+}
+
+impl Config {
+    /// [`Config::default`] but BeatThis's session on `threads` intra-op threads. The native clients take
+    /// [`performance_cores`].
+    pub fn with_beatthis_threads(threads: usize) -> Config {
+        Config { graph_threads: BTreeMap::from([(BEATTHIS_GRAPH.to_string(), threads)]), ..Config::default() }
+    }
+
+    /// The intra-op threads of `graph`'s session.
+    pub fn intra_threads(&self, graph: &str) -> usize {
+        self.graph_threads.get(graph).copied().unwrap_or(self.threads)
+    }
+}
+
+/// The device's performance cores, BeatThis's intra-op threads in the native clients: on Apple platforms
+/// `hw.perflevel0.physicalcpu`, the cores of the fastest performance level. Elsewhere, or where the system does not
+/// report it, the available parallelism up to 4: that count includes efficiency cores and SMT siblings, and on the Mac
+/// where BeatThis was timed (4 performance and 6 efficiency cores) its 4 performance cores were about as fast as
+/// ONNX Runtime's own choice. At least 1.
+pub fn performance_cores() -> usize {
+    perflevel0_cores().unwrap_or_else(|| std::thread::available_parallelism().map_or(1, |n| n.get().min(4)))
+}
+
+#[cfg(target_vendor = "apple")]
+fn perflevel0_cores() -> Option<usize> {
+    let mut cores: libc::c_int = 0;
+    let mut size = std::mem::size_of::<libc::c_int>();
+    // SAFETY: `cores` and `size` outlive the call and `size` is the byte size of `cores`; no new value is set.
+    let status = unsafe { libc::sysctlbyname(c"hw.perflevel0.physicalcpu".as_ptr(), (&raw mut cores).cast(), &mut size, std::ptr::null_mut(), 0) };
+    (status == 0 && cores > 0).then_some(cores as usize)
+}
+
+#[cfg(not(target_vendor = "apple"))]
+fn perflevel0_cores() -> Option<usize> {
+    None
 }
 
 /// The six graphs of the release as ONNX Runtime sessions.
@@ -49,7 +89,7 @@ impl Sessions {
         let mut sessions = Vec::new();
         for graph in &models.graphs {
             #[allow(unused_mut)]
-            let mut builder = Session::builder().map_err(ort_error)?.with_intra_threads(config.threads).map_err(ort_error)?.with_inter_threads(1).map_err(ort_error)?;
+            let mut builder = Session::builder().map_err(ort_error)?.with_intra_threads(config.intra_threads(&graph.name)).map_err(ort_error)?.with_inter_threads(1).map_err(ort_error)?;
             if config.coreml_graphs.contains(&graph.name) {
                 #[cfg(feature = "coreml")]
                 {
@@ -159,5 +199,30 @@ pub fn phase_name(index: usize) -> &'static str {
         i if i == Phase::Rows as usize => "rows",
         i if i == Phase::Arrangement as usize => "arrangement",
         _ => "export",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ensomi_generate::GRAPHS;
+
+    #[test]
+    fn graph_threads_change_only_the_graphs_they_name() {
+        let config = Config::with_beatthis_threads(4);
+        assert_eq!(config.intra_threads(BEATTHIS_GRAPH), 4);
+        for graph in GRAPHS.into_iter().filter(|&g| g != BEATTHIS_GRAPH) {
+            assert_eq!(config.intra_threads(graph), 1, "{graph}");
+        }
+        assert!(GRAPHS.iter().all(|graph| Config::default().intra_threads(graph) == 1));
+    }
+
+    #[test]
+    fn a_device_has_at_least_one_performance_core() {
+        let cores = performance_cores();
+        assert!(cores >= 1);
+        if cfg!(not(target_vendor = "apple")) {
+            assert!(cores <= 4);
+        }
     }
 }

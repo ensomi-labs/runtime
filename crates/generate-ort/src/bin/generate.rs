@@ -1,10 +1,11 @@
 //! Generates a chart natively from raw PCM, as the Swift API does: mono float32 samples, little-endian, at
-//! the given rate, with no frontend streams and no controls. Writes the `.osu` text.
+//! the given rate, with no frontend streams and no controls, BeatThis on the performance cores. Writes the `.osu`
+//! text.
 //!
 //! Usage: generate --model-dir <onnx> --assets <resampler tables> --pcm <file.f32> --sample-rate <hz>
 //!        --star <star> [--seed <seed>] [--title <t>] [--artist <a>] [--audio-name <name>] --out <chart.osu>
 use ensomi_generate::{generate, resampler_files, Audio, Options, Request, Samples};
-use ensomi_generate_ort::{drive, package, Config, Sessions};
+use ensomi_generate_ort::{drive, package, performance_cores, Config, Sessions};
 use serde_json::json;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -34,7 +35,7 @@ fn main() -> Result<(), String> {
     let seed: u64 = args.get("seed").map_or(Ok(0), |s| s.parse()).map_err(|_| "--seed is an unsigned integer")?;
     let (models, _) = package::open(&model_dir)?;
     let models = Arc::new(models);
-    let mut sessions = Sessions::load(&model_dir, &models, &Config::default())?;
+    let mut sessions = Sessions::load(&model_dir, &models, &Config::with_beatthis_threads(performance_cores()))?;
     let start = Instant::now();
     let options = Options { audio_name: args.get("audio-name").cloned(), ..Options::new(Rc::new(move || start.elapsed().as_secs_f64() * 1000.0)) };
     let audio = Audio { samples: Samples::F32(pcm), channels: 1, sample_rate, mel: None, beatthis: None, resampler };

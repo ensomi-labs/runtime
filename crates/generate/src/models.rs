@@ -258,6 +258,11 @@ struct Raw {
     system: System,
 }
 
+/// The graphs the pipeline runs, by their names in `runtime.json`.
+pub const GRAPHS: [&str; 6] = [BEATTHIS_GRAPH, "rows_encoder", "rows_step", "r2_predict", "r2_release", "r2_commit"];
+/// BeatThis, which the timing stage runs on the song's spectrogram in chunks.
+pub const BEATTHIS_GRAPH: &str = "beatthis";
+
 pub struct Graph {
     pub name: String,
     pub file: String,
@@ -338,7 +343,7 @@ impl Models {
     /// the sizes of the arrays it reads, and for every star band a request can reach the band's calibration, prior
     /// and default. Graph outputs are checked against the shapes they should have where they are read.
     fn check(&self) -> Result<(), String> {
-        for graph in ["beatthis", "rows_encoder", "rows_step", "r2_predict", "r2_release", "r2_commit"] {
+        for graph in GRAPHS {
             self.graph(graph)?;
         }
         let state: Vec<&str> = self.r2_initial.iter().map(|(name, _)| name.as_str()).collect();
