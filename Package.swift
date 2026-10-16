@@ -3,8 +3,8 @@ import Foundation
 import PackageDescription
 
 // The release workflow writes these when it publishes the xcframework (RELEASING.md).
-private let releaseURL = "https://github.com/ensomi-labs/runtime/releases/download/v0.3.1/EnsomiRuntimeFFI.xcframework.zip"
-private let releaseChecksum = "60816f4c27d9515f8f7090988822d1e8ca7db180fbea1dd1d217b54c7739b1b6"
+private let releaseURL = "https://github.com/ensomi-labs/runtime/releases/download/v0.3.2/EnsomiRuntimeFFI.xcframework.zip"
+private let releaseChecksum = "04b2a99a03fe9a13c20f024b87ce7dbcc80b30c355e366595af1fcd0a0c96408"
 
 // ENSOMI_RUNTIME_XCFRAMEWORK selects a local xcframework instead, such as the
 // build/apple/EnsomiRuntimeFFI.xcframework that scripts/build-apple.sh builds.
