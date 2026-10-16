@@ -6,8 +6,8 @@
 //! Input as for `providers`: the recorded PCM averaged to mono float32 at its recorded rate, and the star, seed,
 //! title and artist of the release example. The lead: judge C's settle lead, the render lead given (the app's
 //! default scroll time is 11485 / 25 = 459.4 ms), no margin. "From a stored Prepared" starts from its bytes in
-//! memory, reading them included. CPU provider, one thread. One `prepare` per song first warms the graphs and gives
-//! the bytes.
+//! memory, reading them included. CPU provider with the Swift package's defaults: BeatThis on the performance cores,
+//! the other graphs on one thread. One `prepare` per song first warms the graphs and gives the bytes.
 //!
 //! Usage: stream --model-dir <ensomi-r2> --reference <runtime-ref> --out <report.json> [--runs 3]
 //!        [--render-lead-ms 459.4] [song...]
@@ -69,11 +69,11 @@ fn main() {
         songs = SONGS.iter().map(|s| s.to_string()).collect();
     }
     let assets = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../assets/resampler");
-    let options = GeneratorOptions { provider: ExecutionProvider::Cpu, resampler_directory: Some(assets.to_string_lossy().into_owned()), low_memory: None };
+    let options = GeneratorOptions { provider: ExecutionProvider::Cpu, resampler_directory: Some(assets.to_string_lossy().into_owned()), low_memory: None, beatthis_threads: None };
     let generator = ChartGenerator::open(model_dir.join("onnx").to_string_lossy().into_owned(), options).unwrap();
     let lead = LeadPolicy { ruleset: Ruleset { judge: Judge::C }, render_lead_ms, margin_ms: 0.0 };
     let mut report = Map::new();
-    report.insert("what".into(), json!("seconds from the start of a generation to the first Ready at 0 and to Done, through the UniFFI binding, native CPU, one ONNX Runtime thread"));
+    report.insert("what".into(), json!("seconds from the start of a generation to the first Ready at 0 and to Done, through the UniFFI binding, native CPU, BeatThis on the performance cores and the other graphs on one ONNX Runtime thread"));
     report.insert("lead".into(), json!({"settle_ms": lead.ruleset.settle_lead_ms(), "render_ms": render_lead_ms, "margin_ms": 0.0}));
     let mut songs_report = Map::new();
     for song in &songs {

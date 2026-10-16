@@ -12,9 +12,9 @@
 //!        --out <report.json> [--charts <dir>] [--configs cpu,coreml,...] [song...]
 //! `--charts` receives each song's CPU `.osu` and its request. A run adds its configurations to an existing
 //! report and compares with the CPU charts already in `--charts`.
-use ensomi_generate::{generate, Audio, Models, Options, Request, Samples};
+use ensomi_generate::{generate, Audio, Models, Options, Request, Samples, BEATTHIS_GRAPH};
 use ensomi_generate_ort::recording::Recording;
-use ensomi_generate_ort::{drive_observed, package, phase_name, Config, Sessions, Timings};
+use ensomi_generate_ort::{drive_observed, package, performance_cores, phase_name, Config, Sessions, Timings};
 use serde_json::{json, Map, Value};
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -23,14 +23,16 @@ use std::sync::Arc;
 use std::time::Instant;
 
 const SONGS: [&str; 4] = ["hesitation-snow", "saigetsu", "catch-the-moment", "adventure"];
-const CONFIGS: [&str; 5] = ["cpu", "cpu-threads", "cpu-lean", "coreml-beatthis", "coreml"];
+const CONFIGS: [&str; 6] = ["cpu", "cpu-beatthis-threads", "cpu-threads", "cpu-lean", "coreml-beatthis", "coreml"];
 
 fn config(name: &str, models: &Models) -> Config {
     let all: Vec<String> = models.graphs.iter().map(|g| g.name.clone()).collect();
-    let beatthis = vec!["beatthis".to_string()];
+    let beatthis = vec![BEATTHIS_GRAPH.to_string()];
     let coreml = |graphs: Vec<String>, units: &str, format: &str| Config { coreml_graphs: graphs, coreml_units: units.to_string(), coreml_format: format.to_string(), ..Config::default() };
     match name {
         "cpu" => Config::default(),
+        // The Swift package's `.cpu`: BeatThis on the performance cores, the other graphs on one thread.
+        "cpu-beatthis-threads" => Config::with_beatthis_threads(performance_cores()),
         "cpu-threads" => Config { threads: 0, ..Config::default() },
         "cpu-lean" => Config { reuse_memory: false, ..Config::default() },
         "coreml" => coreml(all, "ALL", "MLProgram"),

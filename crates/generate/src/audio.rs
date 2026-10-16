@@ -2,6 +2,7 @@
 use crate::fft::Fft;
 use crate::machine::{Io, Tensor};
 use crate::math::{f32r, half, round};
+use crate::models::BEATTHIS_GRAPH;
 use serde::Deserialize;
 
 /// Interleaved samples at the request's sample rate.
@@ -247,7 +248,7 @@ pub async fn beat_activations(io: &Io, spect: &[f32]) -> Result<Activations, Str
         let mut data = vec![0f32; ((left + hi - lo + right) * 128) as usize];
         data[(left * 128) as usize..((left + hi - lo) * 128) as usize].copy_from_slice(&spect[(lo * 128) as usize..(hi * 128) as usize]);
         let rows = data.len() / 128;
-        let mut out = io.run("beatthis", vec![("spect", Tensor::f32(&[1, rows, 128], data))]).await?;
+        let mut out = io.run(BEATTHIS_GRAPH, vec![("spect", Tensor::f32(&[1, rows, 128], data))]).await?;
         outputs.push((out.take_f32("beat_logits", rows)?, out.take_f32("downbeat_logits", rows)?));
     }
     let mut beat = vec![-1000f32; frames as usize];

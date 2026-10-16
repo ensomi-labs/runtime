@@ -35,7 +35,7 @@ pub use export::{chart_tokens, Chart, ChartObject, Page, Token, TokenKind};
 pub use generate::{generate, generate_prepared, prepare, Audio, Commit, Controls, GenerationResult, Options, Pattern, Receipt, Request, Section, Trace, TraceFn};
 pub use grid::Grid;
 pub use machine::{Data, Generator, Phase, Step, Tensor, Tensors};
-pub use models::Models;
+pub use models::{Models, BEATTHIS_GRAPH, GRAPHS};
 pub use prepared::Prepared;
 pub use random::{Draw, RandomSource, ReplayRandom, SeededRandom};
 pub use schedule::{Action, Event, Lead, Mode, Scheduler, Source};

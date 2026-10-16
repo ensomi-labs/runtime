@@ -8,8 +8,8 @@
 use ensomi_gameplay::{Chart, ChartObject};
 use ensomi_generate::capabilities::capabilities as core_capabilities;
 use ensomi_generate::package::{self as core_package, PackageFile, PackageInfo, PackageModel};
-use ensomi_generate::{generate, prepare, resampler_files, Audio, Models, Options, Phase, Request, Samples};
-use ensomi_generate_ort::{drive_observed, package, Config, Sessions};
+use ensomi_generate::{generate, prepare, resampler_files, Audio, Models, Options, Phase, Request, Samples, BEATTHIS_GRAPH};
+use ensomi_generate_ort::{drive_observed, package, performance_cores, Config, Sessions};
 use serde_json::{json, Value};
 use std::any::Any;
 use std::panic::{catch_unwind, AssertUnwindSafe};
@@ -39,6 +39,10 @@ pub struct GeneratorOptions {
     /// lower peak footprint for a slower generation. `None` turns it on for iOS and off elsewhere.
     #[uniffi(default)]
     pub low_memory: Option<bool>,
+    /// ONNX Runtime's intra-op threads for BeatThis; the other graphs run on one. `None` takes the device's
+    /// performance cores (`hw.perflevel0.physicalcpu` on Apple platforms), 0 lets ONNX Runtime choose.
+    #[uniffi(default)]
+    pub beatthis_threads: Option<u32>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, uniffi::Enum)]
@@ -159,7 +163,7 @@ pub struct ChartControls {
 pub struct GenerateChartRequest {
     /// Star rating of the whole chart, within the capabilities' range.
     pub star: f64,
-    /// The same model, PCM, star, controls and seed give the same chart.
+    /// The same model, PCM, star, controls and seed give the same chart on one device with the same options.
     #[uniffi(default = 0)]
     pub seed: u64,
     #[uniffi(default)]
@@ -303,9 +307,10 @@ impl Prepared {
 
 fn session_config(options: &GeneratorOptions) -> Config {
     let reuse_memory = !options.low_memory.unwrap_or(cfg!(target_os = "ios"));
+    let config = Config::with_beatthis_threads(options.beatthis_threads.map_or_else(performance_cores, |threads| threads as usize));
     match options.provider {
-        ExecutionProvider::Cpu => Config { reuse_memory, ..Config::default() },
-        ExecutionProvider::CoreMl => Config { coreml_graphs: vec!["beatthis".to_string()], reuse_memory, ..Config::default() },
+        ExecutionProvider::Cpu => Config { reuse_memory, ..config },
+        ExecutionProvider::CoreMl => Config { coreml_graphs: vec![BEATTHIS_GRAPH.to_string()], reuse_memory, ..config },
     }
 }
 
@@ -526,5 +531,28 @@ pub(crate) fn chart_result(result: &ensomi_generate::GenerationResult) -> ChartR
             star: result.receipt.star,
             receipt_json: result.receipt.receipt_json.clone(),
         },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ensomi_generate::GRAPHS;
+
+    fn options(provider: ExecutionProvider, beatthis_threads: Option<u32>) -> GeneratorOptions {
+        GeneratorOptions { provider, resampler_directory: None, low_memory: None, beatthis_threads }
+    }
+
+    #[test]
+    fn beatthis_runs_on_the_performance_cores_and_the_other_graphs_on_one_thread() {
+        for provider in [ExecutionProvider::Cpu, ExecutionProvider::CoreMl] {
+            for (requested, expected) in [(None, performance_cores()), (Some(1), 1), (Some(3), 3), (Some(0), 0)] {
+                let config = session_config(&options(provider, requested));
+                assert_eq!(config.intra_threads(BEATTHIS_GRAPH), expected, "{provider:?} {requested:?}");
+                for graph in GRAPHS.into_iter().filter(|&g| g != BEATTHIS_GRAPH) {
+                    assert_eq!(config.intra_threads(graph), 1, "{provider:?} {requested:?} {graph}");
+                }
+            }
+        }
     }
 }

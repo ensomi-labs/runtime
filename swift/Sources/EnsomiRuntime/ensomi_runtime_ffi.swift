@@ -2370,7 +2370,7 @@ public struct GenerateChartRequest: Equatable, Hashable {
      */
     public var star: Double
     /**
-     * The same model, PCM, star, controls and seed give the same chart.
+     * The same model, PCM, star, controls and seed give the same chart on one device with the same options.
      */
     public var seed: UInt64
     public var controls: ChartControls
@@ -2392,7 +2392,7 @@ public struct GenerateChartRequest: Equatable, Hashable {
          * Star rating of the whole chart, within the capabilities' range.
          */star: Double, 
         /**
-         * The same model, PCM, star, controls and seed give the same chart.
+         * The same model, PCM, star, controls and seed give the same chart on one device with the same options.
          */seed: UInt64 = UInt64(0), controls: ChartControls = ChartControls(), 
         /**
          * Written to the `.osu`; "Ensomi" and "Unknown" when absent.
@@ -2547,6 +2547,11 @@ public struct GeneratorOptions: Equatable, Hashable {
      * lower peak footprint for a slower generation. `None` turns it on for iOS and off elsewhere.
      */
     public var lowMemory: Bool?
+    /**
+     * ONNX Runtime's intra-op threads for BeatThis; the other graphs run on one. `None` takes the device's
+     * performance cores (`hw.perflevel0.physicalcpu` on Apple platforms), 0 lets ONNX Runtime choose.
+     */
+    public var beatthisThreads: UInt32?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
@@ -2558,10 +2563,15 @@ public struct GeneratorOptions: Equatable, Hashable {
         /**
          * Releases ONNX Runtime's working memory after each graph run (no CPU arena, no memory patterns): a
          * lower peak footprint for a slower generation. `None` turns it on for iOS and off elsewhere.
-         */lowMemory: Bool? = nil) {
+         */lowMemory: Bool? = nil, 
+        /**
+         * ONNX Runtime's intra-op threads for BeatThis; the other graphs run on one. `None` takes the device's
+         * performance cores (`hw.perflevel0.physicalcpu` on Apple platforms), 0 lets ONNX Runtime choose.
+         */beatthisThreads: UInt32? = nil) {
         self.provider = provider
         self.resamplerDirectory = resamplerDirectory
         self.lowMemory = lowMemory
+        self.beatthisThreads = beatthisThreads
     }
 
     
@@ -2582,7 +2592,8 @@ public struct FfiConverterTypeGeneratorOptions: FfiConverterRustBuffer {
             try GeneratorOptions(
                 provider: FfiConverterTypeExecutionProvider.read(from: &buf), 
                 resamplerDirectory: FfiConverterOptionString.read(from: &buf), 
-                lowMemory: FfiConverterOptionBool.read(from: &buf)
+                lowMemory: FfiConverterOptionBool.read(from: &buf), 
+                beatthisThreads: FfiConverterOptionUInt32.read(from: &buf)
         )
     }
 
@@ -2590,6 +2601,7 @@ public struct FfiConverterTypeGeneratorOptions: FfiConverterRustBuffer {
         FfiConverterTypeExecutionProvider.write(value.provider, into: &buf)
         FfiConverterOptionString.write(value.resamplerDirectory, into: &buf)
         FfiConverterOptionBool.write(value.lowMemory, into: &buf)
+        FfiConverterOptionUInt32.write(value.beatthisThreads, into: &buf)
     }
 }
 

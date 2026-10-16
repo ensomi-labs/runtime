@@ -42,7 +42,7 @@ fn model() -> Option<PathBuf> {
 }
 
 fn open(model: &Path) -> Arc<ChartGenerator> {
-    let options = GeneratorOptions { provider: ExecutionProvider::Cpu, resampler_directory: None, low_memory: None };
+    let options = GeneratorOptions { provider: ExecutionProvider::Cpu, resampler_directory: None, low_memory: None, beatthis_threads: None };
     ChartGenerator::open(model.to_string_lossy().into_owned(), options).unwrap()
 }
 
