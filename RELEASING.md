@@ -159,6 +159,6 @@ and re-run that job from the run page; it publishes the same tarball.
 
 ## Using a release
 
-- Swift: `.package(url: "https://github.com/ensomi-labs/runtime", from: "0.3.1")` and
+- Swift: `.package(url: "https://github.com/ensomi-labs/runtime", from: "0.3.2")` and
   `.product(name: "EnsomiRuntime", package: "runtime")`.
 - npm: `npm install @ensomi/runtime`.

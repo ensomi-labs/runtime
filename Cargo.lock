@@ -312,7 +312,7 @@ dependencies = [
 
 [[package]]
 name = "ensomi-gameplay"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "proptest",
  "serde",
@@ -321,7 +321,7 @@ dependencies = [
 
 [[package]]
 name = "ensomi-generate"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "ensomi-gameplay",
  "libm",
@@ -331,7 +331,7 @@ dependencies = [
 
 [[package]]
 name = "ensomi-generate-ort"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "ensomi-generate",
  "libc",
@@ -341,7 +341,7 @@ dependencies = [
 
 [[package]]
 name = "ensomi-generate-wasm"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "ensomi-gameplay",
  "ensomi-generate",
@@ -352,7 +352,7 @@ dependencies = [
 
 [[package]]
 name = "ensomi-osz"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
@@ -361,7 +361,7 @@ dependencies = [
 
 [[package]]
 name = "ensomi-runtime-ffi"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "ensomi-gameplay",
  "ensomi-generate",
