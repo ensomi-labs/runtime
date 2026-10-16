@@ -95,12 +95,15 @@ These need data CI does not have. Run them in `~/ensomi/ensomi-runtime` on the c
      --core js/pkg/ensomi_generate_wasm_bg.wasm --out conformance/generate/bulk/wasm-parity-stream.json
    ```
 
-   Then the runtime's own charts: ensomi-model's self-snap check on the four songs' CPU charts from the providers
-   example and on `native-charts` prints `"off_snap": 0, "close_rows": 0` for each (no note off its red line's snaps,
-   no head rows nearer than a sixteenth of a beat) and exits with 0:
+   Then the runtime's own charts: the providers example makes the four songs' CPU charts with every graph on one
+   thread (`cpu`) and as the Swift package's `.cpu` runs (`cpu-beatthis-threads`, BeatThis on the performance cores),
+   and each `cpu-beatthis-threads` song in its report has `"same_osu_as_cpu": true`; ensomi-model's self-snap check on
+   the `cpu` charts and on `native-charts` prints `"off_snap": 0, "close_rows": 0` for each (no note off its red
+   line's snaps, no head rows nearer than a sixteenth of a beat) and exits with 0:
 
    ```sh
-   CARGO_TARGET_DIR=target/generate cargo run --release -p ensomi-generate-ort --example providers -- --configs cpu \
+   CARGO_TARGET_DIR=target/generate cargo run --release -p ensomi-generate-ort --example providers -- \
+     --configs cpu,cpu-beatthis-threads \
      --model-dir ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 \
      --reference ../ensomi-model/artifacts/runtime-ref --assets assets/resampler \
      --out conformance/generate/bulk/providers-cpu.json --charts conformance/generate/bulk/charts
