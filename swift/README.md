@@ -167,7 +167,7 @@ on another count may give other last bits and, at a near-tie, another chart. Run
 6 one-thread sessions was slower and peaked at 3.5 to 10.7 GiB. ONNX Runtime's choice for every graph (`cpu-threads`
 below) made the arrangement 33 to 45% slower, so only BeatThis has more than one thread.
 
-The table and footprints below are from before 0.3.2, every graph on one thread. Measured on bings-mac (M5) with
+The table and footprints below are from before 0.3.2, every graph on one thread. Measured on an M5 Mac with
 `crates/generate-ort/examples/providers.rs`
 ([`conformance/generate/apple-providers.json`](../conformance/generate/apple-providers.json), runtime 0.2.0, with no
 other job on the machine): seconds of the second generation in a process, and the process's peak physical

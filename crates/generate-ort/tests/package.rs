@@ -66,7 +66,7 @@ fn notices_are_the_licences_the_config_names() {
     assert!(Models::notice_files(&json!({"frontend_arrays": {}})).is_empty());
 }
 
-/// The released model directory and its runtime config, read from beside the repository, where bings-mac keeps them
+/// The released model directory and its runtime config, read from beside the repository
 /// (conformance/generate/README.md); without them the tests that need them pass without running.
 fn release() -> Option<(PathBuf, Value)> {
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2/onnx");

@@ -1,5 +1,5 @@
-//! The chart generator through the bindings, with the released model read from beside the repository where
-//! bings-mac keeps it (conformance/generate/README.md); without it the test passes without running.
+//! The chart generator through the bindings, with the released model read from beside the repository
+//! (conformance/generate/README.md); without it the test passes without running.
 
 use ensomi_gameplay::{Judge, Ruleset};
 use ensomi_runtime_ffi::generator::{
@@ -32,7 +32,7 @@ fn noise(seconds: usize) -> Vec<f32> {
         .collect()
 }
 
-/// The released model where bings-mac keeps it, or `None` when it is absent.
+/// The released model beside the repository, or `None` when it is absent.
 fn model() -> Option<PathBuf> {
     let model = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2/onnx");
     if !model.exists() {

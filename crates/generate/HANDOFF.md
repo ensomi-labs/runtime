@@ -11,16 +11,16 @@ TypeScript runtime. All three stages are done; what is left is in the report to 
 | --- | --- | --- |
 | Core: state machine, whole host pipeline | `crates/generate` (`ensomi-generate`) | done, no IO, no clock (injected `Options.clock`) |
 | Native driver and replay binary | `crates/generate-ort` | stage 1 passes on all four songs: `conformance/generate/native-parity.json` |
-| Wasm binding | `crates/generate-wasm`, `scripts/wasm-build.sh` | builds; wasm-bindgen-cli 0.2.129 is installed on the mac |
+| Wasm binding | `crates/generate-wasm`, `scripts/wasm-build.sh` | builds with wasm-bindgen-cli 0.2.129 |
 | JS API (`loadModels`, `generateChart`, `decodeAudio`, `localFilesSource`, `models.capabilities`) | `js/src` | written; used by the Wasm replay |
 | Stage 2 check | `js/checks/replay.mjs` -> `conformance/generate/wasm-parity.json` | all four songs pass (BeatThis 1.06e-4 to 1.17e-4 on ORT-web, inside the 2e-4 allowance) |
 | Stage 3 check | the comparison with the TypeScript runtime | passed; retired with that runtime |
 
 ## Next steps
 
-1. Commit anything the mac wrote that is still untracked under `conformance/generate/`.
+1. Commit anything the checks wrote that is still untracked under `conformance/generate/`.
 2. Open points: where the 17 MB soxr tables live for `loadModels`' default `runtimeSource` (`js/assets/` is absent);
-   a browser run of the JS API; `wasm-opt` is not installed on the mac (the `.wasm` is 1.2 MB unoptimised by binaryen);
+   a browser run of the JS API; `wasm-opt` is not installed on the build machine (the `.wasm` is 1.2 MB unoptimised by binaryen);
    resampling 48 kHz PCM in the core takes 1 to 3 s natively (`pcm` in the receipt), more in Wasm.
 
 ## Decisions taken (list them in the report)
@@ -48,5 +48,5 @@ TypeScript runtime. All three stages are done; what is left is in the report to 
 
 ## Risks
 
-- The mac's checkout is the only place anything is built; `js/pkg` (generated) and `js/node_modules` are ignored.
+- Nothing built is committed: `js/pkg` (generated) and `js/node_modules` are ignored.
 - The JS API is not exercised in a browser; `loadCore` uses `fetch` for the `.wasm` by default, Node needs `options.core`.

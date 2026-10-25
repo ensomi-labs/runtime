@@ -1,7 +1,8 @@
 # Chart generator conformance
 
 The generator (`crates/generate`) reproduces the Python release from recorded inputs. Paths below are relative to
-`~/ensomi` on bings-mac; run the commands in `ensomi-runtime`.
+the directory holding `ensomi-runtime` and an `ensomi-model` checkout with its artifacts; run the commands in
+`ensomi-runtime`.
 
 | File | What it pins |
 | --- | --- |
@@ -11,7 +12,7 @@ The generator (`crates/generate`) reproduces the Python release from recorded in
 | `apple-providers.json` | `crates/generate-ort/examples/providers.rs`: time, memory and chart equality of ONNX Runtime's CPU and Core ML providers on the four songs. |
 | `native-charts/` | The same run's CPU chart and request for hesitation-snow, which `swift test` reproduces through the Swift API. |
 
-Large intermediate files go under `bulk/`, which is never mirrored.
+Large intermediate files go under `bulk/`, which git ignores.
 
 ## Native replay
 

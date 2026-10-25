@@ -69,9 +69,10 @@ Here a placeholder takes the hand-published slot, so that 0.1.0 is already the C
    and force-moves the tag. `main` is unprotected and the repository has no rulesets; a rule added later must
    exempt GitHub Actions.
 
-## Before a release (bings-mac)
+## Before a release (macOS)
 
-These need data CI does not have. Run them in `~/ensomi/ensomi-runtime` on the commit to be tagged.
+These need data CI does not have. Run them from the repository root, with ensomi-model and its artifacts checked out
+beside it (`../ensomi-model`), on the commit to be tagged.
 
 5. Generator replay parity on the four release recordings (4.2 GB in `ensomi-model/artifacts/runtime-ref`, recorded
    from ensomi-model `r2-1.0.1`), native and Wasm, each for the whole chart and streamed (`--stream`: R2's arrangement
@@ -123,27 +124,28 @@ These need data CI does not have. Run them in `~/ensomi/ensomi-runtime` on the c
    and without the published package's manifest (a changed file must be refused), prints `{"passed":true}`:
 
    ```sh
+   repo=$PWD
    scripts/wasm-build.sh
    out=$(mktemp -d) && (cd js && npm pack --pack-destination "$out")
    cd "$(mktemp -d)" && npm init -y > /dev/null && npm install "$out"/ensomi-runtime-*.tgz
-   cp ~/ensomi/ensomi-runtime/js/checks/packed.mjs ~/ensomi/ensomi-runtime/js/checks/recording.mjs \
-     ~/ensomi/ensomi-runtime/js/checks/package.mjs .
-   node packed.mjs --model-dir ~/ensomi/ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2/onnx \
-     --recording ~/ensomi/ensomi-model/artifacts/runtime-ref/bulk/hesitation-snow \
-     --chart ~/ensomi/ensomi-runtime/conformance/generate/native-charts/hesitation-snow
-   node package.mjs --model-dir ~/ensomi/ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2/onnx \
-     --manifest ~/ensomi/ensomi-runtime/conformance/package/ensomi-package.json
+   cp "$repo"/js/checks/packed.mjs "$repo"/js/checks/recording.mjs \
+     "$repo"/js/checks/package.mjs .
+   node packed.mjs --model-dir "$repo"/../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2/onnx \
+     --recording "$repo"/../ensomi-model/artifacts/runtime-ref/bulk/hesitation-snow \
+     --chart "$repo"/conformance/generate/native-charts/hesitation-snow
+   node package.mjs --model-dir "$repo"/../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2/onnx \
+     --manifest "$repo"/conformance/package/ensomi-package.json
    ```
 
 ## Cutting the release
 
-8. For a version other than the current one: on bings-mac set `version` under `[workspace.package]` in
+8. For a version other than the current one: set `version` under `[workspace.package]` in
    `Cargo.toml`, run `cargo update --workspace` (`Cargo.lock`) and `cd js && npm version X.Y.Z
    --no-git-tag-version` (`package.json`, `package-lock.json`), and change the version in the generator comment of
    `conformance/generate/native-charts/hesitation-snow.osu`, which `swift test` compares line by line; commit and push
-   `main` from the control plane. Do this before steps 5 to 7.
+   `main`. Do this before steps 5 to 7.
 
-9. On the control plane, tag `main`'s head and push the tag:
+9. Tag `main`'s head and push the tag:
 
    ```sh
    git switch main && git pull

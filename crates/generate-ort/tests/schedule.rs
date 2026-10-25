@@ -1,5 +1,5 @@
-//! Requests to the scheduler during generation, with the released model read from beside the repository where
-//! bings-mac keeps it (conformance/generate/README.md); without it the tests pass without running.
+//! Requests to the scheduler during generation, with the released model read from beside the repository
+//! (conformance/generate/README.md); without it the tests pass without running.
 use ensomi_generate::{Action, Audio, Event, Lead, Mode, Models, Options, Request, Samples, Scheduler, Source};
 use ensomi_generate_ort::{package, Config, Sessions};
 use std::path::Path;

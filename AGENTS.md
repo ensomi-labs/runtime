@@ -8,8 +8,8 @@ Read `README.md` first; its boundary rules are decisions, not suggestions.
   Validate only where outside input enters (fixtures, bindings, model files).
 - Behaviour is pinned by `conformance/` fixtures: plain JSON, or a small binary format
   described beside it, that another implementation can read without this code.
-- Builds and tests run on bings-mac (`~/ensomi/ensomi-runtime`, synced from the control
-  plane). Cargo output stays in `target/`, which is not synced.
+- Apple builds (`scripts/build-apple.sh`, `swift test`) run on macOS. Cargo output stays in
+  `target/`.
 
 ## Facts shared with other Ensomi repositories
 
@@ -18,7 +18,7 @@ some defined here are stated elsewhere: the released model's files, revision and
 licence, versions and pins, protocol messages, generation rules. ensomi-model's
 [`docs/ecosystem.md`](https://github.com/ensomi-labs/ensomi-model/blob/main/docs/ecosystem.md)
 says where each kind is defined and what a change affects in the other
-repositories; in the Ensomi workspace it is `../ensomi-model/docs/ecosystem.md`.
+repositories; with ensomi-model checked out beside this repository it is `../ensomi-model/docs/ecosystem.md`.
 Before such a change, follow ensomi-model's
 [`ensomi-cross-repo-changes`](https://github.com/ensomi-labs/ensomi-model/blob/main/.agents/skills/ensomi-cross-repo-changes/SKILL.md)
 skill.

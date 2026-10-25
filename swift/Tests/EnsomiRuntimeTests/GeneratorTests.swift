@@ -3,7 +3,7 @@ import XCTest
 @testable import EnsomiRuntime
 
 /// The chart generator through the Swift API. The model and a release recording are read from beside the
-/// repository, where bings-mac keeps them (conformance/generate/README.md); the tests skip without them. The
+/// repository (conformance/generate/README.md); the tests skip without them. The
 /// resampler tables are the package's own.
 final class GeneratorTests: XCTestCase {
     /// The chart the native driver made from the same PCM, request and seed, every graph on one thread:
