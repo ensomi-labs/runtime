@@ -19,7 +19,9 @@ that both native libraries have 16 KiB LOAD alignment. The AAR includes compiled
 `build-onnxruntime-android.sh` builds ONNX Runtime 1.23.2 (the version selected by `ort-sys` rc.11) from a pinned
 commit with the same NDK and API level. Pyke's rc.11 Android archive contains GNU libstdc++ references and
 fails to load on Android. The source build and its private CMake 3.31.10 / Ninja 1.13.0 venv are cached under
-`CARGO_TARGET_DIR`; deleting `build/android` keeps that cache. The Rust dependency pins stay unchanged.
+`CARGO_TARGET_DIR` (default: `target/onnxruntime-android/{source,build}` and `target/android-tools`);
+deleting `build/android` keeps that cache. This is the CPU execution provider, with ARM KleidiAI kernels;
+XNNPACK and NNAPI are disabled. The Rust dependency pins stay unchanged.
 
 In a Kotlin app module (minSdk 33, targetSdk 36, compileSdk 37):
 
@@ -27,16 +29,75 @@ In a Kotlin app module (minSdk 33, targetSdk 36, compileSdk 37):
 dependencies {
     implementation(files("/absolute/path/to/build/android/ensomi-runtime.aar"))
     implementation("net.java.dev.jna:jna:5.19.1@aar")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
 }
 ```
 
-Import `io.ensomi.runtime.*`. `ChartGenerator.open(context, modelDirectory, options)` copies the bundled tables
-to `noBackupFilesDir` once per table version and fills an unset `resamplerDirectory`. For song PCM use
-`prepareF32le`, `generateF32le` and `ChartScheduler.fromPcmF32le`: their `ByteArray` holds mono little-endian
-f32 samples, avoiding Kotlin's boxed `List<Float>`. The existing float APIs remain available.
-`onGenerationThread { /* blocking FFI call */ }` returns a `CompletableFuture` and runs the call and progress
-on a new thread with an 8 MiB stack. Stop native work with `Cancellation.cancel()` or `ChartScheduler.stop()`;
-cancelling the future alone does not stop it.
+The local AAR has no dependency metadata: the app declares both dependencies above. Coroutines is pinned to
+[1.11.0](https://github.com/Kotlin/kotlinx.coroutines/releases/tag/1.11.0). Import `io.ensomi.runtime.*`.
+
+`RuntimeWorker` owns a reusable single-thread coroutine dispatcher, constructed with an explicit 8 MiB stack.
+It has this public API (default arguments shown):
+
+```kotlin
+class RuntimeWorker : AutoCloseable {
+    suspend fun <T> run(block: suspend () -> T): T
+    suspend fun <T> withGenerator(
+        context: Context,
+        modelDirectory: File,
+        options: GeneratorOptions = GeneratorOptions(ExecutionProvider.CPU),
+        block: suspend ChartGenerator.() -> T,
+    ): T
+    override fun close()
+}
+```
+
+`withGenerator` opens a model on the worker and closes it after the suspending block finishes, including on
+failure or cancellation. It fills an unset `resamplerDirectory` with tables installed under `noBackupFilesDir`.
+Each set of tables has a directory keyed by the SHA-256 of the bundled files. A process/thread lock and atomic
+directory rename prevent partial copies from reaching callers; failures can be retried. An AAR with changed
+tables gets a new directory. Old directories stay available to generators that are still using them.
+
+For example, from an app coroutine:
+
+```kotlin
+suspend fun makeChart(context: Context, modelDirectory: File, pcm: FloatArray): ChartResult =
+    RuntimeWorker().use { worker ->
+        worker.withGenerator(context, modelDirectory) {
+            generate(pcm, sampleRate = 48_000.0, request = GenerateChartRequest(star = 4.0))
+        }
+    }
+```
+
+The worker and generator can each live across many calls and suspensions; the example scopes them to one song.
+`run` also supports existing generators and scheduler work: create a scheduler inside a worker block, wrap it
+in `use`, then call `work()` there. A suspension resumes on the worker unless the app explicitly changes the
+dispatcher. Progress callbacks run on this worker too; send UI updates to the main thread.
+
+These blocking overloads convert `FloatArray` directly to little-endian bytes, then call the byte FFI:
+
+```kotlin
+fun ChartGenerator.prepare(pcm: FloatArray, sampleRate: Double, cancellation: Cancellation? = null): Prepared
+fun ChartGenerator.generate(pcm: FloatArray, sampleRate: Double, request: GenerateChartRequest,
+    listener: GenerationListener? = null, cancellation: Cancellation? = null): ChartResult
+fun ChartScheduler.Companion.fromPcm(generator: ChartGenerator, pcm: FloatArray, sampleRate: Double,
+    request: GenerateChartRequest, mode: ScheduleMode, lead: LeadPolicy): ChartScheduler
+```
+
+For an existing little-endian mono f32 `ByteArray`, call the generated `prepareF32le`, `generateF32le` or
+`ChartScheduler.fromPcmF32le` inside the same worker block. Neither path builds a boxed `List<Float>`.
+Do not mutate the PCM while a call is reading it.
+
+The app closes the worker after all its callers finish (cancel and join them first), usually with `use`.
+`withGenerator` owns its generator; do not retain it outside the block. The app owns any `Prepared`,
+`ChartScheduler`, `Cancellation` or `GameplaySession` it creates: close those with `use` inside the block too.
+Return ordinary data such as `ChartResult` from worker blocks, rather than native handles: coroutine
+cancellation can discard a returned value. The generated objects implement `AutoCloseable`.
+
+Coroutine cancellation skips work that has not started. It does not interrupt blocking Rust: a running call
+and its resource cleanup finish before the coroutine completes cancellation. To stop native work early, signal
+its `Cancellation.cancel()` or `ChartScheduler.stop()` from another thread; do not queue the stop behind the
+running call on the same worker. Native cancellation remains cooperative at the runtime's existing checkpoints.
 
 UniFFI stays at 0.31: API checksum comparisons are omitted for its AArch64 Kotlin bug
 ([upstream fix](https://github.com/mozilla/uniffi-rs/pull/2935)); keep each AAR's classes and native library together.

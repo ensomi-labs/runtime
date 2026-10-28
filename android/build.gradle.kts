@@ -37,6 +37,7 @@ kotlin {
 
 dependencies {
     implementation("net.java.dev.jna:jna:5.19.1@aar")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
     compileOnly("androidx.annotation:annotation:1.9.1")
     androidTestImplementation("androidx.test:runner:1.7.0")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")

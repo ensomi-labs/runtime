@@ -4,7 +4,7 @@
 # NDK 30.0.16248370, Python 3, git and Android Studio's bundled JDK (or JAVA_HOME).
 # Gradle uses the checked-in wrapper. ONNX Runtime is built from pinned source and cached in target/.
 # Honours CARGO_TARGET_DIR. The AAR carries the resampler tables and ONNX Runtime's licence notices;
-# the consuming app declares JNA 5.19.1@aar. No model is needed to build it.
+# the consuming app declares JNA 5.19.1@aar and kotlinx-coroutines-core 1.11.0. No model is needed.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

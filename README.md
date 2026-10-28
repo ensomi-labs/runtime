@@ -71,7 +71,7 @@ scripts/build-android.sh
 
 Builds `build/android/ensomi-runtime.aar` for arm64-v8a and keeps its generated Kotlin source beside it.
 The AAR carries the native libraries, resampler tables and ONNX Runtime notices. The app consumes this one
-local file and declares `net.java.dev.jna:jna:5.19.1@aar`. There is no Android CI or release asset yet.
+local file and declares JNA 5.19.1 and kotlinx-coroutines-core 1.11.0. There is no Android CI or release asset yet.
 [Android build and usage](android/README.md) covers prerequisites, the byte PCM APIs, the 8 MiB worker
 helper and the emulator tests.
 
