@@ -33,15 +33,16 @@ Rules that keep the boundary:
 | Clients | Package | Built by |
 | --- | --- | --- |
 | macOS 14, iOS 17 | Swift package `EnsomiRuntime` ([`Package.swift`](Package.swift), [`swift/`](swift)); the xcframework is a release asset | `scripts/build-apple.sh` |
+| Android 13 (API 33), arm64-v8a | local AAR `ensomi-runtime.aar` ([`android/`](android)); built on macOS only for now | `scripts/build-android.sh` |
 | Web (Chrome 91, Firefox 89, Safari 16.4), Node | npm `@ensomi/runtime` ([`js/`](js)) | `scripts/wasm-build.sh` |
 
 The Wasm core is built with WebAssembly SIMD (`simd128`), which onnxruntime-web's own Wasm needs as well; the browser
 versions are the first with it.
 
-Both packages carry the soxr tables in [`assets/resampler`](assets/resampler), with which the generator resamples PCM at
+The packages carry the soxr tables in [`assets/resampler`](assets/resampler), with which the generator resamples PCM at
 rates other than 22050 Hz. Releases: [`RELEASING.md`](RELEASING.md).
 
-Both also run the audio stages alone (`prepare`, whose result is stored as bytes per song) and a scheduler that
+They also run the audio stages alone (`prepare`, whose result is stored as bytes per song) and a scheduler that
 generates for play: R2's arrangement committed per head row, and play allowed to start once it cannot overtake the
 chart ([`swift/README.md`](swift/README.md), [`js/README.md`](js/README.md)). The scheduler is in the core without IO
 (`crates/generate/src/schedule.rs`); natively its pages go into the gameplay session inside Rust.
@@ -61,6 +62,18 @@ runtime's. The receipt's `controls.difficulty` records the miss.
 
 The TypeScript runtime in `ensomi-web/packages/runtime` is retired: ensomi-web serves the Wasm build of this core.
 A comparison with its charts holds only where it arranged the song once, as this runtime always does.
+
+## Android build (macOS only for now)
+
+```sh
+scripts/build-android.sh
+```
+
+Builds `build/android/ensomi-runtime.aar` for arm64-v8a and keeps its generated Kotlin source beside it.
+The AAR carries the native libraries, resampler tables and ONNX Runtime notices. The app consumes this one
+local file and declares `net.java.dev.jna:jna:5.19.1@aar`. There is no Android CI or release asset yet.
+[Android build and usage](android/README.md) covers prerequisites, the byte PCM APIs, the 8 MiB worker
+helper and the emulator tests.
 
 ## Licence
 
