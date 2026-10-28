@@ -747,11 +747,23 @@ public protocol ChartGeneratorProtocol: AnyObject, Sendable {
     func generate(pcm: [Float], sampleRate: Double, request: GenerateChartRequest, listener: GenerationListener?, cancellation: Cancellation?) throws  -> ChartResult
     
     /**
+     * `generate` with mono PCM encoded as little-endian f32 bytes. Progress, cancellation and errors
+     * follow `generate`; a partial sample returns `GeneratorError::Generation`.
+     */
+    func generateF32le(pcm: Data, sampleRate: Double, request: GenerateChartRequest, listener: GenerationListener?, cancellation: Cancellation?) throws  -> ChartResult
+    
+    /**
      * Runs the stages that read only the audio of mono PCM at `sample_rate`: PCM preparation, the spectrogram,
      * BeatThis, the features and the beat grid. Blocks until they are done; `cancellation` stops them at the next
      * step, and a cancelled `prepare` returns `GeneratorError::Cancelled` and keeps nothing.
      */
     func prepare(pcm: [Float], sampleRate: Double, cancellation: Cancellation?) throws  -> Prepared
+    
+    /**
+     * `prepare` with mono PCM encoded as little-endian f32 bytes. A partial sample returns
+     * `GeneratorError::Generation`.
+     */
+    func prepareF32le(pcm: Data, sampleRate: Double, cancellation: Cancellation?) throws  -> Prepared
     
 }
 /**
@@ -852,6 +864,23 @@ open func generate(pcm: [Float], sampleRate: Double, request: GenerateChartReque
 }
     
     /**
+     * `generate` with mono PCM encoded as little-endian f32 bytes. Progress, cancellation and errors
+     * follow `generate`; a partial sample returns `GeneratorError::Generation`.
+     */
+open func generateF32le(pcm: Data, sampleRate: Double, request: GenerateChartRequest, listener: GenerationListener?, cancellation: Cancellation?)throws  -> ChartResult  {
+    return try  FfiConverterTypeChartResult_lift(try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
+    uniffi_ensomi_runtime_ffi_fn_method_chartgenerator_generate_f32le(
+            self.uniffiCloneHandle(),
+        FfiConverterData.lower(pcm),
+        FfiConverterDouble.lower(sampleRate),
+        FfiConverterTypeGenerateChartRequest_lower(request),
+        FfiConverterOptionTypeGenerationListener.lower(listener),
+        FfiConverterOptionTypeCancellation.lower(cancellation),$0
+    )
+})
+}
+    
+    /**
      * Runs the stages that read only the audio of mono PCM at `sample_rate`: PCM preparation, the spectrogram,
      * BeatThis, the features and the beat grid. Blocks until they are done; `cancellation` stops them at the next
      * step, and a cancelled `prepare` returns `GeneratorError::Cancelled` and keeps nothing.
@@ -861,6 +890,21 @@ open func prepare(pcm: [Float], sampleRate: Double, cancellation: Cancellation?)
     uniffi_ensomi_runtime_ffi_fn_method_chartgenerator_prepare(
             self.uniffiCloneHandle(),
         FfiConverterSequenceFloat.lower(pcm),
+        FfiConverterDouble.lower(sampleRate),
+        FfiConverterOptionTypeCancellation.lower(cancellation),$0
+    )
+})
+}
+    
+    /**
+     * `prepare` with mono PCM encoded as little-endian f32 bytes. A partial sample returns
+     * `GeneratorError::Generation`.
+     */
+open func prepareF32le(pcm: Data, sampleRate: Double, cancellation: Cancellation?)throws  -> Prepared  {
+    return try  FfiConverterTypePrepared_lift(try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
+    uniffi_ensomi_runtime_ffi_fn_method_chartgenerator_prepare_f32le(
+            self.uniffiCloneHandle(),
+        FfiConverterData.lower(pcm),
         FfiConverterDouble.lower(sampleRate),
         FfiConverterOptionTypeCancellation.lower(cancellation),$0
     )
@@ -1033,6 +1077,23 @@ public static func fromPcm(generator: ChartGenerator, pcm: [Float], sampleRate: 
     uniffi_ensomi_runtime_ffi_fn_constructor_chartscheduler_from_pcm(
         FfiConverterTypeChartGenerator_lower(generator),
         FfiConverterSequenceFloat.lower(pcm),
+        FfiConverterDouble.lower(sampleRate),
+        FfiConverterTypeGenerateChartRequest_lower(request),
+        FfiConverterTypeScheduleMode_lower(mode),
+        FfiConverterTypeLeadPolicy_lower(lead),$0
+    )
+})
+}
+    
+    /**
+     * `from_pcm` with mono PCM encoded as little-endian f32 bytes. A partial sample returns
+     * `GeneratorError::Generation`.
+     */
+public static func fromPcmF32le(generator: ChartGenerator, pcm: Data, sampleRate: Double, request: GenerateChartRequest, mode: ScheduleMode, lead: LeadPolicy)throws  -> ChartScheduler  {
+    return try  FfiConverterTypeChartScheduler_lift(try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
+    uniffi_ensomi_runtime_ffi_fn_constructor_chartscheduler_from_pcm_f32le(
+        FfiConverterTypeChartGenerator_lower(generator),
+        FfiConverterData.lower(pcm),
         FfiConverterDouble.lower(sampleRate),
         FfiConverterTypeGenerateChartRequest_lower(request),
         FfiConverterTypeScheduleMode_lower(mode),
@@ -6296,7 +6357,13 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ensomi_runtime_ffi_checksum_method_chartgenerator_generate() != 63973) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_chartgenerator_generate_f32le() != 16685) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_ensomi_runtime_ffi_checksum_method_chartgenerator_prepare() != 22134) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_chartgenerator_prepare_f32le() != 43843) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_method_generationlistener_progress() != 30631) {
@@ -6348,6 +6415,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_constructor_chartscheduler_from_pcm() != 27922) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_constructor_chartscheduler_from_pcm_f32le() != 55128) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_constructor_chartscheduler_from_prepared() != 37736) {

@@ -250,6 +250,15 @@ pub(crate) fn generation_error(message: String) -> GeneratorError {
     GeneratorError::Generation { code: code.to_string(), message }
 }
 
+/// Mono f32 PCM at the byte-oriented binding boundary.
+pub(crate) fn pcm_f32le(pcm: Vec<u8>) -> Result<Vec<f32>, GeneratorError> {
+    let (samples, remainder) = pcm.as_chunks::<4>();
+    if !remainder.is_empty() {
+        return Err(generation_error("PCM byte length must be a multiple of 4".to_string()));
+    }
+    Ok(samples.iter().map(|b| f32::from_le_bytes(*b)).collect())
+}
+
 /// Told of each phase a generation enters, on the generating thread.
 #[uniffi::export(with_foreign)]
 pub trait GenerationListener: Send + Sync {
@@ -469,6 +478,12 @@ impl ChartGenerator {
         Ok(Arc::new(Prepared(Arc::new(prepared))))
     }
 
+    /// `prepare` with mono PCM encoded as little-endian f32 bytes. A partial sample returns
+    /// `GeneratorError::Generation`.
+    pub fn prepare_f32le(&self, pcm: Vec<u8>, sample_rate: f64, cancellation: Option<Arc<Cancellation>>) -> Result<Arc<Prepared>, GeneratorError> {
+        self.prepare(pcm_f32le(pcm)?, sample_rate, cancellation)
+    }
+
     /// Generates a chart from mono PCM at `sample_rate`. Blocks until the chart is done; `listener` hears each
     /// phase and `cancellation` stops it at its next step. A panic in the core or the listener ends the
     /// generation with `GeneratorError::Generation` and leaves the generator usable.
@@ -510,6 +525,19 @@ impl ChartGenerator {
         let (result, _) = outcome.map_err(|e| if cancelled() { GeneratorError::Cancelled } else { generation_error(e) })?;
         Ok(chart_result(&result))
     }
+
+    /// `generate` with mono PCM encoded as little-endian f32 bytes. Progress, cancellation and errors
+    /// follow `generate`; a partial sample returns `GeneratorError::Generation`.
+    pub fn generate_f32le(
+        &self,
+        pcm: Vec<u8>,
+        sample_rate: f64,
+        request: GenerateChartRequest,
+        listener: Option<Arc<dyn GenerationListener>>,
+        cancellation: Option<Arc<Cancellation>>,
+    ) -> Result<ChartResult, GeneratorError> {
+        self.generate(pcm_f32le(pcm)?, sample_rate, request, listener, cancellation)
+    }
 }
 
 impl ChartGenerator {
@@ -538,6 +566,24 @@ pub(crate) fn chart_result(result: &ensomi_generate::GenerationResult) -> ChartR
 mod tests {
     use super::*;
     use ensomi_generate::GRAPHS;
+
+    #[test]
+    fn byte_pcm_decodes_to_the_same_f32_samples() {
+        let pcm = [0.0_f32, -0.0, 1.0, -0.5, f32::MIN_POSITIVE, f32::INFINITY, f32::from_bits(0x7fc01234)];
+        let bytes = pcm.iter().flat_map(|sample| sample.to_le_bytes()).collect();
+        let decoded = pcm_f32le(bytes).unwrap();
+        assert_eq!(decoded.iter().map(|sample| sample.to_bits()).collect::<Vec<_>>(), pcm.iter().map(|sample| sample.to_bits()).collect::<Vec<_>>());
+        assert_eq!(pcm_f32le(vec![0x00, 0x00, 0x80, 0x3f, 0x00, 0x00, 0x00, 0xbf]).unwrap(), vec![1.0, -0.5]);
+        assert!(pcm_f32le(Vec::new()).unwrap().is_empty());
+    }
+
+    #[test]
+    fn byte_pcm_rejects_a_partial_sample() {
+        for length in [1, 2, 3, 5, 6, 7] {
+            assert!(matches!(pcm_f32le(vec![0; length]), Err(GeneratorError::Generation { code, message })
+                if code == "generation_failed" && message == "PCM byte length must be a multiple of 4"));
+        }
+    }
 
     fn options(provider: ExecutionProvider, beatthis_threads: Option<u32>) -> GeneratorOptions {
         GeneratorOptions { provider, resampler_directory: None, low_memory: None, beatthis_threads }
