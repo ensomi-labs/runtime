@@ -15,7 +15,8 @@ pub struct Resampler {
     up: u64,
     down: u64,
     radius: usize,
-    /// `up` rows of `2 * radius + 1` coefficients, one row per position between input samples.
+    width: usize,
+    /// `up` rows of `width` coefficients, one row per position between input samples.
     table: Vec<f32>,
     /// Input not yet fully used. It starts at the input index `base - radius`; before the song is silence.
     input: Vec<f32>,
@@ -31,7 +32,8 @@ impl Resampler {
         let (up, down) = (to / divisor, from / divisor);
         let cutoff = ROLLOFF * (f64::from(to) / f64::from(from)).min(1.0);
         let radius = (ZEROS / cutoff).ceil() as usize;
-        let width = 2 * radius + 1;
+        // Every input closer than radius + 1 to the output, on either side, wherever between two inputs it falls.
+        let width = 2 * radius + 2;
         let mut table = Vec::with_capacity(up as usize * width);
         for phase in 0..up {
             let fraction = f64::from(phase) / f64::from(up);
@@ -40,7 +42,7 @@ impl Resampler {
             let sum: f64 = row.iter().sum();
             table.extend(row.iter().map(|c| (c / sum) as f32));
         }
-        Self { up: up.into(), down: down.into(), radius, table, input: vec![0.0; radius], base: 0, taken: 0, made: 0 }
+        Self { up: up.into(), down: down.into(), radius, width, table, input: vec![0.0; radius], base: 0, taken: 0, made: 0 }
     }
 
     /// Appends the output this input makes possible. It lags the input by the filter's radius, but carries no delay.
@@ -52,7 +54,7 @@ impl Resampler {
 
     /// Ends the input: it is followed by silence, and output stops where the input does.
     pub fn finish(&mut self, output: &mut Vec<f32>) {
-        self.input.resize(self.input.len() + 2 * self.radius + 1, 0.0);
+        self.input.resize(self.input.len() + self.width, 0.0);
         self.run((self.taken * self.up).div_ceil(self.down), output);
     }
 
@@ -64,7 +66,7 @@ impl Resampler {
     }
 
     fn run(&mut self, limit: u64, output: &mut Vec<f32>) {
-        let width = 2 * self.radius + 1;
+        let width = self.width;
         let mut start;
         loop {
             let at = self.made * self.down;
