@@ -10,11 +10,13 @@ with JVM target 17. No model is needed. Run all commands from the repository roo
 scripts/build-android.sh
 ```
 
-This builds `build/android/ensomi-runtime.aar` and keeps the generated source in `build/android/kotlin/`.
+This builds `build/android/ensomi-runtime.aar`, with the bindings' `sync` feature on, and keeps the generated source
+in `build/android/kotlin/`.
 It honours `CARGO_TARGET_DIR`, builds native code at API 24, rejects unresolved native symbols, and checks
 that both native libraries have 16 KiB LOAD alignment. The AAR includes compiled bindings and helpers,
-`libensomi_runtime_ffi.so`, `libc++_shared.so`, the resampler assets and `assets/licenses/onnxruntime`
-(exposed as `onnxRuntimeLicenseAssets`). It is a local build, with no Android CI or release asset yet.
+`libensomi_runtime_ffi.so`, `libc++_shared.so`, the resampler assets, `assets/licenses/onnxruntime`
+(exposed as `onnxRuntimeLicenseAssets`) and Sonalign's notice at `assets/licenses/sonalign/LICENSE`. It is a local build,
+with no Android CI or release asset yet.
 
 `build-onnxruntime-android.sh` builds ONNX Runtime 1.23.2 (the version selected by `ort-sys` rc.11) from a pinned
 commit with the same NDK and API level. Pyke's rc.11 Android archive contains GNU libstdc++ references and
@@ -106,7 +108,7 @@ The script also fixes the 0.31 error template's duplicate `Throwable.message`: t
 the override, retaining its name and wire format. The guarded patch is in `scripts/fix-kotlin-errors.py`.
 
 With an arm64 emulator already booted (use `ensomi-36-16k` for the 16 KiB check), run the model-free binding,
-asset and worker tests, then shut the emulator down:
+asset, sync and worker tests, then shut the emulator down:
 
 ```sh
 export ANDROID_HOME="$HOME/Library/Android/sdk"
@@ -114,3 +116,62 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 android/gradlew -p android --no-daemon connectedAndroidTest
 "$ANDROID_HOME/platform-tools/adb" emu kill
 ```
+
+## Live audio sync
+
+`SyncReference` indexes the song from its decoded PCM; `SyncSession` listens to the microphone and reports where in the
+song the room is. Ensomi plays no audio: the position only joins the game to music already playing.
+
+```kotlin
+class SyncReference : AutoCloseable {
+    companion object {
+        fun fromPcmF32le(pcm: ByteArray, sampleRate: Double): SyncReference // throws SyncException
+    }
+    fun durationMs(): Double
+}
+class SyncSession(reference: SyncReference, sampleRate: Double) : AutoCloseable { // throws SyncException
+    fun pushF32le(pcm: ByteArray, captureTimeMs: Double): SyncSnapshot // throws SyncException
+}
+data class SyncSnapshot(
+    val state: SyncState, // READY, LISTENING, LOCKING, CONFIRMED, LOCKED, DRIFTING, RELOCKING, LOST, FAILED
+    val isFinal: Boolean, // The lock to act on.
+    val referenceTimeMs: Double?, // Both set or both unset, and provisional until isFinal.
+    val captureTimeMs: Double?,
+    val confidence: Double, // Spectral agreement from 0 to 1, for display. Nothing gates on it.
+    val withholdReason: SyncWithholdReason?,
+)
+sealed class SyncException : Exception() { class Refused(val detail: String) : SyncException() }
+
+// In Pcm.kt, over the same byte calls:
+fun SyncReference.Companion.fromPcm(pcm: FloatArray, sampleRate: Double): SyncReference
+fun SyncSession.push(samples: FloatArray, captureTimeMs: Double, count: Int = samples.size): SyncSnapshot
+```
+
+Index the same mono PCM the chart is generated from, at the file's rate, so that a reported time is a chart time. Build
+the reference on `RuntimeWorker` or another background thread. It takes no `Cancellation`: a build is short, and
+coroutine cancellation waits for it.
+
+Push from the thread that reads the microphone, not from an audio callback. Every 100 ms of audio a push runs a search,
+and a thread that falls behind is safe as long as `AudioRecord`'s own buffer holds the wait: give it at least 500 ms. The
+session converts any rate from 8 to 192 kHz; 48 kHz needs no conversion. A lock takes about 3.5 s of audio.
+
+`captureTimeMs` is when the block's first sample was captured, on one monotonic clock in milliseconds. Take it from
+`AudioRecord.getTimestamp`. `framesRead` counts the frames read before this block:
+
+```kotlin
+record.getTimestamp(stamp, AudioTimestamp.TIMEBASE_MONOTONIC)
+val captureNs = stamp.nanoTime + (framesRead - stamp.framePosition) * 1_000_000_000 / rate
+val snapshot = session.push(block, captureNs / 1e6, count = read)
+framesRead += read
+if (snapshot.isFinal) {
+    val songMs = snapshot.referenceTimeMs!! + (System.nanoTime() / 1e6 - snapshot.captureTimeMs!!)
+}
+```
+
+Before a timestamp is available, the time a read returned less the block's duration will do, but it stays late by the
+device's input latency, and that error reaches the position. Jitter does not: the session keeps the earliest stamp of
+the last five seconds against its sample count, and treats stamps that stay more than two hops late for 500 ms as audio
+lost, restarting the search without it. `isFinal` then turns false until the session has locked again.
+
+Stop pushing at the first `isFinal`, as the Swift app does, and project from that one snapshot. A `Refused` block changes
+nothing, and the next is taken. Calls to one session take a lock, so they are safe, though they serve one stream.

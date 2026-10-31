@@ -124,7 +124,7 @@ impl SyncReference {
     }
 }
 
-/// One listening session. Calls to one session are made safe by a lock nobody but the caller's capture thread takes.
+/// One listening session. Its lock makes calls safe from any thread, though a session serves one stream.
 #[derive(uniffi::Object)]
 pub struct SyncSession(Mutex<Session>);
 

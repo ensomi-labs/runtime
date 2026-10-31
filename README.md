@@ -11,7 +11,7 @@ and keep only what is specific to their platform.
 | Messages between programs | chart, generation, capabilities, chart stream (unreleased) | [EnsomiProtocol](https://github.com/ensomi-labs/protocol) |
 | Model package | the manifest `ensomi-package.json`, format `ensomi-package/1` ([`docs/model-package.md`](docs/model-package.md)), which this runtime alone interprets; `runtime.json` and the files it names | the released model's `onnx/` directory (`sed-i/ensomi-r2`) |
 | Conformance fixtures | inputs and expected outputs any implementation must reproduce | `conformance/` |
-| Core | gameplay rules with their ruleset, input events, judgement events and score, clock and offset arithmetic, note layout, chart sources, the generator's host pipeline | `crates/` |
+| Core | gameplay rules with their ruleset, input events, judgement events and score, clock and offset arithmetic, note layout, chart sources, the generator's host pipeline, live audio sync for Android | `crates/` |
 | Compute | the published ONNX graphs, run by ONNX Runtime with the platform's execution provider | each binding |
 | Platform shell | audio codec, audio output and its clock, timestamped input, display link, rendering, UI, storage, model download | each app |
 
@@ -46,6 +46,10 @@ They also run the audio stages alone (`prepare`, whose result is stored as bytes
 generates for play: R2's arrangement committed per head row, and play allowed to start once it cannot overtake the
 chart ([`swift/README.md`](swift/README.md), [`js/README.md`](js/README.md)). The scheduler is in the core without IO
 (`crates/generate/src/schedule.rs`); natively its pages go into the gameplay session inside Rust.
+
+Live audio sync is in the core too (`crates/sync`): the features and session around
+[Sonalign](https://github.com/ensomi-labs/sonalign), pinned exactly, for clients that do not have the Swift app's. Only
+the Android build carries it ([`android/README.md`](android/README.md)); Apple apps link Sonalign as a Swift package.
 
 Requests during generation: the scheduler takes a new request for the chart in progress (`Event::Request`), for play
 in which game events change the coming chart, with or without Sonalign: a multiplayer attack on another player's

@@ -63,6 +63,83 @@ class RuntimeLoadTest {
     }
 
     @Test
+    fun syncLocksOnASongThroughTheBindings() = runBlocking {
+        val rate = 44_100.0
+        val song = syncSong(rate.toInt(), seconds = 30)
+        val blockSize = 882
+        val offsetMs = 11_000.0
+        val clockMs = 5_000_000.0
+        val block = FloatArray(blockSize)
+        RuntimeWorker().use { worker ->
+            worker.run {
+                val buildStarted = System.nanoTime()
+                SyncReference.fromPcm(song, rate).use { reference ->
+                    val buildMs = (System.nanoTime() - buildStarted) / 1e6
+                    assertEquals(30_000.0, reference.durationMs(), 0.001)
+                    SyncSession(reference, rate).use { session ->
+                        var sample = (offsetMs / 1_000 * rate).toInt()
+                        var pushes = 0
+                        var pushNs = 0L
+                        var worstNs = 0L
+                        var lock: SyncSnapshot? = null
+                        while (lock == null && sample + blockSize <= song.size) {
+                            song.copyInto(block, 0, sample, sample + blockSize)
+                            val started = System.nanoTime()
+                            val snapshot = session.push(block, clockMs + pushes * 20.0)
+                            val cost = System.nanoTime() - started
+                            pushNs += cost
+                            worstNs = maxOf(worstNs, cost)
+                            if (snapshot.isFinal) lock = snapshot
+                            sample += blockSize
+                            pushes += 1
+                        }
+                        println(
+                            "Ensomi sync: reference ${buildMs / 0.5} ms/min; push mean " +
+                                "${pushNs / pushes / 1_000} us, worst ${worstNs / 1_000} us, $pushes pushes",
+                        )
+                        val locked = requireNotNull(lock) { "The session never reached a final lock" }
+                        assertEquals(SyncState.LOCKED, locked.state)
+                        val error = locked.referenceTimeMs!! - (offsetMs + locked.captureTimeMs!! - clockMs)
+                        assertEquals(0.0, error, 3.5)
+                    }
+                }
+            }
+            worker.run {
+                SyncReference.fromPcm(FloatArray(4_096), 48_000.0).use { reference ->
+                    SyncSession(reference, 48_000.0).use { session ->
+                        val snapshot = session.push(FloatArray(4_800), 0.0, count = 2_400)
+                        assertEquals(SyncState.LISTENING, snapshot.state)
+                        assertFalse(snapshot.isFinal)
+                        assertNull(snapshot.referenceTimeMs)
+                    }
+                    try {
+                        SyncSession(reference, 1.5).close()
+                        fail("Expected a refused sample rate")
+                    } catch (error: SyncException.Refused) {
+                        assertTrue(error.message.isNotEmpty())
+                    }
+                }
+            }
+        }
+    }
+
+    /** A tone that jumps at random every 120 ms and decays, so no passage repeats. */
+    private fun syncSong(rate: Int, seconds: Int): FloatArray {
+        var state = 1
+        var phase = 0.0
+        var hertz = 440.0
+        val notes = rate * 12 / 100
+        return FloatArray(rate * seconds) { index ->
+            if (index % notes == 0) {
+                state = state * 1_664_525 + 1_013_904_223
+                hertz = 220.0 * Math.pow(2.0, (state ushr 8) / 16_777_216.0 * 2.0)
+            }
+            phase += 2 * Math.PI * hertz / rate
+            (Math.sin(phase) * 0.3 * (1.0 - (index % notes).toDouble() / notes)).toFloat()
+        }
+    }
+
+    @Test
     fun workerReusesNativeStackAndPropagatesErrors() = runBlocking {
         val caller = Thread.currentThread()
         val worker = RuntimeWorker()

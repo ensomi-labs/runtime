@@ -11,6 +11,9 @@ repository.workspace = true
 # Pinned exactly: reference and query features are only comparable under the configuration this version was validated on.
 sonalign = "=0.2.0"
 
+[dev-dependencies]
+serde_json = "1"
+
 [lints.clippy]
 # Index loops read like the Swift original, and over parallel arrays.
 needless_range_loop = "allow"

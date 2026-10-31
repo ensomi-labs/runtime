@@ -72,11 +72,14 @@ fn song() -> &'static (Song, Reference) {
     })
 }
 
-/// A room: quieter than the recording, with noise over it at about 6 dB of signal to noise.
+/// A room: quieter than the recording, with noise at 6 dB below the signal.
 fn heard(mut pcm: Vec<f32>, seed: u32) -> Vec<f32> {
+    let rms = (pcm.iter().map(|sample| f64::from(*sample).powi(2)).sum::<f64>() / pcm.len() as f64).sqrt();
+    // Uniform noise of width w has an RMS of w / sqrt(12).
+    let width = (rms * 0.5 * 12f64.sqrt()) as f32;
     let mut random = Lcg(seed);
     for sample in &mut pcm {
-        *sample = *sample * 0.4 + (random.next() as f32 - 0.5) * 0.14;
+        *sample = (*sample + (random.next() as f32 - 0.5) * width) * 0.4;
     }
     pcm
 }

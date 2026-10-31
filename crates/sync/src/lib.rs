@@ -73,7 +73,7 @@ impl Reference {
         if frames.len() < 2 {
             return Err(Error::TooShort);
         }
-        // The Swift app's aligner uses Sonalign's default configuration; so does the live path, which needs none other.
+        // The Swift app's aligner takes Sonalign's default configuration.
         Ok(Self { engine: Engine::new(frames, HOP_MS, Configuration::default()), duration_ms })
     }
 
