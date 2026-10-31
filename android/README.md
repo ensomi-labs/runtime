@@ -25,6 +25,16 @@ fails to load on Android. The source build and its private CMake 3.31.10 / Ninja
 deleting `build/android` keeps that cache. This is the CPU execution provider, with ARM KleidiAI kernels;
 XNNPACK and NNAPI are disabled. The Rust dependency pins stay unchanged.
 
+Android sessions disable ORT memory patterns while retaining the CPU arena by default. `lowMemory` also disables
+the arena, preserving the lower-peak mode. On a Redmi K Pad, disabling patterns alone reduced peak app RSS by
+about 0.65 GB across three songs without changing their chart bytes; it avoids the large BeatThis slowdown of
+disabling both controls. These are device measurements, not a universal memory bound. See the
+[paired measurements and chart gates](../artifacts/android-perf-1/report.md).
+
+BeatThis defaults to at most four threads on Android; the other five graphs use one. Apps can set
+`GeneratorOptions.beatthisThreads` for a measured device. Eight threads improved this K Pad's BeatThis time,
+but the runtime does not assume that every Android device benefits from eight threads.
+
 In a Kotlin app module (minSdk 33, targetSdk 36, compileSdk 37):
 
 ```kotlin
