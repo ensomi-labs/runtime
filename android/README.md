@@ -148,7 +148,7 @@ fun SyncSession.push(samples: FloatArray, captureTimeMs: Double, count: Int = sa
 ```
 
 Index the same mono PCM the chart is generated from, at the file's rate, so that a reported time is a chart time. Build
-the reference on `RuntimeWorker` or another background thread. It takes no `Cancellation`: a build is short (about 0.25 s
+the reference on `RuntimeWorker` or another background thread. It takes no `Cancellation`: a build is short (0.1 to 0.25 s
 per minute of audio on an arm64 emulator), and coroutine cancellation waits for it.
 
 Push from the thread that reads the microphone, not from an audio callback. Every 100 ms of audio a push runs a search,
