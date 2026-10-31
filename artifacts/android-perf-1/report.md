@@ -1,10 +1,12 @@
 # Android performance round 1
 
+The original optimized app spends 58–59% of these chart runs decoding and about 28% in BeatThis. Reusing recognition’s successful decode/hash removes 11.69–28.88 s from the subsequent chart request. Eight BeatThis threads on this K Pad save another measured 1.19–2.51 s in the native interval when tested independently. Bulk PCM reads save 0.38–0.81 s in independent comparisons, with a noisy medium-song result. The runtime change cuts normal-mode peak app RSS by about 0.65 GB. Do not add these independent gain estimates into a combined measured result. Every adopted change passes all nine paired full-chart hash gates.
+
 ## Scope and method
 
 No quality metric is validated here. An unequal `.osu` hash is a failed tier 0 gate, even if only one object differs. Tier 1 requires reporting object additions/removals/changes followed by the owner's listening and play review on a blinded, representative song/star/seed panel. Small logit errors or unchanged difficulty estimates cannot establish quality.
 
-Test request: star 4, seed 20261029. Each timing is a fresh instrumented process running the non-debuggable `checks` APK, signed with certificate `099c619b240f210f9da238654d03bc62e97b76ea82aa36158cfe028d5a7f0314`. The direct runtime check uses one session opening and `generate`; the recognition reuse check separately uses the app's actual `prepare` and whole-chart scheduler path (two session openings). Do not confuse either with time spent waiting for a download or recognition. Timed runs leave operator profiling off; separate profiles collect ORT worker participation and sampled CPU placement. Peak RSS is sampled every 50 ms, with VmHWM also reported for the direct check. The app-path peak covers the chart-making interval after capability discovery, not the initial probe. Its initial probe reproduces the successful decode/hash work but omits AudioProbe’s metadata-retriever and file-stat checks; no microphone, recognition UI or ambient-play end-to-end run is claimed. Thermal status must be zero. A result at zero does not mean fixed frequency or zero competing system activity.
+Test request: star 4, seed 20261029. Each timing is a fresh instrumented process running the non-debuggable `checks` APK, signed with certificate `099c619b240f210f9da238654d03bc62e97b76ea82aa36158cfe028d5a7f0314`. The direct runtime check uses one session opening and `generate`; the recognition reuse check separately uses the app's actual `prepare` and whole-chart scheduler path (two session openings). Do not confuse either with time spent waiting for a download or recognition. Timed runs leave operator profiling off; separate profiles collect ORT worker participation and sampled CPU placement. Peak RSS is sampled every 50 ms, with VmHWM also reported for the direct check. The app-path peak covers the chart-making interval after capability discovery, not the initial probe. Its initial probe reproduces the successful decode/hash work but omits AudioProbe’s metadata-retriever and file-stat checks; no microphone, recognition UI or ambient-play end-to-end run is claimed. Thermal status must be zero. A result at zero does not mean fixed frequency or zero competing system activity. OS file caches were not flushed; a fresh process does not mean cold storage or a first model installation.
 
 The tablet's CPU maximum-frequency groups are cores 0–3 at 2.4 GHz, 4–6 at 3.3 GHz, and 7 at 3.73 GHz. `performance_cores()` does not discover these on Android: it caps available parallelism at four. Explicit ORT thread counts leave workers without ORT affinity; the OS places them. Default sessions have one inter-op thread and sequential execution. Five graphs already run with one intra-op thread. Thus there is no six-graph default-pool oversubscription in the current build. ORT's worker spinning is enabled by default; the medium-song no-spin screen below is slower. See [ORT thread management](https://onnxruntime.ai/docs/performance/tune-performance/threading.html); the experiment uses pinned ORT 1.23.2, not newer documented spin-duration options.
 
@@ -23,7 +25,7 @@ Extracted in place from the existing private artifacts; no original traces copie
 
 Initial order from these traces: split timing and loading, then target BeatThis and duplicate decoding. The repeated baseline below puts decoding first (58–59%), BeatThis second (28%). No optimization is adopted before its paired measurements and hash gate.
 
-Baseline AAR copied to `artifacts/android-perf-1/baseline/ensomi-runtime.aar`, SHA-256 `71ad6397a71e0948a1a04b50702b56fd0e7c084d7bd5dee9942b83e82117825b`. Source AAR remains untouched.
+The protected AAR at `/Users/l/ensomi/ensomi-runtime--android-sync-b1/build/android/ensomi-runtime.aar` was copied to `artifacts/android-perf-1/baseline/ensomi-runtime.aar`, SHA-256 `71ad6397a71e0948a1a04b50702b56fd0e7c084d7bd5dee9942b83e82117825b`. Source AAR remains untouched.
 
 ## Measured base profile (before candidate runs)
 
@@ -51,7 +53,7 @@ The three inputs are the tablet’s own MP3s: short is The Gypsy Bard (140.264 s
 
 `pcm` is frontend resampling; `spectrogram` is BeatThis's log-Mel frontend; `mel` is the rows frontend plus derived features. `generate` is a subtotal, not another additive stage. Its excess over the receipt total includes the Kotlin/Rust PCM boundary and result conversion. `close` is session destruction, distinct from the R2 release graph. The native graph table below splits rows and arrangement further. Peak RSS is decimal MB and includes the app, not only ONNX weights.
 
-The long song's decode range is large despite thermal status 0: 19.5–30.9 s. Its BeatThis range is only 0.040 s. This is why isolated before/after totals would not establish a gain. All candidate comparisons use adjacent A/B runs, with AB/BA/AB ordering when repeated three times. Operator-profile runs are excluded from ordinary timing means.
+The long song's decode range is large despite thermal status 0: 19.5–30.9 s. Its BeatThis range is only 0.040 s. This is why isolated before/after totals would not establish a gain. All tier 0 candidate comparisons use adjacent A/B runs, with AB/BA/AB ordering when repeated three times. Operator-profile runs are excluded from ordinary timing means.
 
 The decoder candidate fills available codec input slots without blocking before waiting for output. It preserves the chosen codec, input order, timestamps, gapless trimming and sample arithmetic. [MediaCodec's zero input timeout returns immediately](https://developer.android.com/reference/android/media/MediaCodec#dequeueInputBuffer(long)); the old loop waits after each compressed packet. The PCM and chart hashes pass, but the measured slowdown below rejects this candidate.
 
@@ -183,7 +185,7 @@ The initial direct baseline hashes through a 1 MiB FileInputStream buffer. Later
 
 ## Adopted tier 0 runtime change: disable Android memory patterns
 
-Normal Android sessions keep the CPU arena but disable ORT memory patterns. The existing `lowMemory` path still disables both. Other platforms retain their previous settings. No graph, arithmetic, thread count, compiler flag or FFI schema changes.
+Runtime commit `1494fd8`: normal Android sessions keep the CPU arena but disable ORT memory patterns. The existing `lowMemory` path still disables both. Other platforms retain their previous settings. No graph, arithmetic, thread count, compiler flag or FFI schema changes.
 
 Three interleaved pairs per song (AB/BA/AB), original decoder and four BeatThis threads. Both arms use the same aggregate-instrumented CPU AAR, with operator profiling off: A uses the original memory settings and B disables only patterns. **All 9/9 full chart SHA-256 gates pass against the unmodified original AAR; zero hit objects differ.** Thermal status is zero before and after every run. The separate clean deliverable and original AAR contain identical bindings, helper classes, assets and notices; only the native runtime library differs.
 
@@ -193,7 +195,7 @@ Three interleaved pairs per song (AB/BA/AB), original decoder and four BeatThis 
 | medium; 3 | 29.319 → 29.105 | 0.214 (-0.157–0.768) | 11.705 → 11.631 | 0.074 (0.038–0.118) | 0.049 (0.040–0.067) | 1841.6 → 1197.9; 643.3–644.0 |
 | long; 3 | 49.340 → 49.378 | -0.038 (-0.333–0.208) | 18.301 → 18.266 | 0.035 (0.005–0.066) | 0.015 (0.010–0.018) | 1925.9 → 1269.2; 656.2–657.3 |
 
-Mean peak RSS falls by 652.8/643.7/656.6 MB (35.6%/35.0%/34.1%) for short/medium/long. This is principally a memory improvement. Native time improves by 0.035–0.091 s; whole-process differences are small and mixed because decode varies. No whole-process speed gain is claimed for this change. Keeping the arena avoids the large lowMemory slowdown in the screening table; changing the lowest-peak policy itself was not adopted.
+Mean peak RSS falls by 652.9/643.6/656.7 MB (35.7%/35.0%/34.1%) for short/medium/long. This is principally a memory improvement. Native time improves by 0.035–0.091 s; whole-process differences are small and mixed because decode varies. No whole-process speed gain is claimed for this change. Keeping the arena avoids the large lowMemory slowdown in the screening table; changing the lowest-peak policy itself was not adopted.
 
 The final integrated app and lowMemory checks below use the same clean AAR. Operator profiles and environment-variable experiment hooks are absent from the deliverable. The tested songs reach 315 s; this does not establish a universal peak-memory bound for arbitrary song lengths or other Android devices.
 
@@ -242,20 +244,20 @@ The same file compiles `pthread_setaffinity_np` out on Android. Supplying `sessi
 
 ## Implementation audit
 
-- Recognition's `AudioProbe.probe` decodes mono PCM and hashes the file. `RecognitionController` retains that PCM for sync. `SessionCharts` originally gave only a URI to `RuntimeChartMaker`, which hashes and decodes again. The private candidate passes the retained decoding and matching hash directly to the maker; process-recovery/missing-PCM paths still decode normally. The same retained PCM remains available for sync. No global PCM cache is added.
+- Recognition's `AudioProbe.probe` decodes mono PCM and hashes the file. `RecognitionController` retains that PCM for sync. `SessionCharts` originally gave only a URI to `RuntimeChartMaker`, which hashes and decodes again. The adopted private app change passes the retained decoding and matching hash directly to the maker; process-recovery/missing-PCM paths still decode normally. The same retained PCM remains available for sync. No global PCM cache is added.
 - The current Kotlin helper already bulk-converts `FloatArray` to little-endian bytes; it does not construct `List<Float>`. The historical boxed-PCM issue is not present. UniFFI still copies bytes to Rust, and `pcm_f32le` allocates a float vector. Removing this safely would require an ownership/alignment design; the incoming byte allocation cannot simply be cast to a float vector with another allocation layout.
 - Both Mels use the core's mixed-radix float64 FFT (1024 and 960 points), precomputed twiddles and sparse nonzero Mel weights. The soxr table resampler already uses four accumulators. Replacing the FFT, changing reduction order, enabling FMA/fast-math, or changing resampling is not assumed byte-preserving. `libm` is deliberate for cross-platform numerics.
-- Rust's release build has no repository profile override: ordinary release optimization, 16 codegen units, no cross-crate LTO, generic `aarch64-linux-android`. Android's ORT build is Release `-O3`, CPU EP with KleidiAI. The thin-LTO/one-codegen-unit screen gives no native speed gain and is not adopted; no CPU-feature or fast-math flag is added. ORT dispatches its own CPU kernels independently of Rust target features.
+- Rust's release build has no repository profile override: ordinary release optimization, 16 codegen units, no cross-crate LTO, generic `aarch64-linux-android` (the target configuration reports `neon`; no CPU-specific feature overrides). Android's ORT build is Release `-O3`, CPU EP with KleidiAI. The thin-LTO/one-codegen-unit screen gives no native speed gain and is not adopted; no CPU-feature or fast-math flag is added. ORT dispatches its own CPU kernels independently of Rust target features.
 - `lowMemory` disables the CPU arena and memory patterns in every graph. Allocation/release work can recur at every BeatThis chunk and every rows/R2 call. The measured two-by-two interaction above separates those controls. The lowest-memory contract remains unchanged.
 
 ## Tiers 1 and 2: candidates, not adopted
 
-All timings and object differences below are **unmeasured unless explicitly supplied later**. An unmeasured difference is not zero. Stage-time ceilings are bounds on potential savings, not forecasts; acceleration also adds setup, transfers and fallbacks. Memory estimates based on weights exclude activations and allocator retention.
+INT8 and XNNPACK measurements are supplied below; other candidate timings, object differences and peak memory remain **unmeasured** unless an explicit estimate is given. An unmeasured difference is not zero. Stage-time ceilings are bounds on potential savings, not forecasts; acceleration also adds setup, transfers and fallbacks. Memory estimates based on weights exclude activations and allocator retention.
 
 | Candidate | What can improve / time bound | Memory / effort | Required check and limitation |
 | --- | --- | --- | --- |
-| Tier 1: XNNPACK | At most the time in supported graph operators; use measured graph times as the ceiling | Another ORT source build, provider registration and per-graph selection; medium effort, peak unknown | Disabled in the AAR and absent from the binding's provider enum. The README documents the disabled providers and the broken GNU-libstdc++ prebuilt archive, but does **not** give a separate measured reason for disabling XNNPACK. Its supported 2D Conv/Gemm/MatMul subset leaves attention, rotary and GRU work on CPU. Measure partition coverage, fallback and both thread pools. [Provider documentation](https://onnxruntime.ai/docs/execution-providers/Xnnpack-ExecutionProvider.html). |
-| Tier 1: NNAPI / MediaTek NPU | All six graph calls total 6.53/9.12/14.60 s (short/medium/long): an absolute savings ceiling, not a forecast; offload adds setup/transfers | NNAPI is not built or exposed; building/registering its public EP is medium/high effort. A direct vendor EP separately needs an SDK/plugin. Peak unknown | Enumerate devices and actual partition assignment on this tablet; disable NNAPI's CPU fallback for diagnostic runs. NNAPI was deprecated in Android 15, and the presence of an NPU proves no compatible driver or ORT backend. Qualcomm QNN is not a MediaTek backend. [Android status](https://developer.android.com/ndk/guides/neuralnetworks), [ORT NNAPI options](https://onnxruntime.ai/docs/execution-providers/NNAPI-ExecutionProvider.html). |
+| Tier 1: XNNPACK | Measured below: stock adapter slows BeatThis; four-small-graph screen is 0.156/0.197/0.450 s below CPU control (one observation/song) | Provider registration and per-graph selection; medium effort. Ordinary trial peak RSS 1.84–1.95 GB; corrected-adapter peak unknown | Disabled in the AAR and absent from the binding's provider enum. The README documents the disabled providers and the broken GNU-libstdc++ prebuilt archive, but does **not** give a separate measured reason for disabling XNNPACK. Operator support includes subsets of 2D Conv, Gemm and MatMul; actual partition coverage is measured below. Release’s dynamic-candidate Gemm fails in the pinned provider. Measure partition coverage, fallback and both thread pools. [Provider documentation](https://onnxruntime.ai/docs/execution-providers/Xnnpack-ExecutionProvider.html). |
+| Tier 1: NNAPI / MediaTek NPU | All six graph calls total 6.53/9.12/14.60 s (short/medium/long): an absolute savings ceiling, not a forecast; offload adds setup/transfers | NNAPI is not built or exposed; building/registering its public EP is medium/high effort. A direct vendor EP separately needs an SDK/plugin. Peak unknown | Three MediaTek accelerator entries are enumerated below; actual partition assignment remains unmeasured; disable NNAPI's CPU fallback for diagnostic runs. NNAPI was deprecated in Android 15, and the presence of an NPU proves no compatible driver or ORT backend. Qualcomm QNN is not a MediaTek backend. [Android status](https://developer.android.com/ndk/guides/neuralnetworks), [ORT NNAPI options](https://onnxruntime.ai/docs/execution-providers/NNAPI-ExecutionProvider.html). |
 | Tier 1: GPU | BeatThis is the first graph to try: 5.88/8.17/12.82 s original stage ceiling; small graphs have little work per host round trip | New supported Android EP/build and buffers, high effort, peak unknown | CPU and Apple CoreML are the only exposed providers. CUDA/CoreML do not target this Android GPU. Measure partitioning, transfers and cold setup separately; preserve ONNX/backend boundary. |
 | Tier 1: BeatThis INT8 / FP16 | 5.88/8.17/12.82 s original graph-time ceiling; INT8 probe below | 82.10 MB graph on disk; lower-precision weights could reduce its weight storage, not necessarily its large activations. Medium/high effort | Static quantization needs authorized calibration audio, per-op coverage and a converted local package. Keep graph I/O float32 because the runtime tensor adapter supports only f32/i64/bool. The pinned Android build also has `onnxruntime_ENABLE_CPU_FP16_OPS=OFF`; CPU FP16 is not a drop-in model-file swap. Test chunks, beats, fitted grids and complete hit objects; owner quality review follows. |
 | Tier 1: rows encoder INT8 / FP16 | 0.045/0.060/0.104 s graph-time ceiling; INT8 probe below | 2.28 MB graph, whole-song dynamic attention may dominate activations; medium effort | Dynamic beat/frame axes, local-attention masks, cumulative sums and normalization require fallback/cast inspection. Any changed head time propagates to R2. |
@@ -274,9 +276,22 @@ Export facts above were read from ensomi-model `8f30b925f9e77d4b8e34fd4ca1436f73
 
 The Dimensity developer guide distinguishes Neuron Adapter/NNAPI integration from the offline Neuron Runtime API, which it restricts to vendor-partition applications; it is not a normal APK drop-in. See [MediaTek’s deployment table](https://developer.mediatek.com/ai/6423c916c612745b3a4baa2d.html). The newer **Genio** Android documentation says its accelerated ORT libraries/EPs must be obtained from a MediaTek representative; it does not establish compatibility with this Dimensity tablet. See [MediaTek’s Android ORT access instructions](https://genio.mediatek.com/doc/iot-aihub/ai_hub/supported_os/android.html). Before a direct MediaTek execution-provider project, the owner would need a redistributable, Dimensity-9400+-compatible provider/SDK and confirmation that an ordinary APK can use it. No proprietary SDK access or NPU inference is claimed here.
 
+### NNAPI devices visible to the ordinary app
+
+`NeuralDevicesCheck` called the public native NNAPI enumeration API from app UID 10283 on the final checks APK. It loaded no model and ran no inference. The tablet reports:
+
+| Device entry | Type | Version | Feature level |
+| --- | --- | --- | --- |
+| `mtk-dsp_shim` | accelerator | 8.1.6 | 1000008 (level 8) |
+| `mtk-mdla_shim` | accelerator | 8.1.6 | 1000008 (level 8) |
+| `mtk-neuron_shim` | accelerator | 8.1.6 | 1000008 (level 8) |
+| `nnapi-reference` | CPU | OS3.0.310.0.WAOCNXM | 1000008 (level 8) |
+
+These are three accelerator-type API entries, not proof of three independent physical accelerators. No GPU-type entry was enumerated. That does not rule out a separate GPU API. Public NNAPI is therefore an available integration path to investigate without first acquiring a proprietary MediaTek EP SDK; actual graph support, setup/inference seconds, peak memory and hit-object differences remain unmeasured. The next check is a local ORT build with `onnxruntime_USE_NNAPI_BUILTIN=ON`, temporary provider registration, CPU-fallback-disabled diagnostics and per-graph partition profiles. Compare complete charts and count changed objects before any owner quality decision. Enumeration alone establishes none of those results.
+
 ### Cheap tier 1 probe: dynamic INT8 MatMul/Gemm conversion
 
-Local copies only, ORT 1.23.2 `quantize_dynamic`, per-channel signed INT8 weights for constant-weight MatMul/Gemm. Their activations are dynamically quantized; this is not a storage-only conversion. Variable-by-variable attention MatMul, Conv and GRU stay float32, as do graph I/O. All six source graph hashes match the pinned package manifest and are checked again on the tablet. ONNX checker and Mac CPU session-load check passed for all six. This is neither an Android speed measurement nor a quality result. No inference on test songs was performed by this conversion check: changed hit-object counts and peak inference memory remain **unmeasured**. Files are ignored under `quantized/`.
+Local copies only, ORT 1.23.2 `quantize_dynamic`, per-channel signed INT8 weights for constant-weight MatMul/Gemm. Their activations are dynamically quantized; this is not a storage-only conversion. Variable-by-variable attention MatMul, Conv and GRU stay float32, as do graph I/O. All six source graph hashes match the pinned package manifest and are checked again on the tablet. ONNX checker and Mac CPU session-load check passed for all six. Each converted graph was then measured separately on all three tablet songs, with the other five graphs unchanged, the original AAR/decoder, four BeatThis threads and normal memory settings. These are 18 single-run exploratory observations, all at thermal status zero. Files are ignored under `quantized/`.
 
 | Graph | Original MB | Converted MB | MatMulInteger nodes |
 | --- | ---: | ---: | ---: |
@@ -287,8 +302,133 @@ Local copies only, ORT 1.23.2 `quantize_dynamic`, per-channel signed INT8 weight
 | r2_release | 0.500 | 0.153 | 8 |
 | r2_commit | 8.018 | 4.518 | 25 |
 
-XNNPACK build probe: enabling it in an isolated copy of pinned ORT initially failed CMake generation: the `onnxruntimeTargets` install export referenced Abseil targets outside an export set. `ABSL_ENABLE_INSTALL=ON` did not resolve it: ORT explicitly turns that off for XNNPACK to avoid a duplicate target. `CMAKE_SKIP_INSTALL_RULES=ON` allowed the static build (no system installation is needed). The excluded `XNNPACK` and `pthreadpool` targets also had to be built explicitly before Rust could link them. This is build evidence, not yet evidence that XNNPACK runs the graphs.
+### INT8 device results: one observation per graph and song
+
+`generate` includes all native stages and the PCM/result boundary, excluding Android decode, hashing, session opening and closing. Parenthesized seconds are the difference from the earlier original-AAR three-run mean (7.901/10.842/17.503 s), **not an interleaved paired speed estimate**. Changes in sampled decisions can also change downstream work. Small differences for the small graphs are not established gains.
+
+Object delta `M/R/A` means modified/removed/added. First remove exact matching hit-object lines as a multiset; pair remaining entries with the same lane and start millisecond as modified; count unmatched entries as removed or added. A changed start time counts as removal plus addition. This is an exact comparison convention, not a validated quality metric. Full chart SHA equality is reported separately, so timing-point or other text changes would still fail even with zero object delta.
+
+| Changed graph (INT8 MatMul/Gemm only) | Short: generate s; object delta M/R/A; RSS MB | Medium: generate s; object delta M/R/A; RSS MB | Long: generate s; object delta M/R/A; RSS MB |
+| --- | --- | --- | --- |
+| beatthis | 5.975 (+1.925 saved); 0/0/0; 848.9; SHA = | 8.219 (+2.623 saved); 0/0/0; 875.4; SHA = | 13.410 (+4.093 saved); 0/0/0; 944.6; SHA = |
+| rows_encoder | 7.827 (+0.073 saved); 151/729/673; 1813.5; SHA ≠ | 10.770 (+0.072 saved); 174/929/960; 1839.4; SHA ≠ | 17.411 (+0.092 saved); 421/1769/1812; 1925.1; SHA ≠ |
+| rows_step | 7.851 (+0.050 saved); 167/669/659; 1813.8; SHA ≠ | 10.719 (+0.123 saved); 166/905/983; 1839.9; SHA ≠ | 17.411 (+0.091 saved); 477/1722/1811; 1925.5; SHA ≠ |
+| r2_predict | 7.888 (+0.013 saved); 214/692/682; 1814.0; SHA ≠ | 10.722 (+0.120 saved); 178/860/895; 1839.7; SHA ≠ | 17.329 (+0.174 saved); 395/1792/1748; 1925.4; SHA ≠ |
+| r2_release | 7.802 (+0.099 saved); 110/371/373; 1832.8; SHA ≠ | 10.812 (+0.030 saved); 82/237/238; 1841.3; SHA ≠ | 17.421 (+0.082 saved); 435/1673/1765; 1925.8; SHA ≠ |
+| r2_commit | 7.826 (+0.075 saved); 195/681/612; 1812.1; SHA ≠ | 10.699 (+0.143 saved); 217/842/935; 1853.1; SHA ≠ | 17.224 (+0.278 saved); 548/1758/1829; 1922.8; SHA ≠ |
+
+BeatThis's measured BeatThis phase is 3.968/5.572/8.720 s versus original means 5.876/8.170/12.819 s; complete generation is 1.925/2.623/4.093 s below the historical means. Its three full chart hashes match and object deltas are zero. This makes it the strongest quantization follow-up from this screen, **not an adopted optimization or proof of preserved quality beyond these requests**. Next: interleaved pairs against the final float32 build, larger song/star/seed coverage, intermediate beat/grid comparisons, then the owner's blinded listening/play review. Peak RSS falls much more than the weight-file reduction alone explains; no allocator-level attribution is claimed.
+
+Every rows/R2 conversion changes objects on every test song. Their small apparent timing differences do not justify a speed claim or a quality conclusion. Keep those graphs float32 for this round. FP16, static calibration-based quantization and combined multi-graph quantization were not measured.
+
+### XNNPACK build and dynamic-shape failure
+
+Build probe: enabling it in an isolated copy of pinned ORT initially failed CMake generation: the `onnxruntimeTargets` install export referenced Abseil targets outside an export set. `ABSL_ENABLE_INSTALL=ON` did not resolve it: ORT explicitly turns that off for XNNPACK to avoid a duplicate target. `CMAKE_SKIP_INSTALL_RULES=ON` allowed the static build (no system installation is needed). The excluded `XNNPACK` and `pthreadpool` targets also had to be built explicitly before Rust could link them. The separate device profiles confirm execution of 62 BeatThis MatMul nodes on XNNPACK; the timing results below determine its usefulness.
+
+Enabling XNNPACK for all five small graphs fails while running R2 release's `/pointer_relation/MatMul/MatMulAddFusion`: output-buffer shape `1×128` versus `24×128` on the short song, and `1×128` versus `71×128` on the medium song. The all-five-graphs configuration was not attempted on the long song after those failures. No complete chart is produced, so object delta, complete generation time and peak RSS for that failed configuration are unavailable, not zero. The follow-up excludes R2 release from XNNPACK and leaves it on CPU.
+
+The pinned provider's Gemm constructor derives `M_` from the model's shape, substitutes 1 for an unknown/nonpositive first dimension, and `Compute` allocates output with that cached `M_` instead of the actual input's row count. That conflicts with release's variable candidate count here. Turning off allocator memory patterns does not correct that output-shape calculation. This configuration needs provider-side dynamic-shape support or partition exclusion before it can generate charts. See [ORT 1.23.2 XNNPACK Gemm implementation](https://github.com/microsoft/onnxruntime/blob/v1.23.2/onnxruntime/core/providers/xnnpack/math/gemm.cc). No provider code fix or new export is adopted.
+
+### XNNPACK timings and actual execution
+
+One ordinary observation per song/configuration, original decoder and original normal-mode memory settings, with profiling off. `cpu` is CPU-only in the same XNNPACK-enabled experimental build, with four BeatThis threads; all five small graphs use one. `xnn1` and `xnn4` request four XNNPACK threads for BeatThis, with one/four CPU-fallback threads respectively. `xnn8` requests eight XNNPACK threads with four CPU-fallback threads. The selected graph's CPU spinning is disabled in these provider trials. `small4` selects rows encoder, rows step, R2 predict and R2 commit for XNNPACK with one requested provider/fallback thread, leaving BeatThis on CPU/four and R2 release on CPU/one. These are per-configuration screens, not three-pair estimates.
+
+| Song / provider setting | Generate s | BeatThis s | Open s | Peak RSS MB | Object delta M/R/A | Chart SHA equals original |
+| --- | ---: | ---: | ---: | ---: | --- | --- |
+| short / cpu | 7.882 | 5.847 | 0.768 | 1852.1 | 0/0/0 | True |
+| short / xnn1 | 12.408 | 10.420 | 0.774 | 1836.1 | 0/0/0 | True |
+| short / xnn4 | 10.995 | 9.037 | 0.810 | 1855.2 | 0/0/0 | True |
+| short / xnn8 | 10.996 | 9.033 | 0.779 | 1855.3 | 0/0/0 | True |
+| short / small4 | 7.726 | 5.843 | 0.795 | 1838.5 | 0/0/0 | True |
+| medium / cpu | 10.793 | 8.129 | 0.767 | 1842.3 | 0/0/0 | True |
+| medium / xnn1 | 17.085 | 14.523 | 0.775 | 1862.9 | 0/0/0 | True |
+| medium / xnn4 | 15.265 | 12.659 | 0.752 | 1878.3 | 0/0/0 | True |
+| medium / xnn8 | 15.388 | 12.742 | 0.781 | 1864.9 | 0/0/0 | True |
+| medium / small4 | 10.596 | 8.126 | 0.766 | 1852.2 | 0/0/0 | True |
+| long / cpu | 17.552 | 12.802 | 0.762 | 1926.6 | 0/0/0 | True |
+| long / xnn1 | 27.337 | 22.733 | 0.787 | 1946.9 | 0/0/0 | True |
+| long / xnn4 | 24.490 | 19.929 | 0.786 | 1928.5 | 0/0/0 | True |
+| long / xnn8 | 24.473 | 19.825 | 0.784 | 1947.8 | 0/0/0 | True |
+| long / small4 | 17.102 | 12.747 | 0.772 | 1935.9 | 0/0/0 | True |
+
+All 15 successful ordinary cases match the original-AAR full chart SHA, with zero modified/removed/added objects and thermal status zero before/after. The two separate successful profiles also match. The failed all-small-graph configuration above produces no chart.
+
+BeatThis is slower in every tested XNNPACK setting. There is an important adapter limitation: pinned ORT’s MatMul and Gemm execution calls pass a null thread pool to `xnn_run_operator`, even though their reshape calls receive the configured pool. A null pthreadpool runs serially. Thus requesting four or eight threads does not parallelize these compute calls. The BeatThis XNNPACK profile assigns **only MatMul** to XNNPACK: 62 optimized nodes, 310 calls, 3.830 s; CPU fallback takes 5.289 s. During its timing phase, the caller and three CPU workers accumulate CPU ticks, while three additional runtime-named workers accumulate zero. The source and observation explain the ineffective provider thread setting; these results do not measure a corrected parallel adapter. See [pinned MatMul adapter](https://github.com/microsoft/onnxruntime/blob/v1.23.2/onnxruntime/core/providers/xnnpack/math/matmul.cc), [Gemm adapter](https://github.com/microsoft/onnxruntime/blob/v1.23.2/onnxruntime/core/providers/xnnpack/math/gemm.cc), and [pinned pthreadpool null-pool behavior](https://github.com/google/pthreadpool/blob/4e80ca24521aa0fb3a746f9ea9c3eaa20e9afbb0/src/portable-api.c).
+
+The four-small-graph screen is 0.156/0.197/0.450 s below its respective CPU control. Most of that difference is in arrangement: 0.605→0.464, 0.862→0.651 and 1.632→1.218 s. These single observations merit repetition, not adoption. They require a per-graph provider policy that excludes release, complete paired chart/numerical comparisons and the owner’s quality review. Peak RSS has no consistent improvement. No XNNPACK configuration is included in the deliverable.
+
+Separate short-song profile coverage follows. Node counts are optimized executed nodes, not counts of the original ONNX nodes. Kernel-time shares describe the profiled configuration, not an acceleration percentage. Profiles add overhead and are excluded from ordinary timings. In the small-graph profile, XNNPACK handles Gemm and Conv in R2 commit; release stays entirely on CPU.
+
+| Separate diagnostic profile / graph | Provider | Executed nodes | Calls | Kernel seconds | Share of profiled kernel time |
+| --- | --- | ---: | ---: | ---: | ---: |
+| xnn-coverage / beatthis | CPUExecutionProvider | 1925 | 9625 | 5.2890 | 58.0% |
+| xnn-coverage / beatthis | XnnpackExecutionProvider | 62 | 310 | 3.8302 | 42.0% |
+| xnn-coverage / rows_encoder | CPUExecutionProvider | 202 | 202 | 0.0409 | 100.0% |
+| xnn-coverage / rows_step | CPUExecutionProvider | 39 | 10998 | 0.0457 | 100.0% |
+| xnn-coverage / r2_predict | CPUExecutionProvider | 60 | 48480 | 0.0754 | 100.0% |
+| xnn-coverage / r2_release | CPUExecutionProvider | 46 | 3772 | 0.0110 | 100.0% |
+| xnn-coverage / r2_commit | CPUExecutionProvider | 218 | 175926 | 0.6423 | 100.0% |
+| xnn-small4-coverage / beatthis | CPUExecutionProvider | 1963 | 9815 | 5.8786 | 100.0% |
+| xnn-small4-coverage / rows_encoder | CPUExecutionProvider | 196 | 196 | 0.0391 | 86.6% |
+| xnn-small4-coverage / rows_encoder | XnnpackExecutionProvider | 14 | 14 | 0.0061 | 13.4% |
+| xnn-small4-coverage / rows_step | CPUExecutionProvider | 30 | 8460 | 0.0289 | 62.2% |
+| xnn-small4-coverage / rows_step | XnnpackExecutionProvider | 9 | 2538 | 0.0175 | 37.8% |
+| xnn-small4-coverage / r2_predict | CPUExecutionProvider | 52 | 42016 | 0.0514 | 68.4% |
+| xnn-small4-coverage / r2_predict | XnnpackExecutionProvider | 9 | 7272 | 0.0238 | 31.6% |
+| xnn-small4-coverage / r2_release | CPUExecutionProvider | 46 | 3772 | 0.0107 | 100.0% |
+| xnn-small4-coverage / r2_commit | CPUExecutionProvider | 201 | 162207 | 0.2182 | 49.0% |
+| xnn-small4-coverage / r2_commit | XnnpackExecutionProvider | 33 | 26631 | 0.2267 | 51.0% |
+
+A provider-side thread-pool fix and dynamic-Gemm support are follow-up candidates, with speed, memory and changed-object counts unmeasured until implemented. The native backend and binding would also need explicit per-graph selection; the current production provider enum exposes only CPU/CoreML. No patched provider or dependency upgrade was adopted.
 
 ### Tier 2 estimate from attention shapes
 
 In the three separate BeatThis profiles, kernels whose input or output includes a `1500 × 1500` temporal-attention matrix account for 2.47/3.44/5.41 s, about 42% of total kernel time. Under an idealized quadratic-cost model, halving context to 750 frames and doubling the chunk count would save roughly 1.24/1.72/2.70 s of this work, before extra chunk/border/setup costs and changed kernel efficiency. This is a design estimate, not a benchmark or a quality result. One `[32,1,1500,1500]` float32 score tensor is 288 MB; its 750-frame counterpart is 72 MB. Total peak memory is not predicted by that tensor alone. No export, context setting, model file or training configuration was changed.
+
+## Deliverable and validation
+
+The clean CPU-only AAR is `/Users/l/ensomi/ensomi-runtime--android-perf-1/build/android/ensomi-runtime.aar` (15,754,636 bytes), SHA-256 **`4d08efa159307f06194b0acc71ca02e7a00cd779da283785c232ef9d133a9039`**. The protected baseline remains separate and unchanged. The deliverable contains no experiment environment-variable hooks, operator profiling or XNNPACK. The native library SHA-256 is `0a291b433b18d3774f031f831505bcd164c888354db24d64bd168e6da7456004`; the final checks APK embeds that exact library.
+
+This is a local build, not a release or upload. Rust 1.99.0 / LLVM 23.1.1, NDK 30.0.16248370 / Clang 21.0.0, API 24, generic arm64 release settings, CPU ORT 1.23.2. The native library was built with `--locked --release -p ensomi-runtime-ffi --features sync` through cargo-ndk, `max-page-size=16384` and `--no-undefined`, then stripped. Both native libraries have 16 KiB LOAD alignment. The verified original AAR's unchanged bindings, resources and notices were retained; only `jni/arm64-v8a/libensomi_runtime_ffi.so` was replaced. No Cargo profile, target-feature, dependency/model pin or license changed.
+
+`cargo test --workspace` passes: 147 tests, one pre-existing ignored test, no failures. Native and Wasm conformance each pass all four release recordings in both whole-chart and streamed modes, using the commands in `conformance/generate/README.md` with output redirected to this evidence directory. Final reports are `final-native-parity.json`, `final-native-parity-stream.json`, `final-wasm-parity.json`, and `final-wasm-parity-stream.json`. The private app's checks build, 417 unit tests and lint pass. The signing certificate remains `099c619b240f210f9da238654d03bc62e97b76ea82aa36158cfe028d5a7f0314`.
+
+### Final combined app and unchanged lowMemory mode
+
+One integration observation per song and mode on the clean deliverable, after all repeated individual gates. These are not repeated combined gain estimates. The app path includes bulk PCM reads, successful-probe reuse, eight BeatThis threads and Android memory patterns off.
+
+| Song | Combined app: chart after probe/capability s | Including first probe/capability s | Peak chart RSS MB | Full chart SHA equals original app path |
+| --- | ---: | ---: | ---: | --- |
+| short | 8.365 | 20.658 | 1158.3 | yes |
+| medium | 11.285 | 27.796 | 1185.3 | yes |
+| long | 17.068 | 47.033 | 1262.5 | yes |
+
+The first decode remains in the full interval. The app-path peak still covers chart making only, as in its paired baseline. The separate lowMemory check uses the direct harness and four BeatThis threads; it verifies the existing lowest-peak policy on the final native library.
+
+| Song | lowMemory total s | Generate s | Peak RSS MB | Full chart SHA equals original direct path |
+| --- | ---: | ---: | ---: | --- |
+| short | 25.581 | 13.524 | 1027.7 | yes |
+| medium | 35.701 | 18.513 | 1060.5 | yes |
+| long | 58.661 | 29.990 | 1110.7 | yes |
+
+All six full chart hashes match their original-AAR baselines, with zero changed objects and thermal status zero before and after each run. No quantized graph, experimental provider or profiling hook is used in these final checks.
+
+The final checks APK is `artifacts/android-perf-1/final-candidate-app.apk`, SHA-256 `0dfeed0389317be193becdd4159631bec44b7ad705a36d25acac0879a90ea3f8`. Its installed hash was verified against the local file after replacement. `final-audit.json` verifies 36 paired full-chart gates, six final integration/lowMemory gates and all four conformance reports directly from saved evidence; the nine decoder pairs also have equal PCM hashes between their original-decoder and bulk-read arms.
+
+At the end of the final tablet lease (04:34:53 JST), thermal status was zero, no audio was active, the accessibility driver was enabled, `enable_three_gesture` was 0, `stayon` was 15 and app-op 10021 was allowed. The tablet was left at Home and this job's lock was released. The protected AAR's original SHA-256 was rechecked unchanged. Experiment files were retained, as required; neither installed application nor its data was cleared. No NetEase UI interaction, reboot, sealed/N1 data use, training, model-repository change, tag, release or model upload occurred.
+
+Early setup failures were excluded from timings: the first instrumentation method needed an explicit Unit/void return for JUnit; the corrected helper was used for all baselines and gates. The XNNPACK CMake and runtime failures are recorded above. Failed runs are not counted as successful chart comparisons.
+
+### Evidence index and reproduction
+
+Only this report, `status.md` and their ignore rule are committed from the evidence directory. All paths here are repository-relative. No audio is committed or transferred off the tablet. Raw evidence stays under `artifacts/android-perf-1/`:
+
+- `baseline-plan.json` and `base-*.{json,osu}`: original AAR, three runs/song. `baseline/` holds the original AAR/APK. `binary-hashes.json`, `native-hashes.json`, `final-binary-hashes.json` identify exact binaries.
+- `graph-*` and `native-profile-*`: aggregate graph timing and separate operator profiles; `core-summary.py` and `graph-summary.py` derive placement and graph tables. `profile-harness.patch` records the temporary runtime instrumentation, absent from committed production source.
+- `bulk-*`, `reuse-*`, `threads8-*`, `nopattern-*`: individual paired measurements, complete charts and receipts. `summarize.py`, `reuse-summary.py`, `pair-report.py` reproduce tables. Plans preserve AB/BA/AB order. `audit-final.py` checks raw chart-file hashes, thermal values and final conformance results.
+- `cpu-probes-plan.json`, `cpuprobe-*`, `decoder-*`, `decodeparts-*`, `batch-decoder.patch`: screens and rejected decoder work. `lto-*` identifies the unadopted compiler probe.
+- `quantized/`, `quant-plan.json`, `int8-*`, `quant-summary.py`: local converted graph copies and per-graph tier 1 results. `xnn2-harness.patch`, `xnn-probes-plan.json`, `xnnprobe-*`, `native-xnn-*`, `xnn-summary.py` and `xnn-coverage.py`: isolated XNNPACK build, runs and provider coverage.
+- `device.py`, `queue.py`, `*-device.log`: serial-specific lock/install/idle/thermal handling and actual run order. `installed-*`, `*-idle.txt` and `idle-*` record build and device state. Plans must use fresh labels for a new run; app-path scratch evidence is never removed.
+- The private app branch (`codex/android-perf-1-app`, final source commit `b376cad`) contains the fixed-request instrumentation checks and documents their arguments in `docs/phone-checks.md`. Its source stays in the private repository; `b376cad` was pushed only to `ensomi-labs/commons`, branch `codex/android-perf-1-app`. Runtime changes are committed only on `codex/android-perf-1`; the job runner pushes that branch on exit.
+
+Unverified beyond these measurements: broader songs/stars/seeds and Android devices; sustained power/thermal behavior; real ambient playback and time to playable join; first-probe latency under production storage load; arbitrarily long songs; acceleration through NNAPI, GPU or a direct MediaTek provider; FP16; and all tier 2 designs. The first decode is still the largest remaining app cost. A same-codec asynchronous or multi-access-unit approach is a future tier 0 candidate only if PCM and complete-chart gates pass; the tested input-slot batching was slower. Generator-session reuse could avoid repeated opens but needs explicit lifetime/cancellation handling and memory measurement. No tier 1 quality decision is made here.
