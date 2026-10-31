@@ -27,8 +27,11 @@ jobs:
           rustup default "$RUST_VERSION"
       - uses: Swatinem/rust-cache@v2
       - run: cargo clippy --locked --workspace --all-targets -- -D warnings
+      - run: cargo clippy --locked -p ensomi-runtime-ffi --all-targets --features sync -- -D warnings
       - name: Tests, with the gameplay conformance fixtures
         run: cargo test --locked --workspace
+      - name: The sync bindings, which only the Android build turns on
+        run: cargo test --locked -p ensomi-runtime-ffi --features sync --test sync
 
   wasm:
     name: Wasm build and npm pack

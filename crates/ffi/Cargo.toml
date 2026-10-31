@@ -16,6 +16,7 @@ ensomi-gameplay = { path = "../gameplay" }
 ensomi-generate = { path = "../generate" }
 ensomi-generate-ort = { path = "../generate-ort" }
 ensomi-osz = { path = "../osz" }
+ensomi-sync = { path = "../sync", optional = true }
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
 # Minor version pinned: third-party C# and JS generators target a UniFFI release series.
 uniffi = "0.31"
@@ -26,6 +27,8 @@ ensomi-generate-ort = { path = "../generate-ort", features = ["coreml"] }
 [features]
 # The binding generator, `cargo run --features bindgen --bin uniffi-bindgen`.
 bindgen = ["uniffi/cli"]
+# Live audio sync, for Android. Off for Apple, whose apps link Sonalign as a Swift package.
+sync = ["dep:ensomi-sync"]
 
 [[bin]]
 name = "uniffi-bindgen"

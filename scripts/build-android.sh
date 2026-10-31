@@ -3,7 +3,7 @@
 # Needs cargo-ndk 4.1.2, the aarch64-linux-android Rust target, Android SDK 37 / build-tools 37.0.0,
 # NDK 30.0.16248370, Python 3, git and Android Studio's bundled JDK (or JAVA_HOME).
 # Gradle uses the checked-in wrapper. ONNX Runtime is built from pinned source and cached in target/.
-# Honours CARGO_TARGET_DIR. The AAR carries the resampler tables and ONNX Runtime's licence notices;
+# Honours CARGO_TARGET_DIR. The AAR carries the resampler tables and the licence notices of ONNX Runtime and Sonalign;
 # the consuming app declares JNA 5.19.1@aar and kotlinx-coroutines-core 1.11.0. No model is needed.
 set -euo pipefail
 
@@ -23,7 +23,7 @@ rm -rf "$work/jni" "$work/kotlin" "$work/assets"
 ORT_LIB_LOCATION="$ort_dir" \
 CARGO_TARGET_AARCH64_LINUX_ANDROID_RUSTFLAGS="${CARGO_TARGET_AARCH64_LINUX_ANDROID_RUSTFLAGS:-} -C link-arg=-Wl,-z,max-page-size=16384 -C link-arg=-Wl,--no-undefined" \
   cargo ndk -t arm64-v8a -P 24 --link-libcxx-shared -o "$work/jni" \
-  build --locked --release -p ensomi-runtime-ffi
+  build --locked --release -p ensomi-runtime-ffi --features sync
 
 # Check every native library, including the NDK's shared C++ runtime.
 readelf="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-readelf"
@@ -42,7 +42,7 @@ python3 scripts/fix-kotlin-errors.py "$work/kotlin/io/ensomi/runtime/$lib.kt"
 
 mkdir -p "$work/assets/licenses"
 cp -R assets/resampler "$work/assets/"
-cp -R licenses/onnxruntime "$work/assets/licenses/"
+cp -R licenses/onnxruntime licenses/sonalign "$work/assets/licenses/"
 # The convenience helper reuses its private copy until the bundled tables change.
 shasum -a 256 assets/resampler/* | shasum -a 256 | awk '{print $1}' > "$work/assets/resampler.sha256"
 
