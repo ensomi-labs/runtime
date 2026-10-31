@@ -24,6 +24,8 @@ ORT_LIB_LOCATION="$ort_dir" \
 CARGO_TARGET_AARCH64_LINUX_ANDROID_RUSTFLAGS="${CARGO_TARGET_AARCH64_LINUX_ANDROID_RUSTFLAGS:-} -C link-arg=-Wl,-z,max-page-size=16384 -C link-arg=-Wl,--no-undefined" \
   cargo ndk -t arm64-v8a -P 24 --link-libcxx-shared -o "$work/jni" \
   build --locked --release -p ensomi-runtime-ffi --features sync
+# Sonalign also declares a cdylib, which cargo-ndk copies here. The runtime links it statically and never loads this one.
+rm -f "$work/jni/arm64-v8a/"libsonalign*.so
 
 # Check every native library, including the NDK's shared C++ runtime.
 readelf="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-readelf"
