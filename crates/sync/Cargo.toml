@@ -1,0 +1,16 @@
+[package]
+name = "ensomi-sync"
+description = "Live audio sync: from PCM to a position in a known recording, through Sonalign"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+# Pinned exactly: reference and query features are only comparable under the configuration this version was validated on.
+sonalign = "=0.2.0"
+
+[lints.clippy]
+# Index loops read like the Swift original, and over parallel arrays.
+needless_range_loop = "allow"

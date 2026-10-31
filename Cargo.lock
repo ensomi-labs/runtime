@@ -367,8 +367,16 @@ dependencies = [
  "ensomi-generate",
  "ensomi-generate-ort",
  "ensomi-osz",
+ "ensomi-sync",
  "serde_json",
  "uniffi",
+]
+
+[[package]]
+name = "ensomi-sync"
+version = "0.3.2"
+dependencies = [
+ "sonalign",
 ]
 
 [[package]]
@@ -1120,6 +1128,16 @@ dependencies = [
  "byteorder",
  "libc",
  "winapi",
+]
+
+[[package]]
+name = "sonalign"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e24d1b971881d83f073869690db2b82b2c71efc7b8339e247c1b80aece1b99d1"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
