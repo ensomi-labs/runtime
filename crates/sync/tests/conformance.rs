@@ -3,9 +3,10 @@
 use ensomi_sync::frames_f32le;
 use serde_json::Value;
 
-/// Rounding between vDSP's single-precision FFT and this crate's double-precision one.
-const PCEN_TOLERANCE: f64 = 1e-6;
-// These matched exactly on the exporter host; allow only double-precision rounding elsewhere.
+/// Rounding between vDSP's single-precision FFT and this crate's double-precision one, and a platform's `powf` on top.
+/// On the Mac that wrote the fixture the largest difference is 7.2e-7, and on recordings 2.4e-6.
+const PCEN_TOLERANCE: f64 = 1e-5;
+// These matched exactly on the Mac; allow only double-precision rounding elsewhere.
 const ENERGY_TOLERANCE_DB: f64 = 1e-12;
 const TIME_TOLERANCE_MS: f64 = 1e-12;
 

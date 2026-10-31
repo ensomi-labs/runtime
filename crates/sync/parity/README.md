@@ -14,5 +14,8 @@ and of its reference. `examples/parity.rs` then reports:
 - Lock time and lock position through Sonalign, for each of these, and for a whole `Session` fed 20 ms blocks.
 - Final locks of each query against another song's reference.
 
+Both sides run the same Rust Sonalign: the baseline is the Swift app's frames, not its `Aligner` wrapper or its live
+capture. `session` keeps its own block cadence, so it compares first locks, not call by call.
+
 Recordings and exports stay private. Keep them outside the repository (`build/` is ignored). The small synthetic case in
 `conformance/sync` has no such restriction, and `tests/conformance.rs` holds this crate to it everywhere.

@@ -148,12 +148,13 @@ fun SyncSession.push(samples: FloatArray, captureTimeMs: Double, count: Int = sa
 ```
 
 Index the same mono PCM the chart is generated from, at the file's rate, so that a reported time is a chart time. Build
-the reference on `RuntimeWorker` or another background thread. It takes no `Cancellation`: a build is short, and
-coroutine cancellation waits for it.
+the reference on `RuntimeWorker` or another background thread. It takes no `Cancellation`: a build is short (about 0.25 s
+per minute of audio on an arm64 emulator), and coroutine cancellation waits for it.
 
 Push from the thread that reads the microphone, not from an audio callback. Every 100 ms of audio a push runs a search,
 and a thread that falls behind is safe as long as `AudioRecord`'s own buffer holds the wait: give it at least 500 ms. The
-session converts any rate from 8 to 192 kHz; 48 kHz needs no conversion. A lock takes about 3.5 s of audio.
+session converts any rate from 8 to 192 kHz; 48 kHz needs no conversion. A lock takes at least 3.6 s of audio, and longer
+when the passage gives weak or ambiguous evidence.
 
 `captureTimeMs` is when the block's first sample was captured, on one monotonic clock in milliseconds. Take it from
 `AudioRecord.getTimestamp`. `framesRead` counts the frames read before this block:
