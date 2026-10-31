@@ -112,23 +112,25 @@ fn is_final(event: &Event) -> bool {
 fn compare(name: &str, id: &str, run: &[Event], baseline: &[Event]) -> Option<(f64, f64)> {
     let (a, b) = (run.iter().find(|event| is_final(event)), baseline.iter().find(|event| is_final(event)));
     let lock = a.zip(b).map(|(a, b)| (a.endpoint_ms - b.endpoint_ms, a.offset_ms.unwrap() - b.offset_ms.unwrap()));
-    let (mut state_differences, mut worst_offset) = (0, 0.0f64);
-    if run.len() == baseline.len() {
+    let state_comparison = if run.len() == baseline.len() && run.iter().zip(baseline).all(|(a, b)| a.endpoint_ms == b.endpoint_ms) {
+        let (mut state_differences, mut worst_offset) = (0, 0.0f64);
         for (a, b) in run.iter().zip(baseline) {
             state_differences += usize::from(a.state != b.state || a.phase != b.phase || a.offset_ms.is_some() != b.offset_ms.is_some());
             if let (Some(a), Some(b)) = (a.offset_ms, b.offset_ms) {
                 worst_offset = worst_offset.max((a - b).abs());
             }
         }
-    }
+        format!("state differences {state_differences}/{}\tworst offset delta {worst_offset:.3}", run.len())
+    } else {
+        "states by call not compared (different cadence)".to_string()
+    };
     let locked = |event: Option<&Event>| event.map_or("no".to_string(), |event| format!("{:.0}", event.endpoint_ms));
     println!(
-        "{id}\t{name}\tfinal at {} (baseline {})\tlock delta {:?}\toffset delta {:?}\tstate differences {state_differences}/{}\tworst offset delta {worst_offset:.3}\tlast {:?}/{:?}",
+        "{id}\t{name}\tfinal at {} (baseline {})\tlock delta {:?}\toffset delta {:?}\t{state_comparison}\tlast {:?}/{:?}",
         locked(a),
         locked(b),
         lock.map(|lock| lock.0),
         lock.map(|lock| lock.1),
-        run.len(),
         run.last().map(|event| event.state),
         baseline.last().map(|event| event.state),
     );
