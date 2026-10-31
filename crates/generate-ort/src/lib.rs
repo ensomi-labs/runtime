@@ -171,6 +171,7 @@ pub fn drive_observed<T>(generator: &mut Generator<T>, sessions: &mut Sessions, 
     let mut timings = Timings::default();
     let mut phase = 0usize;
     let mut outputs: Option<Tensors> = None;
+    let mut overlap = cfg!(target_os = "android");
     loop {
         let start = Instant::now();
         let step = generator.step(outputs.take())?;
@@ -179,7 +180,16 @@ pub fn drive_observed<T>(generator: &mut Generator<T>, sessions: &mut Sessions, 
             Step::Run { graph, inputs } => {
                 observe(None)?;
                 let start = Instant::now();
-                outputs = Some(sessions.run(&graph, inputs)?);
+                outputs = Some(if overlap && graph == BEATTHIS_GRAPH {
+                    overlap = false;
+                    // The core's independent feature slices stay on their owning thread while the first graph runs.
+                    std::thread::scope(|scope| {
+                        let run = std::thread::Builder::new().name("ensomi-graphs".to_string()).stack_size(8 * 1024 * 1024)
+                            .spawn_scoped(scope, || sessions.run(&graph, inputs)).map_err(ort_error)?;
+                        while !run.is_finished() && generator.work() {}
+                        run.join().map_err(|_| "graph worker panicked".to_string())?
+                    })?
+                } else { sessions.run(&graph, inputs)? });
                 let seconds = start.elapsed().as_secs_f64();
                 timings.phases[phase].1 += seconds;
                 let entry = timings.graphs.entry(graph).or_default();
