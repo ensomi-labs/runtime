@@ -4,9 +4,10 @@ use ensomi_sync::frames_f32le;
 use serde_json::Value;
 
 /// Rounding between vDSP's single-precision FFT and this crate's double-precision one.
-const PCEN_TOLERANCE: f64 = 1e-3;
-const ENERGY_TOLERANCE_DB: f64 = 1e-6;
-const TIME_TOLERANCE_MS: f64 = 1e-9;
+const PCEN_TOLERANCE: f64 = 1e-6;
+// These matched exactly on the exporter host; allow only double-precision rounding elsewhere.
+const ENERGY_TOLERANCE_DB: f64 = 1e-12;
+const TIME_TOLERANCE_MS: f64 = 1e-12;
 
 #[test]
 fn frames_match_the_swift_extractor() {
