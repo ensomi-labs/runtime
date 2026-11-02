@@ -21,7 +21,7 @@ mkdir -p "$work"
 rm -rf "$work/jni" "$work/kotlin" "$work/assets"
 # Set this explicitly even though NDK 30's linker defaults to 16 KiB pages.
 ORT_LIB_LOCATION="$ort_dir" \
-CARGO_TARGET_AARCH64_LINUX_ANDROID_RUSTFLAGS="${CARGO_TARGET_AARCH64_LINUX_ANDROID_RUSTFLAGS:-} -C link-arg=-Wl,-z,max-page-size=16384 -C link-arg=-Wl,--no-undefined" \
+CARGO_TARGET_AARCH64_LINUX_ANDROID_RUSTFLAGS="${CARGO_TARGET_AARCH64_LINUX_ANDROID_RUSTFLAGS:-} -C link-arg=-Wl,-z,max-page-size=16384 -C link-arg=-Wl,--no-undefined -C link-arg=-Wl,--build-id=sha1" \
   cargo ndk -t arm64-v8a -P 24 --link-libcxx-shared -o "$work/jni" \
   build --locked --release -p ensomi-runtime-ffi --features sync
 # Sonalign also declares a cdylib, which cargo-ndk copies here. The runtime links it statically and never loads this one.

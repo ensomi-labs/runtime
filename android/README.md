@@ -22,7 +22,7 @@ with no Android CI or release asset yet.
 commit with the same NDK and API level. Pyke's rc.11 Android archive contains GNU libstdc++ references and
 fails to load on Android. The source build and its private CMake 3.31.10 / Ninja 1.13.0 venv are cached under
 `CARGO_TARGET_DIR` (default: `target/onnxruntime-android/{source,build}` and `target/android-tools`);
-deleting `build/android` keeps that cache. This is the CPU execution provider, with ARM KleidiAI kernels;
+deleting `build/android` keeps that cache. This is the CPU execution provider, with ARM KleidiAI kernels disabled;
 XNNPACK and NNAPI are disabled. The Rust dependency pins stay unchanged.
 
 Android sessions disable ORT memory patterns while retaining the CPU arena by default. `lowMemory` also disables

@@ -28,11 +28,12 @@ if [[ ! -d "$work/source/.git" ]]; then
 fi
 [[ $(git -C "$work/source" rev-parse HEAD) == "$revision" ]]
 
+# Avoid SME2 instructions on SME1 CPUs: https://github.com/microsoft/onnxruntime/issues/26377.
 python "$work/source/tools/ci_build/build.py" \
   --build_dir "$work/build" --config Release --update --build --skip_tests --skip_submodule_sync \
   --cmake_generator Ninja --parallel 4 --compile_no_warning_as_error \
   --android --android_sdk_path "$ANDROID_HOME" --android_ndk_path "$ANDROID_NDK_HOME" \
-  --android_abi arm64-v8a --android_api 24 --android_cpp_shared \
-  --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF FETCHCONTENT_TRY_FIND_PACKAGE_MODE=NEVER
+  --android_abi arm64-v8a --android_api 24 --android_cpp_shared --no_kleidiai \
+  --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF onnxruntime_USE_KLEIDIAI=OFF FETCHCONTENT_TRY_FIND_PACKAGE_MODE=NEVER
 # re2 is EXCLUDE_FROM_ALL upstream; the static-only build has no final link target to pull it in.
 cmake --build "$work/build/Release" --target re2 --parallel 4
