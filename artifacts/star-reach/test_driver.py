@@ -32,6 +32,10 @@ class DriverTests(unittest.TestCase):
         self.assertEqual([t['seed'] for t in result['tries']],list(range(6)))
         self.assertEqual(result['best']['k'],0)
 
+    def test_quantile_endpoints_are_exactly_the_tested_values(self):
+        self.assertEqual(arm_options('q_tested',1)['difficulty_q'],.1)
+        self.assertEqual(arm_options('q_tested',9)['difficulty_q'],.75)
+
     def test_arms_are_off_inside_fitted_interval(self):
         for arm in ['overall','end_segment','q_tested','q_outer','direct','ceiling','masks','overall+direct']:
             for star in [2.125,2.5,4,5.875]:self.assertEqual(arm_options(arm,star),{})

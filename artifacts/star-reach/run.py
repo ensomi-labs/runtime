@@ -237,7 +237,7 @@ def arm_options(arm,star):
         elif part in ('q_tested','q_outer'):
             base=.5 if low else .467
             endpoint=(.1 if low else .75) if part=='q_tested' else (0. if low else .95)
-            opts['difficulty_q']=base+f*(endpoint-base)
+            opts['difficulty_q']=endpoint if f==1 else base+f*(endpoint-base)
         elif part=='ceiling': opts['multiplier_max']=1.2+.1*f
         elif part=='direct':
             # A blend to a direct multiplier, so the baseline endpoint is exactly preserved.
