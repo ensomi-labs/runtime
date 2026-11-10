@@ -77,3 +77,16 @@ Apache-2.0. The model (`sed-i/ensomi-r2`) is licensed MIT, as its [card](https:/
 states; BeatThis (CPJKU) keeps its own MIT notice (`onnx/BeatThis-LICENSE.txt`, in `models.notices`) for
 `onnx/beatthis.onnx`, an ONNX export of its `final0` checkpoint, and its front-end arrays
 `onnx/beatthis-mel-filter.bin` and `onnx/beatthis-hann-window.bin`.
+
+
+Any finite requested star is accepted, including section stars. Capabilities' `min_star` (2) and
+`max_star_exclusive` (6) describe the range the model was fitted on, which interfaces may recommend.
+Outside it the generator uses its nearest fitted settings; a chart's measured star need not follow the
+request. With the same seed and other inputs, requests at or above 5.875 produce the 5.875 chart,
+and requests at or below 2.125 produce the 2.0 chart. Generation stays one pass in both whole-chart
+and ahead-of-play modes. Interfaces choose their offered range and perform any search themselves.
+
+Use `starRating(result.chart)` (a synchronous function) to measure osu!mania star rating (20241007), four keys at clock rate 1,
+for a generated or imported chart. This is independent of generation and leaves receipts unchanged.
+The package compiles its default Wasm core during module import so the calculator can return a number synchronously.
+The first calculation initializes it unless a core has already been selected through `loadModels`.

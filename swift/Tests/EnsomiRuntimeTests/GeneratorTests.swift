@@ -204,10 +204,23 @@ final class GeneratorTests: XCTestCase {
         XCTAssertEqual(capabilities.controls.first { $0.name == "chordjack" }?.status, .notWorking)
     }
 
+    func testAcceptsStarOutsideTheFittedRange() throws {
+        let result = try Paths().open(.cpu).generate(
+            pcm: noise(seconds: 30), sampleRate: 22_050, request: GenerateChartRequest(star: 7), listener: nil, cancellation: nil
+        )
+        XCTAssertEqual(result.receipt.star, 7)
+        XCTAssertFalse(result.chart.objects.isEmpty)
+    }
+
+    func testStarRatingOfTheNativeChart() throws {
+        let text = try String(contentsOf: Self.root.appendingPathComponent("conformance/generate/native-charts/hesitation-snow.osu"), encoding: .utf8)
+        XCTAssertEqual(starRating(chart: try parseOsu(text: text).chart), 2.78122023258017, accuracy: 1e-9)
+    }
+
     func testRefusedRequestCarriesItsProtocolCode() throws {
         let generator = try Paths().open(.cpu)
         XCTAssertThrowsError(try generator.generate(
-            pcm: noise(seconds: 5), sampleRate: 22_050, request: GenerateChartRequest(star: 7), listener: nil, cancellation: nil
+            pcm: noise(seconds: 5), sampleRate: 22_050, request: GenerateChartRequest(star: .nan), listener: nil, cancellation: nil
         )) { error in
             guard case .Generation(let code, _) = error as? GeneratorError else { return XCTFail("\(error)") }
             XCTAssertEqual(code, "star_out_of_range")

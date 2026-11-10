@@ -110,7 +110,8 @@ pub struct ModelCapabilities {
     pub model_name: String,
     pub model_version: String,
     pub files: Vec<ModelFile>,
-    /// Accepted star range: `min_star <= star < max_star_exclusive`.
+    /// Range the model was fitted on; interfaces may recommend it. Any finite star is accepted.
+    /// Outside it the nearest fitted settings are used, so measured star need not follow the request.
     pub min_star: f64,
     pub max_star_exclusive: f64,
     pub controls: Vec<ControlCapability>,
@@ -134,7 +135,7 @@ pub enum PatternKind {
 
 #[derive(Clone, Debug, PartialEq, uniffi::Enum)]
 pub enum SectionTarget {
-    /// Star rating for this span alone.
+    /// Requested star for this span alone; any finite number.
     Star { star: f64 },
     /// Note pattern for this span; `strength` from 0 to 1.
     Pattern { kind: PatternKind, strength: f64 },
@@ -161,7 +162,8 @@ pub struct ChartControls {
 /// EnsomiProtocol's `GenerateChartRequest` without the audio reference: the PCM is passed beside it.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct GenerateChartRequest {
-    /// Star rating of the whole chart, within the capabilities' range.
+    /// Requested whole-chart star; any finite number. Capabilities give the fitted, recommended range.
+    /// Outside it the nearest fitted settings are used; measure the result with `star_rating`.
     pub star: f64,
     /// The same model, PCM, star, controls and seed give the same chart on one device with the same options.
     #[uniffi(default = 0)]

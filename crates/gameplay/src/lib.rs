@@ -11,6 +11,7 @@ mod layout;
 mod osu;
 mod rules;
 mod session;
+mod star;
 
 pub use chart::{Chart, ChartError, ChartObject, ChartToken, TokenKind};
 pub use feedback::{
@@ -24,3 +25,4 @@ pub use session::{
     InputEvent, JudgementEvent, LANES, LaneState, Part, Phase, Score, Session, VisibleObject,
     VisibleState,
 };
+pub use star::star_rating;
