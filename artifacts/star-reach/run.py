@@ -160,6 +160,10 @@ def measure(path, duration, calc):
 
 
 def candidate(args, worker, song, star, seed, opts, calc):
+    # Only after Q1 has proved the plateaus. The search trace still records the literal request
+    # and counts every logical generation; this only reuses a byte-identical result.
+    if getattr(args, 'cache_baseline_plateaus', False) and not opts:
+        star = max(2.125, min(5.875, star))
     identity = dict(star_request_input=float(star),seed=seed,options=opts)
     key=hashlib.sha256(json.dumps(identity,sort_keys=True).encode()).hexdigest()[:20]
     path=args.private/'candidates'/song['id']/key
@@ -298,6 +302,7 @@ def main():
     p.add_argument('--full-grid',action='store_true')
     p.add_argument('--search-arm',default='baseline')
     p.add_argument('--songs',help='comma-separated manifest ids, otherwise all')
+    p.add_argument('--cache-baseline-plateaus',action='store_true',help='search only: require Q1 equality, then memoize identical endpoint charts')
     args=p.parse_args()
     args.private=args.private.resolve(); args.model_repo=args.model_repo.resolve()
     args.binary=args.binary.resolve(); args.assets=args.assets.resolve()
@@ -308,6 +313,15 @@ def main():
     if args.command=='validate': validate(args,calc); return
     manifest=json.loads((args.private/'manifest.json').read_text())
     songs=[s for s in manifest['songs'] if not args.songs or s['id'] in args.songs.split(',')]
+    if args.cache_baseline_plateaus:
+        assert args.command == 'search' and args.search_arm == 'baseline'
+        for song in songs:
+            records=json.loads((args.private/'sweeps/baseline'/(song['id']+'.json')).read_text())
+            assert len(records)==len(GRID)*len(SEEDS)
+            for seed in SEEDS:
+                for low in [True,False]:
+                    group=[r for r in records if r['seed']==seed and ((r['star_request_input']<=2.125) if low else (r['star_request_input']>=5.875))]
+                    assert len({r['hit_objects_sha256'] for r in group})==1
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as pool:
         if args.command=='prepare': fs=[pool.submit(prepare_song,args,s) for s in songs]
         elif args.command=='sweep': fs=[pool.submit(sweep_song,args,s,calc,args.arms.split(',')) for s in songs]
