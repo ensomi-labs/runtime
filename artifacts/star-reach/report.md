@@ -182,6 +182,9 @@ The overall rows slope is 0.4999019906 log-workload/star; end slopes are
 0.7929525934 below and 0.4829161723 above. The multiplier lower bound is
 already 0.8; `direct` explicitly blends the chosen multiplier toward 0.8
 or 1.3 to measure the head-count lever without a quantile/clamp confound.
+For `direct`, the receipt’s `domain` and `clamped` describe the raw fit
+solution before that explicit blend; `m_final` records the resulting
+multiplier, checked against the fit’s full [0.8,1.3] domain.
 `ceiling` only raises the allowed upper edge. The model's calibration
 `per_m` says fallback support holds through 1.3 and fails from 1.45; this
 experiment never requests a multiplier outside [0.8,1.3]. The receipt
