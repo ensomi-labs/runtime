@@ -19,10 +19,15 @@ ax[0].plot(x,[r['song_median'] for r in b],color='#0072B2',label='Median of song
 ax[0].plot([1,9],[1,9],'--',color='gray',lw=1,label='Measured = requested')
 ax[0].set_title('Baseline reach across 12 songs × 2 seeds')
 ax[0].set_xlabel('Requested star');ax[0].set_ylabel('Measured osu!mania star');ax[0].legend(fontsize=8)
-colors=['#0072B2','#D55E00','#009E73','#CC79A7','#E69F00','#56B4E9','#000000','#AA3377','#777777','#44AA99']
+colors=['#0072B2','#D55E00','#009E73','#CC79A7','#E69F00','#56B4E9','#000000','#AA3377','#777777','#44AA99','#882255','#999933']
 for i,arm in enumerate(sorted({r['arm'] for r in reach})):
     rows=sorted([r for r in reach if r['arm']==arm],key=lambda r:r['request'])
-    ax[1].plot([r['request'] for r in rows],[r['song_median'] for r in rows],label=arm,color=colors[i%len(colors)],marker='.' if arm!='baseline' else None,lw=1.2)
+    groups=[rows] if arm=='baseline' else [[r for r in rows if r['request']<=2.125],[r for r in rows if r['request']>=5.875]]
+    labelled=False
+    for group in groups:
+        if not group:continue
+        ax[1].plot([r['request'] for r in group],[r['song_median'] for r in group],label=arm if not labelled else None,color=colors[i%len(colors)],marker='.' if arm!='baseline' else None,lw=1.2)
+        labelled=True
 ax[1].set_title('Opt-in arms: raw measured reach')
 ax[1].set_xlabel('Requested star');ax[1].set_ylabel('Median of song medians')
 ax[1].legend(fontsize=7,ncol=2)

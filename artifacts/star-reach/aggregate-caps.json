@@ -82,6 +82,48 @@
     "dense_grid_checked": true
   },
   {
+    "arm": "end_segment+masks",
+    "end": "low",
+    "safe_cap": 2.0,
+    "star": 2.459076397712388,
+    "paired_movement": 0.04000821229329565,
+    "first_failure": 1.5,
+    "reason": [
+      "envelope"
+    ],
+    "unchanged_interior_monotone": true,
+    "preliminary_gate": false,
+    "dense_grid_checked": false
+  },
+  {
+    "arm": "masks",
+    "end": "low",
+    "safe_cap": 2.125,
+    "star": 2.4769958465105715,
+    "paired_movement": -0.0,
+    "first_failure": 2.0,
+    "reason": [
+      "median reversal"
+    ],
+    "unchanged_interior_monotone": true,
+    "preliminary_gate": false,
+    "dense_grid_checked": true
+  },
+  {
+    "arm": "masks",
+    "end": "high",
+    "safe_cap": 5.875,
+    "star": 5.266011783340246,
+    "paired_movement": 0.0,
+    "first_failure": 6.5,
+    "reason": [
+      "envelope"
+    ],
+    "unchanged_interior_monotone": true,
+    "preliminary_gate": false,
+    "dense_grid_checked": true
+  },
+  {
     "arm": "overall",
     "end": "low",
     "safe_cap": 2.125,
@@ -111,6 +153,20 @@
   },
   {
     "arm": "overall+direct",
+    "end": "high",
+    "safe_cap": 5.875,
+    "star": 5.266011783340246,
+    "paired_movement": 0.0,
+    "first_failure": 6.5,
+    "reason": [
+      "envelope"
+    ],
+    "unchanged_interior_monotone": true,
+    "preliminary_gate": false,
+    "dense_grid_checked": true
+  },
+  {
+    "arm": "overall+masks",
     "end": "high",
     "safe_cap": 5.875,
     "star": 5.266011783340246,

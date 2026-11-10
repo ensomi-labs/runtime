@@ -59,6 +59,19 @@ Same-seed trajectory steps with both requests inside the fitted table (a selecte
 | proportional | 417 | 1.492 [-0.118,3.142] | 51 | 21 | 242 |
 | bounded | 494 | 1.387 [-0.160,4.199] | 57 | 29 | 301 |
 
+The search optimizes star only. Applying the already fixed structural screen to selected winners is characterization, not a validated playability test; counts below are target/seed cases, with repeated charts.
+
+| Scope | Rule | n | First chart warnings | Winner warnings | New warnings |
+| --- | --- | --- | --- | --- | --- |
+| all | secant | 408 | 52 | 86 | 53 |
+| all | seeds | 408 | 52 | 76 | 55 |
+| all | proportional | 408 | 52 | 85 | 51 |
+| all | bounded | 408 | 52 | 73 | 53 |
+| interior | secant | 168 | 17 | 22 | 16 |
+| interior | seeds | 168 | 17 | 23 | 15 |
+| interior | proportional | 168 | 17 | 21 | 14 |
+| interior | bounded | 168 | 17 | 22 | 15 |
+
 ### Published examples selected to expose search failures
 
 largest published secant miss: **saigetsu**, target 5.5, starting seed 0. These cases were selected after measurement to explain failures.
@@ -121,6 +134,8 @@ largest published proportional advantage: **saigetsu**, target 4.0, starting see
 
 ## Workload r and measured star
 
+These deltas pool 24 paired charts, unlike the proposal gate, which first takes the two-seed median within each of 12 songs. Negative star deltas mean easier measured output; opposite signs show why runtime r cannot stand in for star.
+
 | Arm | End | Median star Δ | Median r Δ | Opposite sign / nonzero pairs |
 | --- | --- | --- | --- | --- |
 | ceiling | low | 0.000 | 0.000 | 0/0 |
@@ -129,10 +144,16 @@ largest published proportional advantage: **saigetsu**, target 4.0, starting see
 | direct | high | 0.957 | 0.380 | 0/24 |
 | end_segment | low | -0.393 | 0.011 | 9/24 |
 | end_segment | high | 0.797 | -0.104 | 20/24 |
+| end_segment+masks | low | -0.472 | 0.024 | 14/24 |
+| end_segment+masks | high | — | — | 0/0 |
+| masks | low | -0.045 | -0.003 | 6/19 |
+| masks | high | 0.000 | 0.000 | 4/10 |
 | overall | low | -0.236 | 0.016 | 13/24 |
 | overall | high | 0.935 | -0.099 | 17/24 |
 | overall+direct | low | — | — | 0/0 |
 | overall+direct | high | 1.372 | 0.029 | 11/24 |
+| overall+masks | low | — | — | 0/0 |
+| overall+masks | high | 0.969 | -0.093 | 17/24 |
 | q_outer | low | -0.260 | -0.154 | 3/24 |
 | q_outer | high | 0.601 | 0.217 | 1/23 |
 | q_tested | low | -0.215 | -0.125 | 5/24 |

@@ -84,7 +84,7 @@ def table(header,rows):
 
 def error_stats(rows,key='error'):
     x=[r[key] for r in rows]
-    return dict(n=len(x),median=pct(x,.5),p90=pct(x,.9),within_005=statistics.mean(v<=.05 for v in x),within_015=statistics.mean(v<=.15 for v in x),generations=1 if key=='first_error' else statistics.mean(r['generations'] for r in rows),saturated=None if key=='first_error' else statistics.mean(r['saturated'] for r in rows))
+    return dict(n=len(x),median=pct(x,.5),p90=pct(x,.9),within_005=statistics.mean(v<=.05 for v in x),within_015=statistics.mean(v<=.15 for v in x),generations=1 if key=='first_error' else statistics.mean(r['generations'] for r in rows),saturated=None if key=='first_error' or all(r['rule']=='seeds' for r in rows) else statistics.mean(r['saturated'] for r in rows))
 
 
 def main():
@@ -111,7 +111,7 @@ def main():
     dump(a.out/'aggregate-reach.json',summaries)
     flat=[{k:v for k,v in r.items() if k!='violations'} for r in summaries]
     with (a.out/'aggregate-reach.csv').open('w') as f:
-        writer=csv.DictWriter(f,fieldnames=list(flat[0]));writer.writeheader();writer.writerows(flat)
+        writer=csv.DictWriter(f,fieldnames=list(flat[0]),lineterminator='\n');writer.writeheader();writer.writerows(flat)
     lines=['## Q1: baseline measurements','', 'All star ratings below are measurements, not playability judgements. The centre is the median of 12 song medians; p10–p90 and extrema pool 24 charts. Seed spread is the median paired absolute difference between seeds 0 and 1000.','']
     q1=[]
     for request in GRID:
@@ -148,7 +148,8 @@ def main():
             monotone=all(a['song_median'] is not None and b['song_median'] is not None and b['song_median']>=a['song_median']-1e-9 for a,b in zip(selected,selected[1:]))
             violation_count=sum(s['failed_envelope'] for s in selected if s['request'] not in (2.125,5.875))
             bad=collections.Counter()
-            for s in selected:bad.update(s['violations'])
+            for s in selected:
+                if s['request'] not in (2.125,5.875):bad.update(s['violations'])
             gate=monotone and movement is not None and movement>=.5 and movement>2*null[end] and violation_count==0
             verdicts.append(dict(arm=arm,end=end,endpoint=endpoint['request'],endpoint_star=endpoint['song_median'],paired_movement=movement,null_spread=null[end],monotone=monotone,envelope_failures=violation_count,indicators=dict(bad),gate=gate))
     dump(a.out/'aggregate-verdicts.json',verdicts)
@@ -173,8 +174,8 @@ def main():
             caps.append(dict(arm=arm,end=end,safe_cap=safe['request'],star=safe['song_median'],paired_movement=movement,first_failure=stop,reason=reason,unchanged_interior_monotone=interior_monotone,preliminary_gate=gate,dense_grid_checked=dense))
     dump(a.out/'aggregate-caps.json',caps)
     lines.extend(['### Gate at the tested endpoints','',table(['Arm','End','Median star','Paired movement','2 × null','Monotone','Envelope failures','Pass'],[[v['arm'],v['end'],fmt(v['endpoint_star']),fmt(v['paired_movement']),fmt(2*v['null_spread']),v['monotone'],v['envelope_failures'],v['gate']] for v in verdicts])])
-    lines.extend(['### Contiguous cap check','',table(['Arm','End','Last safe request','Median star','Paired movement','First failed request','Why stopped','Preliminary gate'],[[v['arm'],v['end'],fmt(v['safe_cap'],4),fmt(v['star']),fmt(v['paired_movement']),str(v['first_failure']),', '.join(v['reason']) or 'test limit',v['preliminary_gate']] for v in caps])])
-    lines.append(f"Unchanged in-table baseline medians are non-decreasing: {interior_monotone}. A preliminary cap pass still needs the denser grid; this table cannot alone authorize a default.\n")
+    lines.extend(['### Contiguous cap check','',table(['Arm','End','Cap boundary / last passing extension','Median star','Paired movement','First failed request','Why stopped','Preliminary gate'],[[v['arm'],v['end'],fmt(v['safe_cap'],4),fmt(v['star']),fmt(v['paired_movement']),str(v['first_failure']),', '.join(v['reason']) or 'test limit',v['preliminary_gate']] for v in caps])])
+    lines.append(f"Unchanged in-table baseline medians are non-decreasing: {interior_monotone}. An edge-valued cap means no extension was admitted, not that the reference passed the absolute 50 ms floor. A preliminary cap pass still needs the denser grid; this table cannot alone authorize a default.\n")
     lines.extend(['Failures count repeated candidates at different requests; the private envelope file contains every song-specific bound. Passing this structural screen would still not establish playability. A full-grid/cap assessment is required before proposing a default.',''])
     searches=[]
     for path in ([] if a.freeze_envelope else sorted((a.private/'search').glob('*/*.json'))):

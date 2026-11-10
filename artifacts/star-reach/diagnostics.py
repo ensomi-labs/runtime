@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Additional aggregate diagnostics and selected published-song examples; no private identities emitted."""
-import argparse,collections,json,math,statistics
+import argparse,collections,hashlib,json,math,statistics
 from pathlib import Path
 from run import dump,PUBLISHED
-from analyze import pct,stats,error_stats,load_sweeps,table,fmt
+from analyze import pct,stats,error_stats,load_sweeps,table,fmt,violations
 
 
 def saturation_reason(row):
@@ -56,6 +56,22 @@ def main():
     groups=collections.defaultdict(dict)
     for r in searches:groups[r['song'],r['target'],r['seed']][r['rule']]=r
     result['search_cases']=len(searches);result['search_logical_generations']=sum(r['generations'] for r in searches)
+    assert all(r['error']<=r['first_error'] and r['generations']<=6 for r in searches)
+    for group in groups.values():
+        assert len({r['first_error'] for r in group.values()})==1
+    bounds=json.loads((a.private/'structural-envelope.json').read_text())
+    def warnings(row,trial):
+        identity=dict(star_request_input=float(max(2.125,min(5.875,trial['r']))),seed=trial['seed'],options={})
+        key=hashlib.sha256(json.dumps(identity,sort_keys=True).encode()).hexdigest()[:20]
+        m=json.loads((a.private/'candidates'/row['song']/(key+'.metrics.json')).read_text())
+        return violations(m,bounds)
+    winner_warnings=[]
+    for scope in ['all','interior']:
+        for rule in ['secant','seeds','proportional','bounded']:
+            rs=[r for r in searches if r['rule']==rule and (scope=='all' or 2.5<=r['target']<=5.5)]
+            flags=[(bool(warnings(r,r['tries'][0])),bool(warnings(r,r['best']))) for r in rs]
+            winner_warnings.append(dict(scope=scope,rule=rule,n=len(rs),first_flags=sum(x for x,y in flags),winner_flags=sum(y for x,y in flags),new_flags=sum(not x and y for x,y in flags)))
+    result['search_winner_structural_warnings']=winner_warnings
     comparisons=[]
     for scope in ['all','interior','outside']:
         for alternative in ['proportional','seeds','bounded']:
@@ -104,11 +120,14 @@ def main():
     lines.append(table(['Scope','Alternative','Wins/ties/losses vs secant','Median paired error Δ','Mean paired error Δ'],[[r['scope'],r['alternative'],f"{r['wins']}/{r['ties']}/{r['losses']}",fmt(r['paired_delta_median']),fmt(r['paired_delta_mean'])] for r in comparisons]))
     lines.append('Same-seed trajectory steps with both requests inside the fitted table (a selected set of steps, not a random derivative sample):\n')
     lines.append(table(['Rule','Steps','Slope median [p10,p90]','Negative slopes','Star Δ < .01','Slopes outside [.5,2]'],[[r['rule'],r['n'],f"{fmt(r['slope']['median'])} [{fmt(r['slope']['p10'])},{fmt(r['slope']['p90'])}]",r['negative'],r['flat_under_001'],r['outside_slope_clamp']] for r in slopes]))
+    lines.append('The search optimizes star only. Applying the already fixed structural screen to selected winners is characterization, not a validated playability test; counts below are target/seed cases, with repeated charts.\n')
+    lines.append(table(['Scope','Rule','n','First chart warnings','Winner warnings','New warnings'],[[r['scope'],r['rule'],r['n'],r['first_flags'],r['winner_flags'],r['new_flags']] for r in winner_warnings]))
     lines.append('### Published examples selected to expose search failures\n')
     for e in examples:
         lines.append(f"{e['selection']}: **{e['song']}**, target {e['target']}, starting seed {e['starting_seed']}. These cases were selected after measurement to explain failures.\n")
         lines.append(table(['Rule','Try','Requested','Seed','Measured','Absolute error'],[[rule,t['k']+1,fmt(t['r'],4),t['seed'],fmt(t['m'],4),fmt(abs(t['m']-e['target']),4)] for rule,row in e['rules'].items() for t in row['tries']]))
     lines.append('## Workload r and measured star\n')
+    lines.append('These deltas pool 24 paired charts, unlike the proposal gate, which first takes the two-seed median within each of 12 songs. Negative star deltas mean easier measured output; opposite signs show why runtime r cannot stand in for star.\n')
     lines.append(table(['Arm','End','Median star Δ','Median r Δ','Opposite sign / nonzero pairs'],[[r['arm'],r['end'],fmt(r['median_star_delta']),fmt(r['median_r_delta']),f"{r['opposite_signs']}/{r['nonzero_pairs']}"] for r in signs]))
     (a.out/'diagnostics.md').write_text('\n'.join(lines))
     print(json.dumps({k:v for k,v in result.items() if k in ['physical_stored_candidates','baseline_observed_star_range','search_cases','search_logical_generations','saturation_causes']}))

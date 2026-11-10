@@ -21,7 +21,7 @@
     "monotone": true,
     "envelope_failures": 20,
     "indicators": {
-      "min_reattack": 25
+      "min_reattack": 20
     },
     "gate": false
   },
@@ -49,8 +49,8 @@
     "monotone": true,
     "envelope_failures": 55,
     "indicators": {
-      "min_reattack": 50,
       "fallback_per_1000": 14,
+      "min_reattack": 45,
       "triples": 14,
       "ln_share": 1,
       "nps": 2,
@@ -85,11 +85,56 @@
     "monotone": true,
     "envelope_failures": 50,
     "indicators": {
-      "min_reattack": 43,
       "fallback_per_1000": 11,
+      "min_reattack": 38,
       "ln_share": 15,
       "max_gap_beats": 1,
       "nps": 15
+    },
+    "gate": false
+  },
+  {
+    "arm": "end_segment+masks",
+    "end": "low",
+    "endpoint": 1.0,
+    "endpoint_star": 2.0438219441236845,
+    "paired_movement": 0.5425887684006594,
+    "null_spread": 0.2904741981668897,
+    "monotone": true,
+    "envelope_failures": 10,
+    "indicators": {
+      "ln_share": 6,
+      "fallback_per_1000": 2,
+      "empty_beats": 2,
+      "max_gap_beats": 3
+    },
+    "gate": false
+  },
+  {
+    "arm": "masks",
+    "end": "low",
+    "endpoint": 1.0,
+    "endpoint_star": 2.468718431566774,
+    "paired_movement": 0.06510782730410014,
+    "null_spread": 0.2904741981668897,
+    "monotone": false,
+    "envelope_failures": 8,
+    "indicators": {
+      "fallback_per_1000": 8
+    },
+    "gate": false
+  },
+  {
+    "arm": "masks",
+    "end": "high",
+    "endpoint": 9.0,
+    "endpoint_star": 5.267506736610172,
+    "paired_movement": 0.0,
+    "null_spread": 0.351172842500016,
+    "monotone": true,
+    "envelope_failures": 28,
+    "indicators": {
+      "min_reattack": 28
     },
     "gate": false
   },
@@ -120,8 +165,8 @@
     "monotone": true,
     "envelope_failures": 48,
     "indicators": {
-      "min_reattack": 40,
       "fallback_per_1000": 14,
+      "min_reattack": 35,
       "ln_share": 14,
       "nps": 17
     },
@@ -137,10 +182,27 @@
     "monotone": true,
     "envelope_failures": 66,
     "indicators": {
-      "min_reattack": 54,
+      "min_reattack": 49,
       "fallback_per_1000": 20,
       "ln_share": 17,
       "nps": 27
+    },
+    "gate": false
+  },
+  {
+    "arm": "overall+masks",
+    "end": "high",
+    "endpoint": 9.0,
+    "endpoint_star": 6.2300395789861005,
+    "paired_movement": 0.8112825388636931,
+    "null_spread": 0.351172842500016,
+    "monotone": true,
+    "envelope_failures": 48,
+    "indicators": {
+      "fallback_per_1000": 3,
+      "min_reattack": 38,
+      "ln_share": 13,
+      "nps": 17
     },
     "gate": false
   },
@@ -168,7 +230,7 @@
     "monotone": true,
     "envelope_failures": 38,
     "indicators": {
-      "min_reattack": 41,
+      "min_reattack": 36,
       "fallback_per_1000": 7,
       "triples": 3
     },
@@ -198,7 +260,7 @@
     "monotone": true,
     "envelope_failures": 29,
     "indicators": {
-      "min_reattack": 32,
+      "min_reattack": 27,
       "fallback_per_1000": 5
     },
     "gate": false
