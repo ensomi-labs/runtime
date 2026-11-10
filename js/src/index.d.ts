@@ -48,6 +48,7 @@ export declare enum GenerationPhase {
 export interface SectionRequest {
     start_ms: number;
     end_ms: number;
+    /** Any finite star target for this span. */
     star?: number;
     pattern?: {
         kind: PatternKind;
@@ -60,6 +61,7 @@ export interface ChartControls {
 }
 export interface GenerateChartRequest {
     audio?: AudioAssetRef;
+    /** Any finite request; capabilities describe the fitted, recommended range. */
     star: number;
     seed?: number | bigint;
     controls?: ChartControls;
@@ -73,6 +75,8 @@ export interface ModelCapabilities {
         path: string;
         sha256_hex: string;
     }[];
+    /** Fitted range, which interfaces may recommend. Any finite star is accepted; outside this range
+     * generation uses the nearest fitted settings, so measured star need not follow the request. */
     min_star: number;
     max_star_exclusive: number;
     controls: {
@@ -259,3 +263,7 @@ export declare class ChartScheduler {
 }
 export declare function decodeAudio(arrayBuffer: ArrayBuffer): Promise<DecodedAudio>;
 export declare function validateChart(chart: Chart): void;
+
+/** osu!mania star rating (20241007), four keys at clock rate 1; independent of generation.
+ * Loads the package's Wasm core if no `loadModels` has. Rejects if a lane is outside 0 to 3. */
+export declare function starRating(chart: Chart): Promise<number>;

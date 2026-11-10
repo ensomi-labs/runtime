@@ -202,3 +202,14 @@ Runtime's licence (MIT) and third-party notices are in [`licenses/onnxruntime`](
 ships the generator shows them with its acknowledgements. The package carries them as resources:
 `ChartGenerator.onnxRuntimeLicenseFiles` gives the URLs of `LICENSE` and `ThirdPartyNotices.txt` to read. They are
 also copied to `build/apple/licenses` beside the xcframework.
+
+
+Any finite requested star is accepted, including section stars. Capabilities' `min_star` (2) and
+`max_star_exclusive` (6) describe the range the model was fitted on, which interfaces may recommend.
+Outside it the generator uses its nearest fitted settings; a chart's measured star need not follow the
+request. With the same seed and other inputs, requests at or above 5.875 produce the 5.875 chart,
+and requests at or below 2.125 produce the 2.0 chart. Generation stays one pass in both whole-chart
+and ahead-of-play modes. Interfaces choose their offered range and perform any search themselves.
+
+Use `starRating(chart: result.chart)` to measure osu!mania star rating (20241007), four keys at clock rate 1,
+for a generated or imported chart. This is independent of generation and leaves receipts unchanged.
