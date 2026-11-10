@@ -144,12 +144,12 @@ def main():
             candidate_rows=per_request[arm,endpoint['request']]
             reference=song_medians(edge_groups[end]); measured=song_medians(candidate_rows)
             sign=-1 if end=='low' else 1
-            movement=statistics.median(sign*(measured[s]-reference[s]) for s in reference)
-            monotone=all(b['song_median']>=a['song_median']-1e-9 for a,b in zip(selected,selected[1:]))
+            movement=statistics.median(sign*(measured[s]-reference[s]) for s in reference) if set(measured)==set(reference) else None
+            monotone=all(a['song_median'] is not None and b['song_median'] is not None and b['song_median']>=a['song_median']-1e-9 for a,b in zip(selected,selected[1:]))
             violation_count=sum(s['failed_envelope'] for s in selected if s['request'] not in (2.125,5.875))
             bad=collections.Counter()
             for s in selected:bad.update(s['violations'])
-            gate=monotone and movement>=.5 and movement>2*null[end] and violation_count==0
+            gate=monotone and movement is not None and movement>=.5 and movement>2*null[end] and violation_count==0
             verdicts.append(dict(arm=arm,end=end,endpoint=endpoint['request'],endpoint_star=endpoint['song_median'],paired_movement=movement,null_spread=null[end],monotone=monotone,envelope_failures=violation_count,indicators=dict(bad),gate=gate))
     dump(a.out/'aggregate-verdicts.json',verdicts)
     lines.extend(['### Gate at the tested endpoints','',table(['Arm','End','Median star','Paired movement','2 × null','Monotone','Envelope failures','Pass'],[[v['arm'],v['end'],fmt(v['endpoint_star']),fmt(v['paired_movement']),fmt(2*v['null_spread']),v['monotone'],v['envelope_failures'],v['gate']] for v in verdicts])])

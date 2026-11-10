@@ -17,7 +17,9 @@ PIN = '885bb74c19bd68d1c77087d3ec8746244196daa5'
 
 def dump(path, value):
     Path(path).parent.mkdir(parents=True, exist_ok=True)
-    Path(path).write_text(json.dumps(value, indent=2, allow_nan=False) + '\n')
+    temporary = Path(str(path) + '.tmp')
+    temporary.write_text(json.dumps(value, indent=2, allow_nan=False) + '\n')
+    temporary.replace(path)
 
 
 def digest(path):
