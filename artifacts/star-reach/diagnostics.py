@@ -78,6 +78,17 @@ def main():
         assert sum(c for k,c in causes.items() if k!='not_saturated')==sum(r['saturated'] for r in rows)
         saturation[rule]=dict(causes)
     result['saturation_causes']=saturation
+    slopes=[]
+    for rule in ['secant','proportional']:
+        pairs=[]
+        for row in searches:
+            if row['rule']!=rule:continue
+            for i,t in enumerate(row['tries']):
+                prev=next((v for v in reversed(row['tries'][:i]) if v['seed']==t['seed'] and v['r']!=t['r']),None)
+                if prev and 2.125<=t['r']<=5.875 and 2.125<=prev['r']<=5.875:
+                    pairs.append(((t['m']-prev['m'])/(t['r']-prev['r']),abs(t['m']-prev['m']),abs(t['r']-prev['r'])))
+        slopes.append(dict(rule=rule,n=len(pairs),slope=stats([v[0] for v in pairs]),negative=sum(v[0]<0 for v in pairs),flat_under_001=sum(v[1]<.01 for v in pairs),outside_slope_clamp=sum(not .5<=v[0]<=2 for v in pairs)))
+    result['within_table_trajectory_slopes']=slopes
     interior=[g for (song,target,seed),g in groups.items() if song in PUBLISHED and 2.5<=target<=5.5 and all(k in g for k in ['secant','proportional','seeds'])]
     # Deliberately selected explanatory cases, not a new decision sample.
     examples=[]
@@ -90,6 +101,8 @@ def main():
     lines.append(table(['Scope','Rule','N','Median error','p90 error','≤.05','≤.15','Mean used'],[[r['scope'],r['rule'],r['N'],fmt(r['median']),fmt(r['p90']),fmt(r['within_005']),fmt(r['within_015']),fmt(r['mean_generations'],2)] for r in budgets if r['N'] in [3,4,5,6]]))
     lines.append('Saturation causes: `'+json.dumps(saturation,sort_keys=True)+'`.\n')
     lines.append(table(['Scope','Alternative','Wins/ties/losses vs secant','Median paired error Δ','Mean paired error Δ'],[[r['scope'],r['alternative'],f"{r['wins']}/{r['ties']}/{r['losses']}",fmt(r['paired_delta_median']),fmt(r['paired_delta_mean'])] for r in comparisons]))
+    lines.append('Same-seed trajectory steps with both requests inside the fitted table (a selected set of steps, not a random derivative sample):\n')
+    lines.append(table(['Rule','Steps','Slope median [p10,p90]','Negative slopes','Star Δ < .01','Slopes outside [.5,2]'],[[r['rule'],r['n'],f"{fmt(r['slope']['median'])} [{fmt(r['slope']['p10'])},{fmt(r['slope']['p90'])}]",r['negative'],r['flat_under_001'],r['outside_slope_clamp']] for r in slopes]))
     lines.append('### Published examples selected to expose search failures\n')
     for e in examples:
         lines.append(f"{e['selection']}: **{e['song']}**, target {e['target']}, starting seed {e['starting_seed']}. These cases were selected after measurement to explain failures.\n")
