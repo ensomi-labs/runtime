@@ -160,7 +160,7 @@ def measure(path, duration, calc):
 
 
 def candidate(args, worker, song, star, seed, opts, calc):
-    identity = dict(star=float(star),seed=seed,options=opts)
+    identity = dict(star_request_input=float(star),seed=seed,options=opts)
     key=hashlib.sha256(json.dumps(identity,sort_keys=True).encode()).hexdigest()[:20]
     path=args.private/'candidates'/song['id']/key
     saved=Path(str(path)+'.metrics.json')
