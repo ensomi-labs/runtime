@@ -84,7 +84,7 @@ def table(header,rows):
 
 def error_stats(rows,key='error'):
     x=[r[key] for r in rows]
-    return dict(n=len(x),median=pct(x,.5),p90=pct(x,.9),within_005=statistics.mean(v<=.05 for v in x),within_015=statistics.mean(v<=.15 for v in x),generations=statistics.mean(r['generations'] for r in rows),saturated=statistics.mean(r['saturated'] for r in rows))
+    return dict(n=len(x),median=pct(x,.5),p90=pct(x,.9),within_005=statistics.mean(v<=.05 for v in x),within_015=statistics.mean(v<=.15 for v in x),generations=1 if key=='first_error' else statistics.mean(r['generations'] for r in rows),saturated=None if key=='first_error' else statistics.mean(r['saturated'] for r in rows))
 
 
 def main():
@@ -152,7 +152,29 @@ def main():
             gate=monotone and movement is not None and movement>=.5 and movement>2*null[end] and violation_count==0
             verdicts.append(dict(arm=arm,end=end,endpoint=endpoint['request'],endpoint_star=endpoint['song_median'],paired_movement=movement,null_spread=null[end],monotone=monotone,envelope_failures=violation_count,indicators=dict(bad),gate=gate))
     dump(a.out/'aggregate-verdicts.json',verdicts)
+    interior_centres=[aggregate(per_request['baseline',q])['song_median'] for q in GRID if 2.125<=q<=5.875]
+    interior_monotone=all(b>=a-1e-9 for a,b in zip(interior_centres,interior_centres[1:]))
+    caps=[]
+    for arm in sorted({r['arm'] for r in rows}-{'baseline'}):
+        for end in ['low','high']:
+            selected=sorted([v for v in summaries if v['arm']==arm and ((v['request']<=2.125) if end=='low' else (v['request']>=5.875))],key=lambda v:v['request'],reverse=end=='low')
+            if not selected:continue
+            safe=selected[0];stop=None;reason=[]
+            sign=-1 if end=='low' else 1
+            for v in selected[1:]:
+                if v['failed_envelope']:reason.append('envelope')
+                if v['song_median'] is None or sign*(v['song_median']-safe['song_median']) < -1e-9:reason.append('median reversal')
+                if reason:stop=v['request'];break
+                safe=v
+            reference=song_medians(edge_groups[end]);measured=song_medians(per_request[arm,safe['request']])
+            movement=statistics.median(sign*(measured[k]-reference[k]) for k in reference) if set(measured)==set(reference) else None
+            gate=movement is not None and movement>=.5 and movement>2*null[end] and interior_monotone
+            dense=all((arm,q) in per_request for q in GRID if (safe['request']<=q<2.125 if end=='low' else 5.875<q<=safe['request']))
+            caps.append(dict(arm=arm,end=end,safe_cap=safe['request'],star=safe['song_median'],paired_movement=movement,first_failure=stop,reason=reason,unchanged_interior_monotone=interior_monotone,preliminary_gate=gate,dense_grid_checked=dense))
+    dump(a.out/'aggregate-caps.json',caps)
     lines.extend(['### Gate at the tested endpoints','',table(['Arm','End','Median star','Paired movement','2 × null','Monotone','Envelope failures','Pass'],[[v['arm'],v['end'],fmt(v['endpoint_star']),fmt(v['paired_movement']),fmt(2*v['null_spread']),v['monotone'],v['envelope_failures'],v['gate']] for v in verdicts])])
+    lines.extend(['### Contiguous cap check','',table(['Arm','End','Last safe request','Median star','Paired movement','First failed request','Why stopped','Preliminary gate'],[[v['arm'],v['end'],fmt(v['safe_cap'],4),fmt(v['star']),fmt(v['paired_movement']),str(v['first_failure']),', '.join(v['reason']) or 'test limit',v['preliminary_gate']] for v in caps])])
+    lines.append(f"Unchanged in-table baseline medians are non-decreasing: {interior_monotone}. A preliminary cap pass still needs the denser grid; this table cannot alone authorize a default.\n")
     lines.extend(['Failures count repeated candidates at different requests; the private envelope file contains every song-specific bound. Passing this structural screen would still not establish playability. A full-grid/cap assessment is required before proposing a default.',''])
     searches=[]
     for path in sorted((a.private/'search').glob('*/*.json')):
