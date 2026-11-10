@@ -217,7 +217,7 @@ def sweep_song(args,song,calc,arms):
     w=Worker(args); results=[]
     try:
         for arm in arms:
-            for star in (GRID if arm=='baseline' or args.full_grid else ARM_GRID):
+            for star in (args.requests or (GRID if arm=='baseline' or args.full_grid else ARM_GRID)):
                 for seed in SEEDS:
                     value=candidate(args,w,song,star,seed,arm_options(arm,star),calc)
                     results.append(dict(arm=arm,**value))
@@ -302,10 +302,12 @@ def main():
     p.add_argument('--run',default='baseline')
     p.add_argument('--arms',default='baseline')
     p.add_argument('--full-grid',action='store_true')
+    p.add_argument('--requests',type=lambda s:sorted(set(map(float,s.split(',')))),help='explicit comma-separated sweep requests')
     p.add_argument('--search-arm',default='baseline')
     p.add_argument('--songs',help='comma-separated manifest ids, otherwise all')
     p.add_argument('--cache-baseline-plateaus',action='store_true',help='search only: require Q1 equality, then memoize identical endpoint charts')
     args=p.parse_args()
+    if args.requests and not all(math.isfinite(r) for r in args.requests): p.error('--requests must be finite')
     args.private=args.private.resolve(); args.model_repo=args.model_repo.resolve()
     args.binary=args.binary.resolve(); args.assets=args.assets.resolve()
     args.onnx=args.onnx or args.model_repo/'artifacts/release-r2/bulk/hf/ensomi-r2/onnx'
