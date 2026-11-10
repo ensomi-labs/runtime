@@ -88,4 +88,5 @@ and ahead-of-play modes. Interfaces choose their offered range and perform any s
 
 Use `starRating(result.chart)` (a synchronous function) to measure osu!mania star rating (20241007), four keys at clock rate 1,
 for a generated or imported chart. This is independent of generation and leaves receipts unchanged.
-The package initializes its Wasm core during module import so the calculator can return a number synchronously.
+The package compiles its default Wasm core during module import so the calculator can return a number synchronously.
+The first calculation initializes it unless a core has already been selected through `loadModels`.

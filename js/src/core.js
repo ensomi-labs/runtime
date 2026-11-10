@@ -18,6 +18,13 @@ export function loadCore(wasm) {
     return loaded;
 }
 
+/** Uses an already compiled module for a synchronous call; an initialized core keeps its caller's selection. */
+export function loadCoreSync(module) {
+    bindings.initSync({ module });
+    loaded ??= Promise.resolve(bindings);
+    return bindings;
+}
+
 /** Which instance of the core is current; a trap in `callCore` starts the next. */
 export const coreInstance = () => instance;
 
