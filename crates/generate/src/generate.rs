@@ -432,11 +432,11 @@ async fn chart_stages(io: Io, models: Arc<Models>, prepared: Arc<Prepared>, requ
     let (lo, hi) = (domain[0], f64::min(domain[1], options.experiment.as_ref().and_then(|e| e.multiplier_max).unwrap_or(1.2)));
     let raw = libm::exp((libm::log(target_r) - alpha - gamma * libm::log(base_r)) / beta);
     let mut multiplier = clip(raw, lo, hi);
-    if let Some(e) = &options.experiment {
-        if let Some(target) = e.multiplier_target {
-            let blend = e.multiplier_blend.unwrap_or(1.0);
-            multiplier += blend * (target - multiplier);
-        }
+    if let Some(e) = &options.experiment
+        && let Some(target) = e.multiplier_target
+    {
+        let blend = e.multiplier_blend.unwrap_or(1.0);
+        multiplier += blend * (target - multiplier);
     }
     random.reset(r2_seed32);
     let result = arrange(Arrange {
