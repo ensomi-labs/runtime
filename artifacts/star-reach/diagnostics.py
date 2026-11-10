@@ -17,10 +17,10 @@ def saturation_reason(row):
             if max(t['r'],prev['r'])<=2.125:return 'lower_plateau'
             if min(t['r'],prev['r'])>=5.875:return 'upper_plateau'
             return 'flat_response_elsewhere'
-        slope=max(.5,min(2,(t['m']-prev['m'])/(t['r']-prev['r']))) if prev and rule=='secant' else 1
-        nxt=max(target-3,min(target+3,t['r']+(target-t['m'])/slope))
+        slope=max(.5,min(2,(t['m']-prev['m'])/(t['r']-prev['r']))) if prev and rule in ('secant','bounded') else 1
+        nxt=max(2.125,min(5.875,t['r']+(target-t['m'])/slope)) if rule=='bounded' else max(target-3,min(target+3,t['r']+(target-t['m'])/slope))
         if abs(nxt-t['r'])<.01:
-            return 'request_bound' if nxt in (target-3,target+3) else 'small_update'
+            return 'model_boundary' if rule=='bounded' else ('request_bound' if nxt in (target-3,target+3) else 'small_update')
     return 'not_saturated'
 
 
@@ -49,7 +49,8 @@ def main():
             signs.append(dict(arm=arm,end=end,n=len(pairs),median_star_delta=pct(ds,.5),median_r_delta=pct(dr,.5),nonzero_pairs=len(active),opposite_signs=sum(s*r<0 for s,r in active)))
     result['star_vs_r']=signs
     searches=[]
-    for path in (a.private/'search/baseline').glob('*.json'):searches+=json.loads(path.read_text())
+    for path in (a.private/'search').glob('*/*.json'):
+        searches += [r for r in json.loads(path.read_text()) if r.get('build',path.parent.name)=='baseline']
     if not searches:
         dump(a.out/'aggregate-diagnostics.json',result);return
     groups=collections.defaultdict(dict)
@@ -57,14 +58,14 @@ def main():
     result['search_cases']=len(searches);result['search_logical_generations']=sum(r['generations'] for r in searches)
     comparisons=[]
     for scope in ['all','interior','outside']:
-        for alternative in ['proportional','seeds']:
+        for alternative in ['proportional','seeds','bounded']:
             pairs=[(g['secant'],g[alternative]) for (_,target,_),g in groups.items() if 'secant' in g and alternative in g and (scope=='all' or (scope=='interior' and 2.5<=target<=5.5) or (scope=='outside' and (target<2.5 or target>5.5)))]
             if not pairs:continue
             ds=[b['error']-s['error'] for s,b in pairs]
             comparisons.append(dict(scope=scope,alternative=alternative,n=len(pairs),paired_delta_median=pct(ds,.5),paired_delta_mean=statistics.mean(ds),wins=sum(d<-1e-12 for d in ds),ties=sum(abs(d)<=1e-12 for d in ds),losses=sum(d>1e-12 for d in ds),secant=error_stats([s for s,b in pairs]),alternative_stats=error_stats([b for s,b in pairs])))
     result['search_comparisons']=comparisons
     budgets=[]
-    for rule in ['secant','proportional','seeds']:
+    for rule in ['secant','proportional','seeds','bounded']:
         for n in [1,2,3,4,5,6]:
             for scope in ['all','interior']:
                 rows=[r for r in searches if r['rule']==rule and (scope=='all' or 2.5<=r['target']<=5.5)]
@@ -72,14 +73,14 @@ def main():
                 budgets.append(dict(rule=rule,N=n,scope=scope,n=len(rows),median=pct(errors,.5),p90=pct(errors,.9),within_005=statistics.mean(e<=.05 for e in errors),within_015=statistics.mean(e<=.15 for e in errors),mean_generations=statistics.mean(min(n,r['generations']) for r in rows)))
     result['prefix_budgets']=budgets
     saturation={}
-    for rule in ['secant','proportional']:
+    for rule in ['secant','proportional','bounded']:
         rows=[r for r in searches if r['rule']==rule]
         causes=collections.Counter(saturation_reason(r) for r in rows)
         assert sum(c for k,c in causes.items() if k!='not_saturated')==sum(r['saturated'] for r in rows)
         saturation[rule]=dict(causes)
     result['saturation_causes']=saturation
     slopes=[]
-    for rule in ['secant','proportional']:
+    for rule in ['secant','proportional','bounded']:
         pairs=[]
         for row in searches:
             if row['rule']!=rule:continue
@@ -89,7 +90,7 @@ def main():
                     pairs.append(((t['m']-prev['m'])/(t['r']-prev['r']),abs(t['m']-prev['m']),abs(t['r']-prev['r'])))
         slopes.append(dict(rule=rule,n=len(pairs),slope=stats([v[0] for v in pairs]),negative=sum(v[0]<0 for v in pairs),flat_under_001=sum(v[1]<.01 for v in pairs),outside_slope_clamp=sum(not .5<=v[0]<=2 for v in pairs)))
     result['within_table_trajectory_slopes']=slopes
-    interior=[g for (song,target,seed),g in groups.items() if song in PUBLISHED and 2.5<=target<=5.5 and all(k in g for k in ['secant','proportional','seeds'])]
+    interior=[g for (song,target,seed),g in groups.items() if song in PUBLISHED and 2.5<=target<=5.5 and all(k in g for k in ['secant','proportional','seeds','bounded'])]
     # Deliberately selected explanatory cases, not a new decision sample.
     examples=[]
     if interior:

@@ -32,6 +32,12 @@ class DriverTests(unittest.TestCase):
         self.assertEqual([t['seed'] for t in result['tries']],list(range(6)))
         self.assertEqual(result['best']['k'],0)
 
+    def test_known_plateau_uses_six_distinct_seeds(self):
+        result=search(lambda r,s:{'star':2.5},1,1000,'bounded')
+        self.assertEqual([t['seed'] for t in result['tries']],list(range(1000,1006)))
+        self.assertEqual({t['r'] for t in result['tries']},{2.125})
+        self.assertTrue(result['saturated'])
+
     def test_quantile_endpoints_are_exactly_the_tested_values(self):
         self.assertEqual(arm_options('q_tested',1)['difficulty_q'],.1)
         self.assertEqual(arm_options('q_tested',9)['difficulty_q'],.75)

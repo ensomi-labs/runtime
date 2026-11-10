@@ -250,7 +250,7 @@ def arm_options(arm,star):
 
 
 def search(generate, target, seed, rule, n=6, tol=.05):
-    tries=[]; r=target; current_seed=seed; saturated=False; seed_tries=0
+    tries=[]; r=max(2.125,min(5.875,target)) if rule=='bounded' else target; current_seed=seed; saturated=False; seed_tries=0
     for k in range(n):
         value=generate(r,current_seed)
         if 'error' in value: raise RuntimeError(value['error'])
@@ -262,8 +262,8 @@ def search(generate, target, seed, rule, n=6, tol=.05):
             prev=next((t for t in reversed(tries[:-1]) if t['seed']==current_seed and t['r']!=r),None)
             if prev and abs(m-prev['m'])<.01: saturated=True
             else:
-                slope=max(.5,min(2,(m-prev['m'])/(r-prev['r']))) if prev and rule=='secant' else 1.
-                nxt=max(target-3,min(target+3,r+(target-m)/slope))
+                slope=max(.5,min(2,(m-prev['m'])/(r-prev['r']))) if prev and rule in ('secant','bounded') else 1.
+                nxt=max(2.125,min(5.875,r+(target-m)/slope)) if rule=='bounded' else max(target-3,min(target+3,r+(target-m)/slope))
                 if abs(nxt-r)<.01: saturated=True
                 else: r=nxt
         if saturated:
@@ -280,10 +280,10 @@ def search_song(args,song,calc):
     try:
         for target in TARGETS:
             for seed in SEEDS:
-                for rule in ['secant','seeds','proportional']:
+                for rule in args.rules.split(','):
                     if (target,seed,rule) in done: continue
                     result=search(lambda r,s:candidate(args,w,song,r,s,arm_options(args.search_arm,r),calc),target,seed,rule)
-                    results.append(dict(song=song['id'],**result))
+                    results.append(dict(song=song['id'],build=args.search_arm,**result))
                     dump(dest,results)
             print(f"search {song['id']} target {target}",flush=True)
     finally: w.close()
@@ -304,9 +304,11 @@ def main():
     p.add_argument('--full-grid',action='store_true')
     p.add_argument('--requests',type=lambda s:sorted(set(map(float,s.split(',')))),help='explicit comma-separated sweep requests')
     p.add_argument('--search-arm',default='baseline')
+    p.add_argument('--rules',default='secant,seeds,proportional')
     p.add_argument('--songs',help='comma-separated manifest ids, otherwise all')
     p.add_argument('--cache-baseline-plateaus',action='store_true',help='search only: require Q1 equality, then memoize identical endpoint charts')
     args=p.parse_args()
+    if any(r not in ['secant','seeds','proportional','bounded'] for r in args.rules.split(',')): p.error('unknown search rule')
     if args.requests and not all(math.isfinite(r) for r in args.requests): p.error('--requests must be finite')
     args.private=args.private.resolve(); args.model_repo=args.model_repo.resolve()
     args.binary=args.binary.resolve(); args.assets=args.assets.resolve()

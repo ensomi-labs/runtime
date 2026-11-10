@@ -34,7 +34,7 @@ fig.savefig(root/'reach.png',dpi=170);fig.savefig(root/'reach.svg');plt.close(fi
 if (root/'aggregate-search.json').exists():
     search=json.loads((root/'aggregate-search.json').read_text())
     fig,ax=plt.subplots(1,2,figsize=(11,4.3),layout='constrained')
-    for rule,color in zip(['first','secant','seeds','proportional'],colors):
+    for rule,color in zip(['first','secant','seeds','proportional','bounded'],colors):
         rows=sorted([r for r in search if r['build']=='baseline' and r['rule']==rule and isinstance(r['target'],(float,int))],key=lambda r:r['target'])
         ax[0].plot([r['target'] for r in rows],[r['median'] for r in rows],label=rule,color=color,marker='.',lw=1.5)
         ax[1].plot([r['target'] for r in rows],[r['within_005'] for r in rows],label=rule,color=color,marker='.',lw=1.5)

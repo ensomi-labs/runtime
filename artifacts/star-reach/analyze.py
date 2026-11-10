@@ -178,7 +178,7 @@ def main():
     lines.extend(['Failures count repeated candidates at different requests; the private envelope file contains every song-specific bound. Passing this structural screen would still not establish playability. A full-grid/cap assessment is required before proposing a default.',''])
     searches=[]
     for path in ([] if a.freeze_envelope else sorted((a.private/'search').glob('*/*.json'))):
-        for r in json.loads(path.read_text()):searches.append(dict(build=path.parent.name,**r))
+        for r in json.loads(path.read_text()):searches.append(dict(r,build=r.get('build',path.parent.name)))
     if searches:
         lines.extend(['## Q3: client-side search','', 'Errors are absolute stars; proportions are fractions. Six-seed runs always consume six logical generations. Secant/proportional runs may stop at tolerance. Cached candidates still count as generations.',''])
         search_summaries=[]
@@ -186,7 +186,7 @@ def main():
             groups=[r for r in searches if r['build']==build]
             for target in TARGETS+['all','interior','outside']:
                 rows_t=[r for r in groups if target=='all' or (target=='interior' and 2.5<=r['target']<=5.5) or (target=='outside' and (r['target']<2.5 or r['target']>5.5)) or r['target']==target]
-                for rule in ['first','secant','seeds','proportional']:
+                for rule in ['first','secant','seeds','proportional','bounded']:
                     rs=[r for r in rows_t if r['rule']==('secant' if rule=='first' else rule)]
                     if rs:search_summaries.append(dict(build=build,target=target,rule=rule,**error_stats(rs,'first_error' if rule=='first' else 'error')))
             lines.append(f'### {build}\n')
