@@ -9,7 +9,7 @@ use crate::grid::{corrected_grid, Grid};
 use crate::json::{number_string, stringify};
 use crate::machine::{Generator, Io, Phase};
 use crate::math::{clip, quantile};
-use crate::models::Models;
+use crate::models::{Models, MAX_BAND, MIN_BAND};
 use crate::prepared::Prepared;
 use crate::prior::{kappa_targets, predict_prior, rows_features, Prediction};
 use crate::random::{RandomSource, SeededRandom};
@@ -84,7 +84,7 @@ impl Request {
                     .map(|s| Section {
                         start_ms: field_f64(s, "start_ms").unwrap_or(f64::NAN),
                         end_ms: field_f64(s, "end_ms").unwrap_or(f64::NAN),
-                        star: field_f64(s, "star"),
+                        star: s.get("star").map(|_| field_f64(s, "star").unwrap_or(f64::NAN)),
                         pattern: s.get("pattern").filter(|p| p.is_object()).map(|p| Pattern { kind: p["kind"].as_i64().unwrap_or(-1), strength: field_f64(p, "strength").unwrap_or(f64::NAN) }),
                         raw: s.as_object().cloned().unwrap_or_default(),
                     })
@@ -198,9 +198,13 @@ fn validate_audio(audio: &Audio) -> Result<f64, String> {
     Ok(duration)
 }
 
+fn fitted_band(star: f64) -> u32 {
+    star.floor().clamp(MIN_BAND as f64, MAX_BAND as f64) as u32
+}
+
 fn validate_request(request: &Request, duration: f64) -> Result<(), String> {
-    if !(request.star >= 2.0 && request.star < 6.0) {
-        return Err("star_out_of_range: star must be in [2, 6)".to_string());
+    if !request.star.is_finite() {
+        return Err("star_out_of_range: star must be a finite number".to_string());
     }
     if ![0, 1, 2, 3].contains(&request.controls.long_notes) {
         return Err("unsupported_control: unknown long_notes value".to_string());
@@ -213,8 +217,8 @@ fn validate_request(request: &Request, duration: f64) -> Result<(), String> {
         if s.star.is_some() == s.pattern.is_some() {
             return Err("unsupported_control: each section needs exactly one star or pattern target".to_string());
         }
-        if s.star.is_some_and(|star| !(2.0..6.0).contains(&star)) {
-            return Err("star_out_of_range: section star must be in [2, 6)".to_string());
+        if s.star.is_some_and(|star| !star.is_finite()) {
+            return Err("star_out_of_range: section star must be a finite number".to_string());
         }
         if s.pattern.as_ref().is_some_and(|p| ![1, 2, 3, 4, 5].contains(&p.kind) || !(p.strength >= 0.0 && p.strength <= 1.0)) {
             return Err("unsupported_control: pattern kind and strength in [0, 1] are required".to_string());
@@ -380,7 +384,7 @@ async fn chart_stages(io: Io, models: Arc<Models>, prepared: Arc<Prepared>, requ
     }
     io.progress(Phase::Arrangement).await;
     start = clock();
-    let band = f64::min(5.0, request.star.floor()) as u32;
+    let band = fitted_band(request.star);
     let prior_features = rows_features(&rows.head_ms, song_ms, &grid);
     let prediction = predict_prior(&models.prior, &prior_features, band)?;
     if let Some(t) = options.trace.as_mut() {
@@ -549,4 +553,37 @@ async fn chart_stages(io: Io, models: Arc<Models>, prepared: Arc<Prepared>, requ
 
 fn prediction_json(p: &Prediction) -> Value {
     json!({"held": number(p.held), "heads": number(p.heads), "busy_free": number(p.busy_free), "quad": number(p.quad), "log_r": number(p.log_r)})
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn every_finite_star_uses_a_fitted_band() {
+        for (star, band) in [(-f64::MAX, 2), (-1.0, 2), (0.0, 2), (0.3, 2), (1.0, 2), (2.0, 2), (3.9, 3), (4.0, 4), (5.875, 5), (6.0, 5), (9.0, 5), (12.0, 5), (f64::MAX, 5)] {
+            let mut request = Request::from_json("{\"star\":3}", 0, false).unwrap();
+            request.star = star;
+            assert!(validate_request(&request, 30000.0).is_ok(), "{star}");
+            assert_eq!(fitted_band(star), band, "{star}");
+            request.controls.sections.push(Section { start_ms: 0.0, end_ms: 8000.0, star: Some(star), pattern: None, raw: Map::new() });
+            assert!(validate_request(&request, 30000.0).is_ok(), "section {star}");
+        }
+    }
+
+    #[test]
+    fn nonfinite_stars_keep_the_protocol_error() {
+        for star in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            let mut request = Request::from_json("{\"star\":3}", 0, false).unwrap();
+            request.star = star;
+            assert_eq!(validate_request(&request, 30000.0).unwrap_err(), "star_out_of_range: star must be a finite number");
+            request.star = 3.0;
+            request.controls.sections.push(Section { start_ms: 0.0, end_ms: 8000.0, star: Some(star), pattern: None, raw: Map::new() });
+            assert_eq!(validate_request(&request, 30000.0).unwrap_err(), "star_out_of_range: section star must be a finite number");
+        }
+        for json in ["{}", "{\"star\":null}", "{\"star\":\"3\"}", "{\"star\":3,\"controls\":{\"sections\":[{\"start_ms\":0,\"end_ms\":8000,\"star\":null}]}}"] {
+            let error = validate_request(&Request::from_json(json, 0, false).unwrap(), 30000.0).unwrap_err();
+            assert!(error.starts_with("star_out_of_range:"), "{error}");
+        }
+    }
 }

@@ -1,0 +1,459 @@
+[
+  {
+    "name": "empty",
+    "objects": [],
+    "star_rating": 0.0
+  },
+  {
+    "name": "one-note",
+    "objects": [
+      {
+        "lane": 2,
+        "start_ms": 1000
+      }
+    ],
+    "star_rating": 0.0
+  },
+  {
+    "name": "jack",
+    "objects": [
+      {
+        "lane": 0,
+        "start_ms": 1000
+      },
+      {
+        "lane": 0,
+        "start_ms": 1125
+      },
+      {
+        "lane": 0,
+        "start_ms": 1250
+      },
+      {
+        "lane": 0,
+        "start_ms": 1375
+      },
+      {
+        "lane": 0,
+        "start_ms": 1500
+      },
+      {
+        "lane": 0,
+        "start_ms": 1625
+      },
+      {
+        "lane": 0,
+        "start_ms": 1750
+      },
+      {
+        "lane": 0,
+        "start_ms": 1875
+      },
+      {
+        "lane": 0,
+        "start_ms": 2000
+      },
+      {
+        "lane": 0,
+        "start_ms": 2125
+      },
+      {
+        "lane": 0,
+        "start_ms": 2250
+      },
+      {
+        "lane": 0,
+        "start_ms": 2375
+      },
+      {
+        "lane": 0,
+        "start_ms": 2500
+      },
+      {
+        "lane": 0,
+        "start_ms": 2625
+      },
+      {
+        "lane": 0,
+        "start_ms": 2750
+      },
+      {
+        "lane": 0,
+        "start_ms": 2875
+      },
+      {
+        "lane": 0,
+        "start_ms": 3000
+      },
+      {
+        "lane": 0,
+        "start_ms": 3125
+      },
+      {
+        "lane": 0,
+        "start_ms": 3250
+      },
+      {
+        "lane": 0,
+        "start_ms": 3375
+      },
+      {
+        "lane": 0,
+        "start_ms": 3500
+      },
+      {
+        "lane": 0,
+        "start_ms": 3625
+      },
+      {
+        "lane": 0,
+        "start_ms": 3750
+      },
+      {
+        "lane": 0,
+        "start_ms": 3875
+      }
+    ],
+    "star_rating": 1.3821088923144136
+  },
+  {
+    "name": "stream",
+    "objects": [
+      {
+        "lane": 0,
+        "start_ms": 1000
+      },
+      {
+        "lane": 1,
+        "start_ms": 1100
+      },
+      {
+        "lane": 2,
+        "start_ms": 1200
+      },
+      {
+        "lane": 3,
+        "start_ms": 1300
+      },
+      {
+        "lane": 0,
+        "start_ms": 1400
+      },
+      {
+        "lane": 1,
+        "start_ms": 1500
+      },
+      {
+        "lane": 2,
+        "start_ms": 1600
+      },
+      {
+        "lane": 3,
+        "start_ms": 1700
+      },
+      {
+        "lane": 0,
+        "start_ms": 1800
+      },
+      {
+        "lane": 1,
+        "start_ms": 1900
+      },
+      {
+        "lane": 2,
+        "start_ms": 2000
+      },
+      {
+        "lane": 3,
+        "start_ms": 2100
+      },
+      {
+        "lane": 0,
+        "start_ms": 2200
+      },
+      {
+        "lane": 1,
+        "start_ms": 2300
+      },
+      {
+        "lane": 2,
+        "start_ms": 2400
+      },
+      {
+        "lane": 3,
+        "start_ms": 2500
+      },
+      {
+        "lane": 0,
+        "start_ms": 2600
+      },
+      {
+        "lane": 1,
+        "start_ms": 2700
+      },
+      {
+        "lane": 2,
+        "start_ms": 2800
+      },
+      {
+        "lane": 3,
+        "start_ms": 2900
+      },
+      {
+        "lane": 0,
+        "start_ms": 3000
+      },
+      {
+        "lane": 1,
+        "start_ms": 3100
+      },
+      {
+        "lane": 2,
+        "start_ms": 3200
+      },
+      {
+        "lane": 3,
+        "start_ms": 3300
+      },
+      {
+        "lane": 0,
+        "start_ms": 3400
+      },
+      {
+        "lane": 1,
+        "start_ms": 3500
+      },
+      {
+        "lane": 2,
+        "start_ms": 3600
+      },
+      {
+        "lane": 3,
+        "start_ms": 3700
+      },
+      {
+        "lane": 0,
+        "start_ms": 3800
+      },
+      {
+        "lane": 1,
+        "start_ms": 3900
+      },
+      {
+        "lane": 2,
+        "start_ms": 4000
+      },
+      {
+        "lane": 3,
+        "start_ms": 4100
+      }
+    ],
+    "star_rating": 1.1917432373899608
+  },
+  {
+    "name": "chords",
+    "objects": [
+      {
+        "lane": 0,
+        "start_ms": 1000
+      },
+      {
+        "lane": 2,
+        "start_ms": 1000
+      },
+      {
+        "lane": 1,
+        "start_ms": 1200
+      },
+      {
+        "lane": 3,
+        "start_ms": 1200
+      },
+      {
+        "lane": 0,
+        "start_ms": 1400
+      },
+      {
+        "lane": 2,
+        "start_ms": 1400
+      },
+      {
+        "lane": 1,
+        "start_ms": 1600
+      },
+      {
+        "lane": 3,
+        "start_ms": 1600
+      },
+      {
+        "lane": 0,
+        "start_ms": 1800
+      },
+      {
+        "lane": 2,
+        "start_ms": 1800
+      },
+      {
+        "lane": 1,
+        "start_ms": 2000
+      },
+      {
+        "lane": 3,
+        "start_ms": 2000
+      },
+      {
+        "lane": 0,
+        "start_ms": 2200
+      },
+      {
+        "lane": 2,
+        "start_ms": 2200
+      },
+      {
+        "lane": 1,
+        "start_ms": 2400
+      },
+      {
+        "lane": 3,
+        "start_ms": 2400
+      },
+      {
+        "lane": 0,
+        "start_ms": 2600
+      },
+      {
+        "lane": 2,
+        "start_ms": 2600
+      },
+      {
+        "lane": 1,
+        "start_ms": 2800
+      },
+      {
+        "lane": 3,
+        "start_ms": 2800
+      },
+      {
+        "lane": 0,
+        "start_ms": 3000
+      },
+      {
+        "lane": 2,
+        "start_ms": 3000
+      },
+      {
+        "lane": 1,
+        "start_ms": 3200
+      },
+      {
+        "lane": 3,
+        "start_ms": 3200
+      }
+    ],
+    "star_rating": 0.8803667065936105
+  },
+  {
+    "name": "overlapping-releases",
+    "objects": [
+      {
+        "lane": 0,
+        "start_ms": 1000,
+        "end_ms": 2000
+      },
+      {
+        "lane": 1,
+        "start_ms": 1100,
+        "end_ms": 1500
+      },
+      {
+        "lane": 2,
+        "start_ms": 1200,
+        "end_ms": 2025
+      },
+      {
+        "lane": 3,
+        "start_ms": 1300,
+        "end_ms": 1800
+      },
+      {
+        "lane": 1,
+        "start_ms": 1550,
+        "end_ms": 2050
+      },
+      {
+        "lane": 3,
+        "start_ms": 1850
+      },
+      {
+        "lane": 0,
+        "start_ms": 2100
+      }
+    ],
+    "star_rating": 0.4569061538211223
+  },
+  {
+    "name": "legacy-simultaneous",
+    "objects": [
+      {
+        "lane": 0,
+        "start_ms": 1000,
+        "end_ms": 1900
+      },
+      {
+        "lane": 1,
+        "start_ms": 1000,
+        "end_ms": 1300
+      },
+      {
+        "lane": 2,
+        "start_ms": 1000
+      },
+      {
+        "lane": 3,
+        "start_ms": 1000,
+        "end_ms": 2200
+      },
+      {
+        "lane": 2,
+        "start_ms": 1100,
+        "end_ms": 1700
+      },
+      {
+        "lane": 1,
+        "start_ms": 1400
+      },
+      {
+        "lane": 0,
+        "start_ms": 2000
+      },
+      {
+        "lane": 1,
+        "start_ms": 2000,
+        "end_ms": 2600
+      },
+      {
+        "lane": 2,
+        "start_ms": 2000,
+        "end_ms": 2400
+      },
+      {
+        "lane": 3,
+        "start_ms": 2300
+      },
+      {
+        "lane": 0,
+        "start_ms": 2500
+      },
+      {
+        "lane": 2,
+        "start_ms": 2500
+      }
+    ],
+    "star_rating": 0.7545548706241386
+  },
+  {
+    "name": "hesitation-snow",
+    "osu": "../generate/native-charts/hesitation-snow.osu",
+    "star_rating": 2.78122023258017
+  }
+]

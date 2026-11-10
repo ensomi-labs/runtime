@@ -307,6 +307,27 @@ impl WasmGenerator {
     }
 }
 
+/// osu!mania star rating (20241007), four keys at clock rate 1, independent of generation.
+#[wasm_bindgen(js_name = starRating)]
+pub fn star_rating(chart_json: &str) -> Result<f64, JsError> {
+    let chart: serde_json::Value = serde_json::from_str(chart_json).map_err(|e| error(e.to_string()))?;
+    let objects = chart["objects"].as_array().ok_or_else(|| error("Chart needs objects"))?;
+    let whole_ms = |value: &serde_json::Value| -> Result<u32, JsError> {
+        value.as_f64().filter(|n| n.is_finite() && n.fract() == 0.0 && *n >= 0.0 && *n <= u32::MAX as f64)
+            .map(|n| n as u32).ok_or_else(|| error("Chart times and lanes must be nonnegative u32 integers"))
+    };
+    let objects = objects.iter().map(|object| {
+        let lane = whole_ms(&object["lane"])?;
+        if lane >= 4 { return Err(error("Chart lanes must be 0 to 3")); }
+        Ok(ensomi_gameplay::ChartObject {
+            lane,
+            start_ms: whole_ms(&object["start_ms"])?,
+            end_ms: object.get("end_ms").map(whole_ms).transpose()?,
+        })
+    }).collect::<Result<Vec<_>, JsError>>()?;
+    Ok(ensomi_gameplay::star_rating(&objects))
+}
+
 /// Checks an `ensomi-package.json` (`ensomi_generate::package::check`) and returns what it describes:
 /// `{model: {id, name, version}, license, notices, files: [{path, size, sha256}], totalBytes, config}`. Throws naming
 /// what is wrong.

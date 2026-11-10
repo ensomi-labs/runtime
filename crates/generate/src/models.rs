@@ -3,6 +3,10 @@ use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
 
+/// The fitted prior and calibration bands used by the R2 pipeline.
+pub const MIN_BAND: u32 = 2;
+pub const MAX_BAND: u32 = 5;
+
 /// The `grid_fitter` section of `runtime.json`.
 #[derive(Clone, Deserialize)]
 pub struct FitterConfig {
@@ -396,8 +400,10 @@ impl Models {
         if self.calibration.difficulty_fit.domain.len() != 2 {
             return Err(invalid("calibration.difficulty_fit.domain", "needs two values"));
         }
-        // `generate` takes the band as the floor of a star in [2, 6), at most 5.
-        for band in ["2", "3", "4", "5"] {
+        // Generation clamps the floor of any finite star to these fitted bands.
+        for band in MIN_BAND..=MAX_BAND {
+            let band_key = band.to_string();
+            let band = band_key.as_str();
             let missing = |what: &str| invalid(what, format!("no band {band}"));
             let masks = self.calibration.masks.get(band).ok_or_else(|| missing("calibration.masks"))?;
             if masks.jack_run_caps.len() <= masks.gap_tercile_edges_ms.len() {

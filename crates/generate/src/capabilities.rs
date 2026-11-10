@@ -12,6 +12,9 @@ pub const MODEL_ID: &str = "ensomi-r2";
 pub const PIPELINE_ID: &str = "r2";
 pub const PIPELINE_VERSION: u64 = 1;
 
+/// `min_star` and `max_star_exclusive` describe the fitted range, which interfaces may recommend.
+/// Any finite star is accepted; outside the range generation uses the nearest fitted settings,
+/// so the chart's measured star need not follow the request.
 pub fn capabilities(paths: &[String]) -> Value {
     let control = |name: &str, status: u32, note: &str| json!({"name": name, "status": status, "note": note});
     json!({
