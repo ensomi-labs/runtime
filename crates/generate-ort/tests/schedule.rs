@@ -139,3 +139,29 @@ fn a_request_that_changes_the_seed_audio_or_metadata_is_refused() {
     let receipt = &running.result().unwrap().receipt;
     assert_eq!((receipt.star, receipt.seed), (3.0, 0));
 }
+
+#[test]
+fn finite_stars_outside_the_fit_generate_once_with_nearest_settings_in_both_modes() {
+    let Some((models, mut sessions)) = model() else { return };
+    eprintln!("model present: testing open star requests and whole-chart/ahead-of-play parity");
+    let mut prepared = scheduler(&models, audio(), request(FIRST, 7), Mode::WholeChart);
+    drive(&mut prepared, &mut sessions, |_, _| {});
+    let source = prepared.prepared().unwrap();
+    let mut charts = Vec::new();
+    for star in [0.3, 1.0, 2.0, 5.875, 6.0, 9.0] {
+        let json = format!("{{\"star\":{star}}}");
+        let mut whole = scheduler(&models, Source::Prepared(source.clone()), request(&json, 7), Mode::WholeChart);
+        drive(&mut whole, &mut sessions, |_, _| {});
+        let mut streamed = scheduler(&models, Source::Prepared(source.clone()), request(&json, 7), Mode::AheadOfPlay);
+        drive(&mut streamed, &mut sessions, |_, _| {});
+        let result = whole.result().unwrap();
+        assert_eq!(result.osu, streamed.result().unwrap().osu, "star {star}");
+        let receipt: serde_json::Value = serde_json::from_str(&result.receipt.receipt_json).unwrap();
+        assert_eq!(receipt["controls"]["difficulty"]["passes"].as_array().unwrap().len(), 1);
+        charts.push(result.chart.objects.iter().map(|o| (o.lane, o.start_ms, o.end_ms)).collect::<Vec<_>>());
+    }
+    assert_eq!(charts[0], charts[2], "0.3 vs 2.0");
+    assert_eq!(charts[1], charts[2], "1.0 vs 2.0");
+    assert_eq!(charts[4], charts[3], "6.0 vs 5.875");
+    assert_eq!(charts[5], charts[3], "9.0 vs 5.875");
+}

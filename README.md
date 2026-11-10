@@ -59,6 +59,18 @@ same chart. The published Python R2 (`r2-1.0`) arranged a song a second time whe
 star's difficulty target by more than the difficulty fit's seed spread; where it did, its chart differs from this
 runtime's. The receipt's `controls.difficulty` records the miss.
 
+
+Any finite requested star is accepted, including section stars. Capabilities' `min_star` (2) and
+`max_star_exclusive` (6) describe the range the model was fitted on, which interfaces may recommend.
+Outside it the generator uses its nearest fitted settings; a chart's measured star need not follow the
+request. With the same seed and other inputs, requests at or above 5.875 produce the 5.875 chart,
+and requests at or below 2.125 produce the 2.0 chart. Generation stays one pass in both whole-chart
+and ahead-of-play modes. Interfaces choose their offered range and perform any search themselves.
+
+`star_rating` in the gameplay core measures osu!mania difficulty (20241007), four keys at clock rate 1.
+The free `starRating` function in Swift, Kotlin and JavaScript measures generated or imported charts;
+it is independent of generation and does not change receipts. See [`conformance/star`](conformance/star/README.md).
+
 The TypeScript runtime in `ensomi-web/packages/runtime` is retired: ensomi-web serves the Wasm build of this core.
 A comparison with its charts holds only where it arranged the song once, as this runtime always does.
 

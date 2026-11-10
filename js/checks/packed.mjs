@@ -8,12 +8,16 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { loadModels, generateChart, noticeFiles } from '@ensomi/runtime';
+import { loadModels, generateChart, noticeFiles, starRating } from '@ensomi/runtime';
 import { Recording, parseOsu } from './recording.mjs';
 
 const args = process.argv.slice(2), option = (name) => args[args.indexOf(name) + 1];
 const fixture = JSON.parse(await readFile(`${option('--chart')}.json`, 'utf8'));
 const expected = parseOsu(await readFile(`${option('--chart')}.osu`, 'utf8'));
+
+const expectedStar = await starRating({ duration_ms: Math.max(...expected.map(o => o.end_ms ?? o.start_ms)), objects: expected });
+if (option('--chart').endsWith('hesitation-snow') && Math.abs(expectedStar / 2.78122023258017 - 1) > 1e-9)
+    throw new Error(`Unexpected hesitation-snow star: ${expectedStar}`);
 
 const recording = await Recording.open(option('--recording'));
 const audio = await recording.event('audio');
@@ -34,7 +38,9 @@ const start = performance.now();
 const result = await generateChart(models, pcm, Number(audio.sample_rate[0]), { ...fixture.request, seed: fixture.seed });
 const seconds = (performance.now() - start) / 1000;
 await models.dispose();
+const star = await starRating(result.chart);
+if (Math.abs(star / expectedStar - 1) > 1e-9) throw new Error(`Star rating differs: ${star} vs ${expectedStar}`);
 const same = JSON.stringify(result.chart.objects) === JSON.stringify(expected);
-console.log(JSON.stringify({ sample_rate: Number(audio.sample_rate[0]), objects: result.chart.objects.length, expected: expected.length, same_hit_objects: same, notices, seconds }));
+console.log(JSON.stringify({ sample_rate: Number(audio.sample_rate[0]), objects: result.chart.objects.length, expected: expected.length, same_hit_objects: same, star_rating: star, notices, seconds }));
 if (!same || notices.length === 0 || JSON.stringify(notices) !== JSON.stringify(named))
     process.exitCode = 1;

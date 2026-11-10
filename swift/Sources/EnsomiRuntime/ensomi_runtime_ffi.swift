@@ -2366,7 +2366,8 @@ public func FfiConverterTypeControlCapability_lower(_ value: ControlCapability) 
  */
 public struct GenerateChartRequest: Equatable, Hashable {
     /**
-     * Star rating of the whole chart, within the capabilities' range.
+     * Requested whole-chart star; any finite number. Capabilities give the fitted, recommended range.
+     * Outside it the nearest fitted settings are used; measure the result with `star_rating`.
      */
     public var star: Double
     /**
@@ -2389,7 +2390,8 @@ public struct GenerateChartRequest: Equatable, Hashable {
     // declare one manually.
     public init(
         /**
-         * Star rating of the whole chart, within the capabilities' range.
+         * Requested whole-chart star; any finite number. Capabilities give the fitted, recommended range.
+         * Outside it the nearest fitted settings are used; measure the result with `star_rating`.
          */star: Double, 
         /**
          * The same model, PCM, star, controls and seed give the same chart on one device with the same options.
@@ -3138,7 +3140,8 @@ public struct ModelCapabilities: Equatable, Hashable {
     public var modelVersion: String
     public var files: [ModelFile]
     /**
-     * Accepted star range: `min_star <= star < max_star_exclusive`.
+     * Range the model was fitted on; interfaces may recommend it. Any finite star is accepted.
+     * Outside it the nearest fitted settings are used, so measured star need not follow the request.
      */
     public var minStar: Double
     public var maxStarExclusive: Double
@@ -3148,7 +3151,8 @@ public struct ModelCapabilities: Equatable, Hashable {
     // declare one manually.
     public init(modelName: String, modelVersion: String, files: [ModelFile], 
         /**
-         * Accepted star range: `min_star <= star < max_star_exclusive`.
+         * Range the model was fitted on; interfaces may recommend it. Any finite star is accepted.
+         * Outside it the nearest fitted settings are used, so measured star need not follow the request.
          */minStar: Double, maxStarExclusive: Double, controls: [ControlCapability]) {
         self.modelName = modelName
         self.modelVersion = modelVersion
@@ -5180,7 +5184,7 @@ public func FfiConverterTypeSchedulerAction_lower(_ value: SchedulerAction) -> R
 public enum SectionTarget: Equatable, Hashable {
     
     /**
-     * Star rating for this span alone.
+     * Requested star for this span alone; any finite number.
      */
     case star(star: Double
     )
@@ -6132,6 +6136,17 @@ public func parseOsu(text: String)throws  -> OsuBeatmap  {
 })
 }
 /**
+ * osu!mania star rating (20241007), four keys at clock rate 1, independent of generation.
+ * Returns NaN if an object has a lane outside 0 to 3.
+ */
+public func starRating(chart: Chart) -> Double  {
+    return try!  FfiConverterDouble.lift(try! rustCall() {
+    uniffi_ensomi_runtime_ffi_fn_func_star_rating(
+        FfiConverterTypeChart_lower(chart),$0
+    )
+})
+}
+/**
  * What the player is shown for a tier.
  */
 public func tierJudgement(tier: Tier) -> Judgement  {
@@ -6213,6 +6228,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_func_parse_osu() != 25651) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_func_star_rating() != 63869) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_func_tier_judgement() != 59231) {

@@ -29,7 +29,8 @@
     "onnxruntime-web": "1.23.2"
   },
   "scripts": {
-    "build": "cd .. && scripts/wasm-build.sh"
+    "build": "cd .. && scripts/wasm-build.sh",
+    "check": "node checks/star.mjs && node checks/lazy-core.mjs"
   },
   "publishConfig": {
     "access": "public",

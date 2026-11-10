@@ -393,6 +393,16 @@ pub fn parse_osu(text: String) -> Result<OsuBeatmap, OsuError> {
     gameplay::parse_osu(&text)
 }
 
+/// osu!mania star rating (20241007), four keys at clock rate 1, independent of generation.
+/// Returns NaN if an object has a lane outside 0 to 3.
+#[uniffi::export]
+pub fn star_rating(chart: Chart) -> f64 {
+    if chart.objects.iter().any(|object| object.lane >= 4) {
+        return f64::NAN;
+    }
+    gameplay::star_rating(&chart.objects)
+}
+
 /// What the player is shown for a tier.
 #[uniffi::export]
 pub fn tier_judgement(tier: Tier) -> Judgement {
