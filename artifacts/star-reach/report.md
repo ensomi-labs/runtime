@@ -234,6 +234,21 @@ those requests to 2.125 or 5.875 while preserving the literal requests and
 all six logical generations in search traces. It is a computation shortcut,
 not a changed search rule. Controls are unchanged throughout.
 
+## Additional search comparison (committed before its runs)
+
+After Q1 established exact endpoint equality, add one model-aware search
+rule, `bounded`: initialize `r = clamp(T, 2.125, 5.875)` and clamp every
+secant update to that same interval instead of `T ± 3`. All other logic,
+including N=6, tol=0.05, slope bounds [0.5,2], saturation delta 0.01,
+seed increments and earliest ties, stays unchanged. Its first chart must
+match the original algorithm's first chart. The bounds come from the model
+table and Q1 equality, not tuning search errors. This tests the specific
+hypothesis that avoiding known-equivalent requests saves a useful try.
+The original three algorithms remain required comparisons. Judge this
+follow-up by the same median-error, p90 and mean-generation gate. It uses
+the same panel and therefore requires independent replication before a
+population claim; it is not a new held-out validation set.
+
 ## Results
 
 Baseline complete; lever and search results pending. Before the lever arms,
