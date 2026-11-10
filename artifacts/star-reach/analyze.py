@@ -193,6 +193,6 @@ def main():
             lines.append(table(['Target','Rule','n','Error median','Error p90','≤.05','≤.15','Mean generations','Saturated'],[[str(s['target']),s['rule'],s['n'],fmt(s['median']),fmt(s['p90']),fmt(s['within_005']),fmt(s['within_015']),('1' if s['rule']=='first' else fmt(s['generations'],2)),('—' if s['rule']=='first' else fmt(s['saturated']))] for s in search_summaries if s['build']==build]))
         dump(a.out/'aggregate-search.json',search_summaries)
     (a.out/'results.md').write_text('\n'.join(lines))
-    print(json.dumps(dict(baseline_plateau=plateau,null_spread=null,slope=slope,arms=len(verdicts)//2,search_cases=len(searches))))
+    print(json.dumps(dict(baseline_plateau=plateau,null_spread=null,slope=slope,arms=len({v['arm'] for v in verdicts}),search_cases=len(searches))))
 
 if __name__=='__main__':main()

@@ -128,6 +128,23 @@
     "gate": false
   },
   {
+    "arm": "overall+direct",
+    "end": "high",
+    "endpoint": 9.0,
+    "endpoint_star": 6.780821177404473,
+    "paired_movement": 1.4789604840910182,
+    "null_spread": 0.351172842500016,
+    "monotone": true,
+    "envelope_failures": 66,
+    "indicators": {
+      "min_reattack": 54,
+      "fallback_per_1000": 20,
+      "ln_share": 17,
+      "nps": 27
+    },
+    "gate": false
+  },
+  {
     "arm": "q_outer",
     "end": "low",
     "endpoint": 1.0,

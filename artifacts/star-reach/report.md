@@ -254,6 +254,16 @@ population claim; it is not a new held-out validation set.
 
 ## Results
 
+The selected `overall+direct` hard-end combination reaches a 6.780821-star
+median at request 9, paired movement 1.478960, and is monotone, but fails
+structural bounds. All non-mask routes therefore stall under the gate.
+The preregistered final mask arm is now authorized by that result: test
+`masks` alone at both ends, `end_segment+masks` at the easy end, and
+`overall+masks` at the hard end. These are the largest individual rows
+movements at the respective ends. The 200/50 ms floors and high-end quad
+cap 2 are invented limits, not fitted evidence of playability.
+
+
 Single-arm results were read only after all 12 songs completed and the exact
 q=0.1 rerun confirmed 24/24 identical charts and ratings. No single arm
 passes. Following the preregistered combination rule, test `overall+direct`

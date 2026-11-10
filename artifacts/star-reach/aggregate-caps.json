@@ -110,6 +110,20 @@
     "dense_grid_checked": true
   },
   {
+    "arm": "overall+direct",
+    "end": "high",
+    "safe_cap": 5.875,
+    "star": 5.266011783340246,
+    "paired_movement": 0.0,
+    "first_failure": 6.5,
+    "reason": [
+      "envelope"
+    ],
+    "unchanged_interior_monotone": true,
+    "preliminary_gate": false,
+    "dense_grid_checked": true
+  },
+  {
     "arm": "q_outer",
     "end": "low",
     "safe_cap": 2.125,
