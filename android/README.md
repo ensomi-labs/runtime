@@ -18,6 +18,15 @@ that both native libraries have 16 KiB LOAD alignment. The AAR includes compiled
 (exposed as `onnxRuntimeLicenseAssets`) and Sonalign's notice at `assets/licenses/sonalign/LICENSE`. It is a local build,
 with no Android CI or release asset yet.
 
+`scripts/check-no-kleidiai.py` gates `libensomi_runtime_ffi.so` immediately after the native build and again
+after extraction from the completed AAR, before promoting it to `build/android/ensomi-runtime.aar`.
+It requires ELF64 AArch64 with executable `.text` and rejects KleidiAI kernel strings or decoded SME streaming,
+matrix and predicate-as-counter instructions, while permitting the harmless `UseKleidiAI` stub name.
+Android 0.2.1 shipped an older library whose KleidiAI kernel faulted at `ptrue pn9.b` after `smstart` on an
+SME CPU without SME2. Missing libraries, extraction failures and checker/tool errors fail the build.
+This enforces the policy against the removed kernels; it is not a general proof of CPU compatibility.
+The Android app carries the same checker; change the two files together and verify both positive and negative controls.
+
 `build-onnxruntime-android.sh` builds ONNX Runtime 1.23.2 (the version selected by `ort-sys` rc.11) from a pinned
 commit with the same NDK and API level. Pyke's rc.11 Android archive contains GNU libstdc++ references and
 fails to load on Android. The source build and its private CMake 3.31.10 / Ninja 1.13.0 venv are cached under

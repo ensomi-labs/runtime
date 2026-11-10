@@ -13,6 +13,7 @@ lib=ensomi_runtime_ffi
 export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
 export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/30.0.16248370"
 export JAVA_HOME="${JAVA_HOME:-/Applications/Android Studio.app/Contents/jbr/Contents/Home}"
+llvm_bin="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/darwin-x86_64/bin"
 
 scripts/build-onnxruntime-android.sh
 ort_dir=$(cd "$target_dir/onnxruntime-android/build" && pwd)
@@ -24,11 +25,13 @@ ORT_LIB_LOCATION="$ort_dir" \
 CARGO_TARGET_AARCH64_LINUX_ANDROID_RUSTFLAGS="${CARGO_TARGET_AARCH64_LINUX_ANDROID_RUSTFLAGS:-} -C link-arg=-Wl,-z,max-page-size=16384 -C link-arg=-Wl,--no-undefined -C link-arg=-Wl,--build-id=sha1" \
   cargo ndk -t arm64-v8a -P 24 --link-libcxx-shared -o "$work/jni" \
   build --locked --release -p ensomi-runtime-ffi --features sync
+echo "Checking native library for removed KleidiAI/SME code"
+python3 scripts/check-no-kleidiai.py "$llvm_bin" "$work/jni/arm64-v8a/lib$lib.so"
 # Sonalign also declares a cdylib, which cargo-ndk copies here. The runtime links it statically and never loads this one.
 rm -f "$work/jni/arm64-v8a/"libsonalign*.so
 
 # Check every native library, including the NDK's shared C++ runtime.
-readelf="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-readelf"
+readelf="$llvm_bin/llvm-readelf"
 for so in "$work/jni/arm64-v8a/"*.so; do
   echo "$so"
   "$readelf" -lW "$so" | awk '
@@ -49,5 +52,10 @@ cp -R licenses/onnxruntime licenses/sonalign "$work/assets/licenses/"
 shasum -a 256 assets/resampler/* | shasum -a 256 | awk '{print $1}' > "$work/assets/resampler.sha256"
 
 android/gradlew -p android --no-daemon assembleRelease
-cp "$work/gradle/outputs/aar/ensomi-runtime-release.aar" "$work/ensomi-runtime.aar"
+aar="$work/gradle/outputs/aar/ensomi-runtime-release.aar"
+mkdir -p "$work/verify-aar"
+unzip -p "$aar" "jni/arm64-v8a/lib$lib.so" > "$work/verify-aar/lib$lib.so"
+echo "Checking AAR library for removed KleidiAI/SME code"
+python3 scripts/check-no-kleidiai.py "$llvm_bin" "$work/verify-aar/lib$lib.so"
+cp "$aar" "$work/ensomi-runtime.aar"
 shasum -a 256 "$work/ensomi-runtime.aar"
