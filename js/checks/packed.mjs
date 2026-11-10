@@ -15,7 +15,7 @@ const args = process.argv.slice(2), option = (name) => args[args.indexOf(name) +
 const fixture = JSON.parse(await readFile(`${option('--chart')}.json`, 'utf8'));
 const expected = parseOsu(await readFile(`${option('--chart')}.osu`, 'utf8'));
 
-const expectedStar = starRating({ duration_ms: Math.max(...expected.map(o => o.end_ms ?? o.start_ms)), objects: expected });
+const expectedStar = await starRating({ duration_ms: Math.max(...expected.map(o => o.end_ms ?? o.start_ms)), objects: expected });
 if (option('--chart').endsWith('hesitation-snow') && Math.abs(expectedStar / 2.78122023258017 - 1) > 1e-9)
     throw new Error(`Unexpected hesitation-snow star: ${expectedStar}`);
 
@@ -38,7 +38,7 @@ const start = performance.now();
 const result = await generateChart(models, pcm, Number(audio.sample_rate[0]), { ...fixture.request, seed: fixture.seed });
 const seconds = (performance.now() - start) / 1000;
 await models.dispose();
-const star = starRating(result.chart);
+const star = await starRating(result.chart);
 if (Math.abs(star / expectedStar - 1) > 1e-9) throw new Error(`Star rating differs: ${star} vs ${expectedStar}`);
 const same = JSON.stringify(result.chart.objects) === JSON.stringify(expected);
 console.log(JSON.stringify({ sample_rate: Number(audio.sample_rate[0]), objects: result.chart.objects.length, expected: expected.length, same_hit_objects: same, star_rating: star, notices, seconds }));

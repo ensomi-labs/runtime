@@ -86,7 +86,7 @@ request. With the same seed and other inputs, requests at or above 5.875 produce
 and requests at or below 2.125 produce the 2.0 chart. Generation stays one pass in both whole-chart
 and ahead-of-play modes. Interfaces choose their offered range and perform any search themselves.
 
-Use `starRating(result.chart)` (a synchronous function) to measure osu!mania star rating (20241007), four keys at clock rate 1,
-for a generated or imported chart. This is independent of generation and leaves receipts unchanged.
-The package compiles its default Wasm core during module import so the calculator can return a number synchronously.
-The first calculation initializes it unless a core has already been selected through `loadModels`.
+Use `await starRating(result.chart)` to measure osu!mania star rating (20241007), four keys at clock rate 1,
+for a generated or imported chart. It returns a `Promise<number>` and rejects if a lane is outside 0 to 3.
+This is independent of generation and leaves receipts unchanged.
+Loads the package's Wasm core if no `loadModels` has. Importing the package performs no fetch, file read or Wasm compilation.

@@ -264,5 +264,6 @@ export declare class ChartScheduler {
 export declare function decodeAudio(arrayBuffer: ArrayBuffer): Promise<DecodedAudio>;
 export declare function validateChart(chart: Chart): void;
 
-/** osu!mania star rating (20241007), four keys at clock rate 1; independent of generation. */
-export declare function starRating(chart: Chart): number;
+/** osu!mania star rating (20241007), four keys at clock rate 1; independent of generation.
+ * Loads the package's Wasm core if no `loadModels` has. Rejects if a lane is outside 0 to 3. */
+export declare function starRating(chart: Chart): Promise<number>;
