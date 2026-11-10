@@ -114,6 +114,126 @@ if its paired median error and p90 are no worse, at least one improves,
 and mean logical budget is no greater; otherwise state the tradeoff.
 No tuning on this sample presented as an independent validation.
 
+## Method and provenance
+
+The preregistration above was committed as `7f429ef`, before generating any
+charts. A final proposed curve must also be non-decreasing on the unchanged
+in-table baseline points; the per-end tables below are screening tests, not
+a waiver of the full-curve gate. This clarification was written before any
+lever arms ran.
+
+The frozen manifest SHA-256 is
+`49e43483dfeb4f5a011d0a1c97dbe51e5146d9b09ec725b0ca1fbe117ca28662`.
+Selection found 467 eligible distinct held-out recordings and chose eight
+with eight distinct corpus group IDs. Their source annotations span
+58–270 BPM, 54.473–267.555 seconds and 1.445–26.047 notes/second. These are
+selection metadata, not output measurements. The actual twelve full audio
+recordings span 60.0–273.9 seconds. No cropping or post-generation selection.
+No per-song table from the private corpus is included here.
+
+The four published inputs use the recorded float64 PCM, channels averaged
+in float64 then rounded to mono float32, at each recording's rate. Held-out
+audio is decoded by ffmpeg to mono float32 at 44100 Hz. The native public
+`prepare` API runs once per song; its `Prepared` bytes are reused by
+`generate_prepared`. Every candidate uses one arrangement pass, default
+natural long notes, no sections or pattern requests. CPU ONNX Runtime runs
+the chart graphs on one intra-op thread; BeatThis uses the performance
+cores during preparation. Device: Apple M5, 24 GiB RAM, macOS 27.0.
+Concurrent jobs make these timings unsuitable as standalone latency claims.
+
+The pinned calculator reproduces the published examples:
+Adventure 4.6336314444, Catch the Moment 3.5713266497,
+Hesitation Snow 2.7325226611, Saigetsu 3.1917039504.
+These are consistency checks against known outputs, not human validation
+of star as perceived difficulty. Hand-counted checks cover chords, LN
+share, reattacks, empty beats, lane collapse, rounded beat boundaries and
+a fractional multi-segment grid. The envelope has no human-labelled
+validation: passing it only means no listed warning exceeded its bound.
+
+Head rows mean distinct exported head timestamps; chord size counts heads,
+not held lanes. LN share counts LN heads among all notes. Reattack means
+head-to-head in one lane. NPS divides by the entire audio duration, including
+silence. Empty beats use the rows model's whole-beat grid and include partial
+edge beats; a 0.501 ms allowance assigns rounded heads to their intended
+beat. Longest head-free gap includes both song ends. These definitions can
+characterize a chart's structure but cannot judge its musicality.
+
+Builds:
+
+| Purpose | Source |
+| --- | --- |
+| Start | `edf4066` (`origin/main` at job start) |
+| Only product behaviour change | `4c94563`: finite stars, band clamped to 2–5 |
+| Baseline worker | `5ed87d8`, with the core exactly at `4c94563` |
+| Opt-in lever worker | `d663b6b` |
+| Measurement writer fix / aggregation | `4a84b0d` |
+| Search plateau memoization | `fe64a94` |
+
+The first baseline attempt exposed a Python result-writing collision between
+requested and measured `star`; it stopped before producing any sweep table.
+`4a84b0d` separates those fields, and the baseline sweep was restarted. No
+arms or selection decisions used that failed attempt. `builds.json` in the
+private directory records binary and runtime-config SHA-256 hashes.
+
+Code reading confirms the supplied mechanism: clamped 16-point rows
+workload table, band-only priors/masks/quantiles, fitted multiplier clipped
+to [0.8,1.2], zero R2 conditions, and seeds `s` / `s+954` (low 32 bits).
+The overall rows slope is 0.4999019906 log-workload/star; end slopes are
+0.7929525934 below and 0.4829161723 above. The multiplier lower bound is
+already 0.8; `direct` explicitly blends the chosen multiplier toward 0.8
+or 1.3 to measure the head-count lever without a quantile/clamp confound.
+`ceiling` only raises the allowed upper edge. The model's calibration
+`per_m` says fallback support holds through 1.3 and fails from 1.45; this
+experiment never requests a multiplier outside [0.8,1.3]. The receipt
+contains `clamped` and `above_tested_band`, but does not carry `per_m`;
+that support statement comes from the package, not each generated chart.
+
+The requested cross-repository sweep found the old range in the model
+README, released-system report/Python entry point, runtime validation and
+capabilities metadata, and the Hub card. No applicable range contract was
+found in the protocol or beatmap-lens. The separate `codex/star-open` job
+owns the product's metadata/UI/documentation rollout. This experiment
+changes no client pin, model file, release, tag, or published card.
+The runtime and model sources are respectively
+[the starting pipeline](https://github.com/ensomi-labs/runtime/blob/edf4066/crates/generate/src/generate.rs)
+and [the pinned calculator](https://github.com/ensomi-labs/ensomi-model/blob/r2-1.0.1/src/ensomi_model/osu_core/difficulty.py).
+
+## Reproduction
+
+From the repository root. `select` needs numpy and pyarrow (available in the
+model checkout's venv); all other Python drivers use the standard library.
+`select` refuses to overwrite its frozen manifest. Use a fresh private
+output directory for a new sample. Reuse this run's manifest/prepared files
+to reproduce these exact songs. Do not put that directory inside this public
+repository. Build the baseline at `5ed87d8` in a separate worktree to compare
+with the saved experiment build; both binaries must use the same model.
+
+```sh
+MODEL="$HOME/ensomi/ensomi-model"
+OUT="$MODEL/artifacts/star-reach-20261110"
+cargo build --release -p ensomi-generate-ort --example star-reach
+# Keep each compiled binary under target/ before changing source commits.
+"$MODEL/.venv/bin/python" artifacts/star-reach/run.py select --model-repo "$MODEL" --private "$OUT"
+python3 artifacts/star-reach/run.py validate --model-repo "$MODEL" --private "$OUT"
+python3 artifacts/star-reach/run.py prepare --model-repo "$MODEL" --private "$OUT" --binary target/star-reach-baseline
+python3 artifacts/star-reach/run.py sweep --model-repo "$MODEL" --private "$OUT" --binary target/star-reach-baseline --run baseline
+python3 artifacts/star-reach/analyze.py --private "$OUT" --freeze-envelope
+python3 artifacts/star-reach/run.py sweep --model-repo "$MODEL" --private "$OUT" --binary target/star-reach-arms --run single-arms --arms overall,end_segment,q_tested,q_outer,ceiling,direct
+python3 artifacts/star-reach/run.py search --model-repo "$MODEL" --private "$OUT" --binary target/star-reach-baseline --run baseline --cache-baseline-plateaus
+python3 artifacts/star-reach/parity.py --model-repo "$MODEL" --private "$OUT" --binary target/star-reach-arms
+python3 artifacts/star-reach/analyze.py --private "$OUT"
+python3 -m unittest discover -s artifacts/star-reach -p 'test_*.py'
+cargo clippy --locked --workspace --all-targets -- -D warnings
+cargo test --locked --workspace
+```
+
+`--assets`, `--onnx`, `--jobs`, `--songs`, `--arms` and `--full-grid` are
+explicit driver arguments. The search's plateau cache is allowed only after
+the complete Q1 sweep proves equal hit objects at each end. It canonicalizes
+those requests to 2.125 or 5.875 while preserving the literal requests and
+all six logical generations in search traces. It is a computation shortcut,
+not a changed search rule. Controls are unchanged throughout.
+
 ## Results
 
 Pending. Private per-song data, charts and prepared audio stay under
