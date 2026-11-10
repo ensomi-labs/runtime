@@ -11,7 +11,7 @@ and keep only what is specific to their platform.
 | Messages between programs | chart, generation, capabilities, chart stream (unreleased) | [EnsomiProtocol](https://github.com/ensomi-labs/protocol) |
 | Model package | the manifest `ensomi-package.json`, format `ensomi-package/1` ([`docs/model-package.md`](docs/model-package.md)), which this runtime alone interprets; `runtime.json` and the files it names | the released model's `onnx/` directory (`sed-i/ensomi-r2`) |
 | Conformance fixtures | inputs and expected outputs any implementation must reproduce | `conformance/` |
-| Core | gameplay rules with their ruleset, input events, judgement events and score, clock and offset arithmetic, note layout, chart sources, the generator's host pipeline | `crates/` |
+| Core | gameplay rules with their ruleset, input events, judgement events and score, clock and offset arithmetic, note layout, chart sources, the generator's host pipeline, live audio sync for Android | `crates/` |
 | Compute | the published ONNX graphs, run by ONNX Runtime with the platform's execution provider | each binding |
 | Platform shell | audio codec, audio output and its clock, timestamped input, display link, rendering, UI, storage, model download | each app |
 
@@ -33,18 +33,23 @@ Rules that keep the boundary:
 | Clients | Package | Built by |
 | --- | --- | --- |
 | macOS 14, iOS 17 | Swift package `EnsomiRuntime` ([`Package.swift`](Package.swift), [`swift/`](swift)); the xcframework is a release asset | `scripts/build-apple.sh` |
+| Android 13 (API 33), arm64-v8a | local AAR `ensomi-runtime.aar` ([`android/`](android)); built on macOS only for now | `scripts/build-android.sh` |
 | Web (Chrome 91, Firefox 89, Safari 16.4), Node | npm `@ensomi/runtime` ([`js/`](js)) | `scripts/wasm-build.sh` |
 
 The Wasm core is built with WebAssembly SIMD (`simd128`), which onnxruntime-web's own Wasm needs as well; the browser
 versions are the first with it.
 
-Both packages carry the soxr tables in [`assets/resampler`](assets/resampler), with which the generator resamples PCM at
+The packages carry the soxr tables in [`assets/resampler`](assets/resampler), with which the generator resamples PCM at
 rates other than 22050 Hz. Releases: [`RELEASING.md`](RELEASING.md).
 
-Both also run the audio stages alone (`prepare`, whose result is stored as bytes per song) and a scheduler that
+They also run the audio stages alone (`prepare`, whose result is stored as bytes per song) and a scheduler that
 generates for play: R2's arrangement committed per head row, and play allowed to start once it cannot overtake the
 chart ([`swift/README.md`](swift/README.md), [`js/README.md`](js/README.md)). The scheduler is in the core without IO
 (`crates/generate/src/schedule.rs`); natively its pages go into the gameplay session inside Rust.
+
+Live audio sync is in the core too (`crates/sync`): the features and session around
+[Sonalign](https://github.com/ensomi-labs/sonalign), pinned exactly, for clients that do not have the Swift app's. Only
+the Android build carries it ([`android/README.md`](android/README.md)); Apple apps link Sonalign as a Swift package.
 
 Requests during generation: the scheduler takes a new request for the chart in progress (`Event::Request`), for play
 in which game events change the coming chart, with or without Sonalign: a multiplayer attack on another player's
@@ -73,6 +78,18 @@ it is independent of generation and does not change receipts. See [`conformance/
 
 The TypeScript runtime in `ensomi-web/packages/runtime` is retired: ensomi-web serves the Wasm build of this core.
 A comparison with its charts holds only where it arranged the song once, as this runtime always does.
+
+## Android build (macOS only for now)
+
+```sh
+scripts/build-android.sh
+```
+
+Builds `build/android/ensomi-runtime.aar` for arm64-v8a and keeps its generated Kotlin source beside it.
+The AAR carries the native libraries, resampler tables and ONNX Runtime notices. The app consumes this one
+local file and declares JNA 5.19.1 and kotlinx-coroutines-core 1.11.0. There is no Android CI or release asset yet.
+[Android build and usage](android/README.md) covers prerequisites, the byte PCM APIs, the 8 MiB worker
+helper and the emulator tests.
 
 ## Licence
 

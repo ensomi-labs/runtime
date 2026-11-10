@@ -6,7 +6,7 @@
 //! blocked or running `work()` after its current graph run. `request` changes the chart's controls; `work()` leaves
 //! the scheduler free while a graph runs, so `request` waits at most for the current step of the core's own work.
 
-use crate::generator::{chart_result, clock, core_request, generation_error, panic_error, ChartGenerator, ChartResult, GenerateChartRequest, GeneratorError, Prepared};
+use crate::generator::{chart_result, clock, core_request, generation_error, panic_error, pcm_f32le, ChartGenerator, ChartResult, GenerateChartRequest, GeneratorError, Prepared};
 use crate::{lock, GameplaySession};
 use ensomi_gameplay::{ChartToken, Ruleset, TokenKind};
 use ensomi_generate::{Action, Event, Lead, Mode, Options, Scheduler, Source};
@@ -145,6 +145,13 @@ impl ChartScheduler {
     pub fn from_pcm(generator: Arc<ChartGenerator>, pcm: Vec<f32>, sample_rate: f64, request: GenerateChartRequest, mode: ScheduleMode, lead: LeadPolicy) -> Result<Arc<Self>, GeneratorError> {
         let audio = generator.audio(pcm, sample_rate)?;
         Self::new(generator, Source::Audio(audio), request, mode, lead)
+    }
+
+    /// `from_pcm` with mono PCM encoded as little-endian f32 bytes. A partial sample returns
+    /// `GeneratorError::Generation`.
+    #[uniffi::constructor]
+    pub fn from_pcm_f32le(generator: Arc<ChartGenerator>, pcm: Vec<u8>, sample_rate: f64, request: GenerateChartRequest, mode: ScheduleMode, lead: LeadPolicy) -> Result<Arc<Self>, GeneratorError> {
+        Self::from_pcm(generator, pcm_f32le(pcm)?, sample_rate, request, mode, lead)
     }
 
     /// From a stored `Prepared` of the song, without the audio stages.

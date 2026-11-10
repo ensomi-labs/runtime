@@ -30,8 +30,8 @@ pub struct Config {
     /// Intra-op threads of the named graphs' sessions, in place of `threads`. The native clients give BeatThis
     /// ([`BEATTHIS_GRAPH`]) the device's performance cores ([`performance_cores`]).
     pub graph_threads: BTreeMap<String, usize>,
-    /// Whether ONNX Runtime keeps memory for the next run (the CPU arena and memory patterns, its
-    /// defaults). Off lowers the peak footprint.
+    /// Whether ONNX Runtime keeps memory for the next run (the CPU arena, and memory patterns outside
+    /// Android). Off lowers the peak footprint.
     pub reuse_memory: bool,
 }
 
@@ -101,7 +101,12 @@ impl Sessions {
                 return Err("built without the coreml feature".to_string());
             }
             if !config.reuse_memory {
-                builder = builder.with_execution_providers([ort::ep::CPU::default().with_arena_allocator(false).build()]).map_err(ort_error)?.with_memory_pattern(false).map_err(ort_error)?;
+                builder = builder.with_execution_providers([ort::ep::CPU::default().with_arena_allocator(false).build()]).map_err(ort_error)?;
+            }
+            // On Android, the arena alone uses less peak memory than the arena plus pattern buffers.
+            // Keep the arena's reuse between calls unless the client requests the lowest footprint.
+            if !config.reuse_memory || cfg!(target_os = "android") {
+                builder = builder.with_memory_pattern(false).map_err(ort_error)?;
             }
             let session = builder.commit_from_file(dir.join(&graph.file)).map_err(ort_error)?;
             sessions.push((graph.name.clone(), session));
@@ -166,6 +171,7 @@ pub fn drive_observed<T>(generator: &mut Generator<T>, sessions: &mut Sessions, 
     let mut timings = Timings::default();
     let mut phase = 0usize;
     let mut outputs: Option<Tensors> = None;
+    let mut overlap = cfg!(target_os = "android");
     loop {
         let start = Instant::now();
         let step = generator.step(outputs.take())?;
@@ -174,7 +180,16 @@ pub fn drive_observed<T>(generator: &mut Generator<T>, sessions: &mut Sessions, 
             Step::Run { graph, inputs } => {
                 observe(None)?;
                 let start = Instant::now();
-                outputs = Some(sessions.run(&graph, inputs)?);
+                outputs = Some(if overlap && graph == BEATTHIS_GRAPH {
+                    overlap = false;
+                    // The core's independent feature slices stay on their owning thread while the first graph runs.
+                    std::thread::scope(|scope| {
+                        let run = std::thread::Builder::new().name("ensomi-graphs".to_string()).stack_size(8 * 1024 * 1024)
+                            .spawn_scoped(scope, || sessions.run(&graph, inputs)).map_err(ort_error)?;
+                        while !run.is_finished() && generator.work() {}
+                        run.join().map_err(|_| "graph worker panicked".to_string())?
+                    })?
+                } else { sessions.run(&graph, inputs)? });
                 let seconds = start.elapsed().as_secs_f64();
                 timings.phases[phase].1 += seconds;
                 let entry = timings.graphs.entry(graph).or_default();

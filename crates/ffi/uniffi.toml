@@ -2,3 +2,12 @@
 # which fills a missing resamplerDirectory with the tables the package carries.
 [bindings.swift.rename]
 "ChartGenerator.open" = "ffi_open"
+
+[bindings.kotlin]
+package_name = "io.ensomi.runtime"
+cdylib_name = "ensomi_runtime_ffi"
+android = true
+# UniFFI 0.31's AArch64 Kotlin checksum comparison fails for values >= 0x8000 (PR #2935).
+omit_checksums = true
+# 0.31.2 guards SystemCleaner with SDK_INT >= 34 and uses JNA's cleaner on API 33.
+android_cleaner = true

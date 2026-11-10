@@ -1,6 +1,6 @@
 //! UniFFI bindings of the runtime core: the gameplay session, feedback state, note layout, the
-//! `.osu` loader, the chart generator and its `.osz` export ([`generator`]), and the scheduler that generates
-//! for play ([`scheduler`]).
+//! `.osu` loader, the chart generator and its `.osz` export ([`generator`]), the scheduler that generates
+//! for play ([`scheduler`]), and with the `sync` feature, live audio sync ([`sync`]).
 //!
 //! The data types are the core's own, declared here again for the binding generator
 //! (`uniffi::remote`), so a change to a core type that is not mirrored fails to compile. The two stateful
@@ -23,6 +23,8 @@ use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 pub mod generator;
 pub mod scheduler;
+#[cfg(feature = "sync")]
+pub mod sync;
 
 uniffi::setup_scaffolding!();
 
