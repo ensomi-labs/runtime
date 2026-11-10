@@ -199,8 +199,8 @@ fn validate_audio(audio: &Audio) -> Result<f64, String> {
 }
 
 fn validate_request(request: &Request, duration: f64) -> Result<(), String> {
-    if !(request.star >= 2.0 && request.star < 6.0) {
-        return Err("star_out_of_range: star must be in [2, 6)".to_string());
+    if !request.star.is_finite() {
+        return Err("star_out_of_range: star must be finite".to_string());
     }
     if ![0, 1, 2, 3].contains(&request.controls.long_notes) {
         return Err("unsupported_control: unknown long_notes value".to_string());
@@ -213,8 +213,8 @@ fn validate_request(request: &Request, duration: f64) -> Result<(), String> {
         if s.star.is_some() == s.pattern.is_some() {
             return Err("unsupported_control: each section needs exactly one star or pattern target".to_string());
         }
-        if s.star.is_some_and(|star| !(2.0..6.0).contains(&star)) {
-            return Err("star_out_of_range: section star must be in [2, 6)".to_string());
+        if s.star.is_some_and(|star| !star.is_finite()) {
+            return Err("star_out_of_range: section star must be finite".to_string());
         }
         if s.pattern.as_ref().is_some_and(|p| ![1, 2, 3, 4, 5].contains(&p.kind) || !(p.strength >= 0.0 && p.strength <= 1.0)) {
             return Err("unsupported_control: pattern kind and strength in [0, 1] are required".to_string());
@@ -380,7 +380,7 @@ async fn chart_stages(io: Io, models: Arc<Models>, prepared: Arc<Prepared>, requ
     }
     io.progress(Phase::Arrangement).await;
     start = clock();
-    let band = f64::min(5.0, request.star.floor()) as u32;
+    let band = request.star.floor().clamp(2.0, 5.0) as u32;
     let prior_features = rows_features(&rows.head_ms, song_ms, &grid);
     let prediction = predict_prior(&models.prior, &prior_features, band)?;
     if let Some(t) = options.trace.as_mut() {
