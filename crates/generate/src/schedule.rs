@@ -375,7 +375,7 @@ impl Scheduler {
         self.stream.end_ms = Some(prepared.song_ms);
         self.prepared = Some(prepared.clone());
         let o = &mut self.options;
-        let options = Options { random: o.random.take(), trace: o.trace.take(), setting: o.setting.clone(), audio_name: o.audio_name.clone(), clock: o.clock.clone(), commit: o.commit };
+        let options = Options { random: o.random.take(), trace: o.trace.take(), setting: o.setting.clone(), audio_name: o.audio_name.clone(), clock: o.clock.clone(), commit: o.commit, experiment: o.experiment.clone() };
         self.work = Work::Chart(generate_prepared(self.models.clone(), prepared, self.request.clone(), options));
     }
 

@@ -149,12 +149,14 @@ pub struct Options {
     /// Milliseconds from any fixed origin; the core reads time only through this.
     pub clock: Rc<dyn Fn() -> f64>,
     pub commit: Commit,
+    /// Opt-in research arms; never enabled by the platform bindings.
+    pub experiment: Option<crate::Experiment>,
 }
 
 impl Options {
     /// The seeded generator, no trace, the whole chart at the end.
     pub fn new(clock: Rc<dyn Fn() -> f64>) -> Options {
-        Options { random: None, setting: None, audio_name: None, trace: None, clock, commit: Commit::AtEnd }
+        Options { random: None, setting: None, audio_name: None, trace: None, clock, commit: Commit::AtEnd, experiment: None }
     }
 }
 
@@ -370,7 +372,11 @@ async fn chart_stages(io: Io, models: Arc<Models>, prepared: Arc<Prepared>, requ
     let mut start = clock();
     let sections = &request.controls.sections;
     let star_sections: Vec<RowsSection> = sections.iter().filter_map(|s| s.star.map(|star| RowsSection { start_ms: s.start_ms, end_ms: s.end_ms, star })).collect();
-    let rows = decode_rows(&io, &models, &prepared.features, &grid, song_ms, request.star, &mut *random, &star_sections).await?;
+    let request_override = options.experiment.as_ref().map(|e| {
+        let map = &models.rows.record.star_map;
+        crate::experiment::rows_request(request.star, &map.star, &map.request, e)
+    });
+    let rows = decode_rows(&io, &models, &prepared.features, &grid, song_ms, request.star, &mut *random, &star_sections, request_override).await?;
     seconds.push(("rows", seconds_since(&*clock, start)));
     if rows.head_ms.len() < 2 {
         return Err("generation_failed: the rows model placed fewer than two heads".to_string());
@@ -409,8 +415,13 @@ async fn chart_stages(io: Io, models: Arc<Models>, prepared: Arc<Prepared>, requ
     seconds.push(("prior", seconds_since(&*clock, start)));
     start = clock();
     let band_key = band.to_string();
-    let masks = models.calibration.masks.get(&band_key).ok_or_else(|| format!("The calibration has no band {band}"))?.clone();
-    let default_q = *models.default_q.get(&band_key).ok_or_else(|| format!("The system has no default q for band {band}"))?;
+    let mut masks = models.calibration.masks.get(&band_key).ok_or_else(|| format!("The calibration has no band {band}"))?.clone();
+    let mut default_q = *models.default_q.get(&band_key).ok_or_else(|| format!("The system has no default q for band {band}"))?;
+    if let Some(e) = &options.experiment {
+        if let Some(q) = e.difficulty_q { default_q = q; }
+        if let Some(floor) = e.reattack_floor_ms { masks.reattack_floor_ms = floor; }
+        if let Some(cap) = e.quad_run_cap { masks.quad_run_cap = cap; }
+    }
     let base_r = libm::exp(prediction.log_r);
     let fit = models.calibration.difficulty_fit.by_band.get(&band_key).ok_or_else(|| format!("The difficulty fit has no band {band}"))?;
     let fit_number = |key: &str| fit[key].as_f64().unwrap_or(f64::NAN);
@@ -418,9 +429,15 @@ async fn chart_stages(io: Io, models: Arc<Models>, prepared: Arc<Prepared>, requ
     let values = &models.calibration.difficulty.get(&band_key).ok_or_else(|| format!("The calibration has no difficulty values for band {band}"))?.values;
     let target_r = quantile(values, default_q);
     let domain = &models.calibration.difficulty_fit.domain;
-    let (lo, hi) = (domain[0], f64::min(domain[1], 1.2));
+    let (lo, hi) = (domain[0], f64::min(domain[1], options.experiment.as_ref().and_then(|e| e.multiplier_max).unwrap_or(1.2)));
     let raw = libm::exp((libm::log(target_r) - alpha - gamma * libm::log(base_r)) / beta);
-    let multiplier = clip(raw, lo, hi);
+    let mut multiplier = clip(raw, lo, hi);
+    if let Some(e) = &options.experiment {
+        if let Some(target) = e.multiplier_target {
+            let blend = e.multiplier_blend.unwrap_or(1.0);
+            multiplier += blend * (target - multiplier);
+        }
+    }
     random.reset(r2_seed32);
     let result = arrange(Arrange {
         io: &io,
@@ -459,6 +476,9 @@ async fn chart_stages(io: Io, models: Arc<Models>, prepared: Arc<Prepared>, requ
     let held_share = mean_of(result.chart.held[..k_rows].iter().flatten().copied(), k_rows * 4);
     let _ = (held_sum, heads_sum);
     let mut detail = Map::new();
+    if let Some(e) = &options.experiment {
+        detail.insert("experiment".into(), json!(e));
+    }
     detail.insert("runtime".into(), json!({"name": crate::RUNTIME_NAME, "version": crate::RUNTIME_VERSION, "random_algorithm": random.algorithm(), "seed32": seed32, "r2_seed32": r2_seed32}));
     detail.insert("audio".into(), request.audio.clone().unwrap_or(Value::Null));
     detail.insert("star".into(), number(request.star));
@@ -499,7 +519,7 @@ async fn chart_stages(io: Io, models: Arc<Models>, prepared: Arc<Prepared>, requ
     difficulty.insert("passes".into(), json!([{"multiplier": number(multiplier), "achieved": number(result.r), "fallback_count": result.fallback_count, "wall_seconds": number(arrangement_seconds)}]));
     difficulty.insert("tested_band_q".into(), json!([0.1, 0.75]));
     difficulty.insert("above_tested_band".into(), json!(default_q > 0.75));
-    difficulty.insert("default".into(), json!(true));
+    difficulty.insert("default".into(), json!(options.experiment.is_none()));
     detail.insert(
         "controls".into(),
         json!({

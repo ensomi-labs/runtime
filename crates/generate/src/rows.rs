@@ -132,11 +132,11 @@ fn tensor_slice(data: &[f32], b: usize, size: usize, shape: &[usize]) -> Tensor 
     Tensor::f32(shape, data[b * size..(b + 1) * size].to_vec())
 }
 
-pub async fn decode_rows(io: &Io, models: &Models, features: &[f32], grid: &Grid, song_ms: f64, star: f64, random: &mut dyn RandomSource, sections: &[RowsSection]) -> Result<RowsResult, String> {
+pub async fn decode_rows(io: &Io, models: &Models, features: &[f32], grid: &Grid, song_ms: f64, star: f64, random: &mut dyn RandomSource, sections: &[RowsSection], request_override: Option<f64>) -> Result<RowsResult, String> {
     let cfg = &models.rows.config;
     let record = &models.rows.record;
     let (v_size, lags, heads, key) = (cfg.vocab, cfg.lags, cfg.heads, cfg.key);
-    let request = star_request(models, star);
+    let request = request_override.unwrap_or_else(|| star_request(models, star));
     let grid = &grid.whole_beats();
     let SongInputs { nb, edges, position_ms, extra, target } = song_inputs(models, grid, song_ms, request, sections);
     let nf = features.len() / 130;

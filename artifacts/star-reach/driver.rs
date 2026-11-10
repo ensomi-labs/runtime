@@ -75,7 +75,27 @@ fn command(
     let prepared = cache[path].clone();
     let seed = v["seed"].as_u64().ok_or("missing unsigned seed")?;
     let request = Request::from_json(&json!({"star": v["star"]}).to_string(), seed, false)?;
-    let opts = options();
+    let mut opts = options();
+    if let Some(value) = v
+        .get("options")
+        .filter(|v| v.as_object().is_some_and(|o| !o.is_empty()))
+    {
+        let e: ensomi_generate::Experiment =
+            serde_json::from_value(value.clone()).map_err(|e| e.to_string())?;
+        if e.difficulty_q.is_some_and(|q| !(0.0..=1.0).contains(&q))
+            || e.multiplier_max.is_some_and(|m| !(0.8..=1.3).contains(&m))
+            || e.multiplier_target
+                .is_some_and(|m| !(0.8..=1.3).contains(&m))
+            || e.multiplier_blend
+                .is_some_and(|b| !(0.0..=1.0).contains(&b))
+            || e.reattack_floor_ms.is_some_and(|m| m < 0.0)
+            || e.quad_run_cap.is_some_and(|m| m < 0.0)
+            || e.rows_min.zip(e.rows_max).is_some_and(|(lo, hi)| lo > hi)
+        {
+            return Err("invalid experiment option".into());
+        }
+        opts.experiment = Some(e);
+    }
     let (result, _) = drive(
         &mut generate_prepared(models.clone(), prepared, request, opts),
         sessions,

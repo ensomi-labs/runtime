@@ -313,7 +313,7 @@ fn run_song(ctx: &mut Context, model_dir: &Path, reference_dir: &Path, assets: &
         let trace = trace.clone();
         Some(Box::new(move |event: Trace<'_>| (trace.borrow_mut())(event)))
     };
-    let options = Options { random: Some(Box::new(replay)), setting: Some(setting.clone()), audio_name: Some(audio_name.clone()), trace: traced(), clock: clock(), commit: Commit::AtEnd };
+    let options = Options { random: Some(Box::new(replay)), setting: Some(setting.clone()), audio_name: Some(audio_name.clone()), trace: traced(), clock: clock(), commit: Commit::AtEnd, experiment: None };
     let mut audio_stages = None;
     let result = if ctx.stream {
         let (prepared, _) = drive(&mut prepare(ctx.models.clone(), audio, Options { trace: traced(), ..Options::new(clock()) }), &mut ctx.sessions)?;

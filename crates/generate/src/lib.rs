@@ -9,6 +9,7 @@ mod audio;
 pub mod capabilities;
 mod controls;
 mod export;
+mod experiment;
 mod fft;
 pub mod fitter;
 mod generate;
@@ -31,6 +32,7 @@ mod streaming_tests;
 mod tests;
 
 pub use audio::{resampler_files, Samples};
+pub use experiment::{Experiment, RowsExtrapolation};
 pub use export::{chart_tokens, Chart, ChartObject, Page, Token, TokenKind};
 pub use generate::{generate, generate_prepared, prepare, Audio, Commit, Controls, GenerationResult, Options, Pattern, Receipt, Request, Section, Trace, TraceFn};
 pub use grid::Grid;
