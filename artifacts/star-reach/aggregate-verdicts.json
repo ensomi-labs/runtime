@@ -1,1 +1,189 @@
-[]
+[
+  {
+    "arm": "ceiling",
+    "end": "low",
+    "endpoint": 1.0,
+    "endpoint_star": 2.4769958465105715,
+    "paired_movement": -0.0,
+    "null_spread": 0.2904741981668897,
+    "monotone": true,
+    "envelope_failures": 0,
+    "indicators": {},
+    "gate": false
+  },
+  {
+    "arm": "ceiling",
+    "end": "high",
+    "endpoint": 9.0,
+    "endpoint_star": 5.266011783340246,
+    "paired_movement": 0.0,
+    "null_spread": 0.351172842500016,
+    "monotone": true,
+    "envelope_failures": 20,
+    "indicators": {
+      "min_reattack": 25
+    },
+    "gate": false
+  },
+  {
+    "arm": "direct",
+    "end": "low",
+    "endpoint": 1.0,
+    "endpoint_star": 2.3571367581952316,
+    "paired_movement": 0.17697226488323448,
+    "null_spread": 0.2904741981668897,
+    "monotone": true,
+    "envelope_failures": 2,
+    "indicators": {
+      "ln_share": 2
+    },
+    "gate": false
+  },
+  {
+    "arm": "direct",
+    "end": "high",
+    "endpoint": 9.0,
+    "endpoint_star": 6.191505469818624,
+    "paired_movement": 1.0270918582804862,
+    "null_spread": 0.351172842500016,
+    "monotone": true,
+    "envelope_failures": 55,
+    "indicators": {
+      "min_reattack": 50,
+      "fallback_per_1000": 14,
+      "triples": 14,
+      "ln_share": 1,
+      "nps": 2,
+      "quads": 1
+    },
+    "gate": false
+  },
+  {
+    "arm": "end_segment",
+    "end": "low",
+    "endpoint": 1.0,
+    "endpoint_star": 2.1412857584804597,
+    "paired_movement": 0.46647705442528165,
+    "null_spread": 0.2904741981668897,
+    "monotone": true,
+    "envelope_failures": 9,
+    "indicators": {
+      "ln_share": 6,
+      "empty_beats": 2,
+      "max_gap_beats": 3,
+      "fallback_per_1000": 1
+    },
+    "gate": false
+  },
+  {
+    "arm": "end_segment",
+    "end": "high",
+    "endpoint": 9.0,
+    "endpoint_star": 6.131530113663623,
+    "paired_movement": 0.6863910695502589,
+    "null_spread": 0.351172842500016,
+    "monotone": true,
+    "envelope_failures": 50,
+    "indicators": {
+      "min_reattack": 43,
+      "fallback_per_1000": 11,
+      "ln_share": 15,
+      "max_gap_beats": 1,
+      "nps": 15
+    },
+    "gate": false
+  },
+  {
+    "arm": "overall",
+    "end": "low",
+    "endpoint": 1.0,
+    "endpoint_star": 2.2292224197171375,
+    "paired_movement": 0.24425566297060697,
+    "null_spread": 0.2904741981668897,
+    "monotone": false,
+    "envelope_failures": 7,
+    "indicators": {
+      "ln_share": 4,
+      "fallback_per_1000": 2,
+      "empty_beats": 1,
+      "max_gap_beats": 2
+    },
+    "gate": false
+  },
+  {
+    "arm": "overall",
+    "end": "high",
+    "endpoint": 9.0,
+    "endpoint_star": 6.305617917802905,
+    "paired_movement": 0.8548411991710996,
+    "null_spread": 0.351172842500016,
+    "monotone": true,
+    "envelope_failures": 48,
+    "indicators": {
+      "min_reattack": 40,
+      "fallback_per_1000": 14,
+      "ln_share": 14,
+      "nps": 17
+    },
+    "gate": false
+  },
+  {
+    "arm": "q_outer",
+    "end": "low",
+    "endpoint": 1.0,
+    "endpoint_star": 2.3571367581952316,
+    "paired_movement": 0.17697226488323448,
+    "null_spread": 0.2904741981668897,
+    "monotone": false,
+    "envelope_failures": 3,
+    "indicators": {
+      "ln_share": 3
+    },
+    "gate": false
+  },
+  {
+    "arm": "q_outer",
+    "end": "high",
+    "endpoint": 9.0,
+    "endpoint_star": 5.889948753551767,
+    "paired_movement": 0.7546669285708361,
+    "null_spread": 0.351172842500016,
+    "monotone": true,
+    "envelope_failures": 38,
+    "indicators": {
+      "min_reattack": 41,
+      "fallback_per_1000": 7,
+      "triples": 3
+    },
+    "gate": false
+  },
+  {
+    "arm": "q_tested",
+    "end": "low",
+    "endpoint": 1.0,
+    "endpoint_star": 2.398153737017017,
+    "paired_movement": 0.18366424205445986,
+    "null_spread": 0.2904741981668897,
+    "monotone": false,
+    "envelope_failures": 1,
+    "indicators": {
+      "ln_share": 1
+    },
+    "gate": false
+  },
+  {
+    "arm": "q_tested",
+    "end": "high",
+    "endpoint": 9.0,
+    "endpoint_star": 5.733597746307446,
+    "paired_movement": 0.425068659943002,
+    "null_spread": 0.351172842500016,
+    "monotone": true,
+    "envelope_failures": 29,
+    "indicators": {
+      "min_reattack": 32,
+      "fallback_per_1000": 5
+    },
+    "gate": false
+  }
+]

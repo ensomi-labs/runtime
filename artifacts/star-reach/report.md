@@ -254,6 +254,15 @@ population claim; it is not a new held-out validation set.
 
 ## Results
 
+Single-arm results were read only after all 12 songs completed and the exact
+q=0.1 rerun confirmed 24/24 identical charts and ratings. No single arm
+passes. Following the preregistered combination rule, test `overall+direct`
+at the hard end: paired endpoint movements 0.854841 and 1.027092 exceed
+one high-end null spread (0.351173). No easy-side non-rows arm reaches its
+one-spread threshold, so there is no selected easy-side combination.
+The last mask arm waits for this combination's result.
+
+
 Baseline complete; lever and search results pending. Before the lever arms,
 the numerical per-song envelopes were frozen in the private
 `structural-envelope.json`, SHA-256

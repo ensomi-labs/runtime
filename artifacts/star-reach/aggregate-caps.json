@@ -1,1 +1,170 @@
-[]
+[
+  {
+    "arm": "ceiling",
+    "end": "low",
+    "safe_cap": 1.0,
+    "star": 2.4769958465105715,
+    "paired_movement": -0.0,
+    "first_failure": null,
+    "reason": [],
+    "unchanged_interior_monotone": true,
+    "preliminary_gate": false,
+    "dense_grid_checked": false
+  },
+  {
+    "arm": "ceiling",
+    "end": "high",
+    "safe_cap": 5.875,
+    "star": 5.266011783340246,
+    "paired_movement": 0.0,
+    "first_failure": 6.5,
+    "reason": [
+      "envelope"
+    ],
+    "unchanged_interior_monotone": true,
+    "preliminary_gate": false,
+    "dense_grid_checked": true
+  },
+  {
+    "arm": "direct",
+    "end": "low",
+    "safe_cap": 2.125,
+    "star": 2.4769958465105715,
+    "paired_movement": -0.0,
+    "first_failure": 2.0,
+    "reason": [
+      "envelope"
+    ],
+    "unchanged_interior_monotone": true,
+    "preliminary_gate": false,
+    "dense_grid_checked": true
+  },
+  {
+    "arm": "direct",
+    "end": "high",
+    "safe_cap": 5.875,
+    "star": 5.266011783340246,
+    "paired_movement": 0.0,
+    "first_failure": 6.5,
+    "reason": [
+      "envelope"
+    ],
+    "unchanged_interior_monotone": true,
+    "preliminary_gate": false,
+    "dense_grid_checked": true
+  },
+  {
+    "arm": "end_segment",
+    "end": "low",
+    "safe_cap": 2.0,
+    "star": 2.434948142511111,
+    "paired_movement": 0.06951159314724076,
+    "first_failure": 1.5,
+    "reason": [
+      "envelope"
+    ],
+    "unchanged_interior_monotone": true,
+    "preliminary_gate": false,
+    "dense_grid_checked": false
+  },
+  {
+    "arm": "end_segment",
+    "end": "high",
+    "safe_cap": 5.875,
+    "star": 5.266011783340246,
+    "paired_movement": 0.0,
+    "first_failure": 6.5,
+    "reason": [
+      "envelope"
+    ],
+    "unchanged_interior_monotone": true,
+    "preliminary_gate": false,
+    "dense_grid_checked": true
+  },
+  {
+    "arm": "overall",
+    "end": "low",
+    "safe_cap": 2.125,
+    "star": 2.4769958465105715,
+    "paired_movement": -0.0,
+    "first_failure": 2.0,
+    "reason": [
+      "median reversal"
+    ],
+    "unchanged_interior_monotone": true,
+    "preliminary_gate": false,
+    "dense_grid_checked": true
+  },
+  {
+    "arm": "overall",
+    "end": "high",
+    "safe_cap": 5.875,
+    "star": 5.266011783340246,
+    "paired_movement": 0.0,
+    "first_failure": 6.5,
+    "reason": [
+      "envelope"
+    ],
+    "unchanged_interior_monotone": true,
+    "preliminary_gate": false,
+    "dense_grid_checked": true
+  },
+  {
+    "arm": "q_outer",
+    "end": "low",
+    "safe_cap": 2.125,
+    "star": 2.4769958465105715,
+    "paired_movement": -0.0,
+    "first_failure": 2.0,
+    "reason": [
+      "envelope",
+      "median reversal"
+    ],
+    "unchanged_interior_monotone": true,
+    "preliminary_gate": false,
+    "dense_grid_checked": true
+  },
+  {
+    "arm": "q_outer",
+    "end": "high",
+    "safe_cap": 5.875,
+    "star": 5.266011783340246,
+    "paired_movement": 0.0,
+    "first_failure": 6.5,
+    "reason": [
+      "envelope"
+    ],
+    "unchanged_interior_monotone": true,
+    "preliminary_gate": false,
+    "dense_grid_checked": true
+  },
+  {
+    "arm": "q_tested",
+    "end": "low",
+    "safe_cap": 2.125,
+    "star": 2.4769958465105715,
+    "paired_movement": -0.0,
+    "first_failure": 2.0,
+    "reason": [
+      "envelope",
+      "median reversal"
+    ],
+    "unchanged_interior_monotone": true,
+    "preliminary_gate": false,
+    "dense_grid_checked": true
+  },
+  {
+    "arm": "q_tested",
+    "end": "high",
+    "safe_cap": 5.875,
+    "star": 5.266011783340246,
+    "paired_movement": 0.0,
+    "first_failure": 6.5,
+    "reason": [
+      "envelope"
+    ],
+    "unchanged_interior_monotone": true,
+    "preliminary_gate": false,
+    "dense_grid_checked": true
+  }
+]
