@@ -177,7 +177,7 @@ def main():
     lines.append(f"Unchanged in-table baseline medians are non-decreasing: {interior_monotone}. A preliminary cap pass still needs the denser grid; this table cannot alone authorize a default.\n")
     lines.extend(['Failures count repeated candidates at different requests; the private envelope file contains every song-specific bound. Passing this structural screen would still not establish playability. A full-grid/cap assessment is required before proposing a default.',''])
     searches=[]
-    for path in sorted((a.private/'search').glob('*/*.json')):
+    for path in ([] if a.freeze_envelope else sorted((a.private/'search').glob('*/*.json'))):
         for r in json.loads(path.read_text()):searches.append(dict(build=path.parent.name,**r))
     if searches:
         lines.extend(['## Q3: client-side search','', 'Errors are absolute stars; proportions are fractions. Six-seed runs always consume six logical generations. Secant/proportional runs may stop at tolerance. Cached candidates still count as generations.',''])
