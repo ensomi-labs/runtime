@@ -2,6 +2,7 @@ export { loadModels, checkPackage, noticeFiles, urlSource, localFilesSource, Mod
 export { generateChart, prepare, Prepared } from './generate.js';
 export { ChartScheduler } from './schedule.js';
 export { decodeAudio } from './decode_audio.js';
+export { probeAudio, decodeAudioBytes, decodeAudioWav } from './audio.js';
 export { validateChart } from './export.js';
 export * from './types.js';
 export { starRating } from './star.js';

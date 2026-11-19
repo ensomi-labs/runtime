@@ -40,6 +40,25 @@ try {
         try { runtime = await import('./src/index.js'); }
         finally { guarded.forEach(([object, key], i) => { object[key] = originals[i]; }); }
 
+        // Audio decoding before loadModels also initializes the supplied core when options.core is passed.
+        const tinyWav = new Uint8Array(46);
+        const view = new DataView(tinyWav.buffer);
+        [...'RIFF'].forEach((c, i) => { tinyWav[i] = c.charCodeAt(0); });
+        view.setUint32(4, 38, true);
+        [...'WAVEfmt '].forEach((c, i) => { tinyWav[8 + i] = c.charCodeAt(0); });
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 1, true);
+        view.setUint32(24, 24000, true);
+        view.setUint32(28, 48000, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true);
+        [...'data'].forEach((c, i) => { tinyWav[36 + i] = c.charCodeAt(0); });
+        view.setUint32(40, 2, true);
+        const decoded = await runtime.decodeAudioBytes(tinyWav, { name: 'tiny.wav', core: bytes });
+        assert.equal(decoded.sampleRate, 24000);
+        assert.equal(decoded.samples.length, 1);
+
         // loadModels initializes the supplied core before reading the manifest. Stop at that boundary so CI
         // needs no model files or inference mock, then exercise public APIs on the real selected Wasm core.
         const stop = new Error('model read reached');

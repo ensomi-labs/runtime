@@ -2,4 +2,5 @@ node_modules/
 pkg/
 # Copied by scripts/wasm-build.sh for the npm package.
 resampler/
+licenses/
 LICENSE

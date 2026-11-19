@@ -777,6 +777,111 @@ pub fn decode_mono_f32<R: Read + Seek + Send + Sync + 'static>(
     Ok(DecodedMono { samples, sample_rate, info })
 }
 
+/// Decodes an audio source to a standard 16-bit PCM RIFF WAVE file in memory (`Mono` for 1-channel
+/// sources, `Stereo` for multi-channel sources), preserving file sample rate and BASS/AAC lead
+/// alignment, and checking `cancelled` cooperatively.
+pub fn decode_wav_s16le<R: Read + Seek + Send + Sync + 'static>(
+    source: R,
+    hint_ext: Option<&str>,
+    cancelled: &AtomicBool,
+) -> Result<Vec<u8>, AudioError> {
+    if cancelled.load(Ordering::Relaxed) {
+        return Err(AudioError::Cancelled);
+    }
+    let opened = open_track(source, hint_ext)?;
+    if cancelled.load(Ordering::Relaxed) {
+        return Err(AudioError::Cancelled);
+    }
+    let out_channels = if opened.info.channels <= 1 {
+        AudioChannels::Mono
+    } else {
+        AudioChannels::Stereo
+    };
+    let ch = out_channels.count();
+    let sample_rate = opened.info.sample_rate;
+    let (mut pending_silence, raw_skip) = if opened.info.lead_frames >= 0 {
+        (opened.info.lead_frames as u64, 0)
+    } else {
+        (0, u64::from(opened.info.lead_frames.unsigned_abs()))
+    };
+    let mut stream = AudioStream {
+        format: opened.format,
+        decoder: opened.decoder,
+        track_id: opened.track_id,
+        codec_type: opened.codec_type,
+        time_base: opened.time_base,
+        start_ts: opened.start_ts,
+        info: opened.info,
+        out_channels,
+        current_song_frame: 0,
+        pending_silence: 0,
+        raw_skip,
+        seek_target_ts: None,
+        buf: Vec::new(),
+        buf_pos: 0,
+        eof: false,
+        decoded_any_frame: false,
+    };
+
+    const MAX_PREALLOC_BYTES: usize = 48_000 * 3600 * 4;
+    const MAX_WAV_DATA_BYTES: usize = (u32::MAX as usize) - 36;
+    let est_bytes = stream
+        .info
+        .total_frames
+        .map(|f| (f as usize).saturating_mul(ch * 2).min(MAX_PREALLOC_BYTES))
+        .unwrap_or(0);
+    let mut wav = Vec::with_capacity(44usize.saturating_add(est_bytes));
+    let ch_u16 = ch as u16;
+    let block_align = ch_u16 * 2;
+    let byte_rate = sample_rate.saturating_mul(u32::from(block_align));
+    wav.extend_from_slice(b"RIFF");
+    wav.extend_from_slice(&0u32.to_le_bytes());
+    wav.extend_from_slice(b"WAVE");
+    wav.extend_from_slice(b"fmt ");
+    wav.extend_from_slice(&16u32.to_le_bytes());
+    wav.extend_from_slice(&1u16.to_le_bytes());
+    wav.extend_from_slice(&ch_u16.to_le_bytes());
+    wav.extend_from_slice(&sample_rate.to_le_bytes());
+    wav.extend_from_slice(&byte_rate.to_le_bytes());
+    wav.extend_from_slice(&block_align.to_le_bytes());
+    wav.extend_from_slice(&16u16.to_le_bytes());
+    wav.extend_from_slice(b"data");
+    wav.extend_from_slice(&0u32.to_le_bytes());
+
+    while pending_silence > 0 {
+        if cancelled.load(Ordering::Relaxed) {
+            return Err(AudioError::Cancelled);
+        }
+        let frames = (pending_silence as usize).min(16_384);
+        let add_bytes = frames * ch * 2;
+        if wav.len() - 44 + add_bytes > MAX_WAV_DATA_BYTES {
+            return Err(AudioError::Decode { message: "decoded WAV exceeds 4 GiB RIFF limit".to_string() });
+        }
+        wav.resize(wav.len() + add_bytes, 0);
+        pending_silence -= frames as u64;
+    }
+
+    while stream.fill_next_packet(Some(cancelled))? {
+        let add_bytes = stream.buf.len() * 2;
+        if wav.len() - 44 + add_bytes > MAX_WAV_DATA_BYTES {
+            return Err(AudioError::Decode { message: "decoded WAV exceeds 4 GiB RIFF limit".to_string() });
+        }
+        wav.reserve(add_bytes);
+        for &s in &stream.buf {
+            let pcm = (s * 32_768.0).round().clamp(-32_768.0, 32_767.0) as i16;
+            wav.extend_from_slice(&pcm.to_le_bytes());
+        }
+        stream.buf.clear();
+        stream.buf_pos = 0;
+    }
+
+    let data_bytes = (wav.len() - 44) as u32;
+    let riff_size = 36u32 + data_bytes;
+    wav[4..8].copy_from_slice(&riff_size.to_le_bytes());
+    wav[40..44].copy_from_slice(&data_bytes.to_le_bytes());
+    Ok(wav)
+}
+
 fn append_audio_buffer(
     buf: AudioBufferRef<'_>,
     skip_frames: usize,
@@ -914,5 +1019,17 @@ mod tests {
         assert_eq!(stream.position_frame(), 629);
         let after = stream.read_f32(8).unwrap();
         assert!((after[0] - (101.0 * 16.0) / 32768.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn decode_wav_s16le_roundtrip() {
+        let src = make_ramp_wav(512, 48_000);
+        let flag = AtomicBool::new(false);
+        let wav = decode_wav_s16le(Cursor::new(src.clone()), Some("wav"), &flag).unwrap();
+        assert_eq!(wav, src);
+        let mono = decode_mono_f32(Cursor::new(wav), Some("wav"), &flag).unwrap();
+        assert_eq!(mono.sample_rate, 48_000);
+        assert_eq!(mono.samples.len(), 512);
+        assert!((mono.samples[0] - 16.0 / 32768.0).abs() < 1e-6);
     }
 }

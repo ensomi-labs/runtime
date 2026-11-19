@@ -344,14 +344,14 @@ dependencies = [
 
 [[package]]
 name = "ensomi-audio"
-version = "0.3.2"
+version = "0.4.0"
 dependencies = [
  "symphonia",
 ]
 
 [[package]]
 name = "ensomi-gameplay"
-version = "0.3.2"
+version = "0.4.0"
 dependencies = [
  "proptest",
  "serde",
@@ -360,7 +360,7 @@ dependencies = [
 
 [[package]]
 name = "ensomi-generate"
-version = "0.3.2"
+version = "0.4.0"
 dependencies = [
  "ensomi-gameplay",
  "libm",
@@ -370,7 +370,7 @@ dependencies = [
 
 [[package]]
 name = "ensomi-generate-ort"
-version = "0.3.2"
+version = "0.4.0"
 dependencies = [
  "ensomi-generate",
  "libc",
@@ -380,8 +380,9 @@ dependencies = [
 
 [[package]]
 name = "ensomi-generate-wasm"
-version = "0.3.2"
+version = "0.4.0"
 dependencies = [
+ "ensomi-audio",
  "ensomi-gameplay",
  "ensomi-generate",
  "js-sys",
@@ -391,7 +392,7 @@ dependencies = [
 
 [[package]]
 name = "ensomi-osz"
-version = "0.3.2"
+version = "0.4.0"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
@@ -400,7 +401,7 @@ dependencies = [
 
 [[package]]
 name = "ensomi-runtime-ffi"
-version = "0.3.2"
+version = "0.4.0"
 dependencies = [
  "ensomi-audio",
  "ensomi-gameplay",
@@ -414,7 +415,7 @@ dependencies = [
 
 [[package]]
 name = "ensomi-sync"
-version = "0.3.2"
+version = "0.4.0"
 dependencies = [
  "serde_json",
  "sonalign",
@@ -1233,10 +1234,12 @@ dependencies = [
  "symphonia-bundle-flac",
  "symphonia-bundle-mp3",
  "symphonia-codec-aac",
+ "symphonia-codec-adpcm",
  "symphonia-codec-alac",
  "symphonia-codec-pcm",
  "symphonia-codec-vorbis",
  "symphonia-core",
+ "symphonia-format-caf",
  "symphonia-format-isomp4",
  "symphonia-format-mkv",
  "symphonia-format-ogg",
@@ -1275,6 +1278,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4c263845aa86881416849c1729a54c7f55164f8b96111dba59de46849e73a790"
 dependencies = [
  "lazy_static",
+ "log",
+ "symphonia-core",
+]
+
+[[package]]
+name = "symphonia-codec-adpcm"
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2dddc50e2bbea4cfe027441eece77c46b9f319748605ab8f3443350129ddd07f"
+dependencies = [
  "log",
  "symphonia-core",
 ]
@@ -1321,6 +1334,17 @@ dependencies = [
  "bytemuck",
  "lazy_static",
  "log",
+]
+
+[[package]]
+name = "symphonia-format-caf"
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b8faf379316b6b6e6bbc274d00e7a592e0d63ff1a7e182ce8ba25e24edd3d096"
+dependencies = [
+ "log",
+ "symphonia-core",
+ "symphonia-metadata",
 ]
 
 [[package]]

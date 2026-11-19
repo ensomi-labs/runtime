@@ -9,6 +9,8 @@ set -e
 target_dir="${CARGO_TARGET_DIR:-target/generate}"
 CARGO_TARGET_DIR="$target_dir" RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=+simd128" cargo build --release --target wasm32-unknown-unknown -p ensomi-generate-wasm
 wasm-bindgen --target web --experimental-reset-state-function --out-dir js/pkg "$target_dir/wasm32-unknown-unknown/release/ensomi_generate_wasm.wasm"
-rm -rf js/resampler
+rm -rf js/resampler js/licenses
 cp -R assets/resampler js/resampler
+mkdir -p js/licenses
+cp -R licenses/symphonia js/licenses/symphonia
 cp LICENSE js/LICENSE

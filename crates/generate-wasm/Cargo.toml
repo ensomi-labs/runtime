@@ -11,6 +11,7 @@ repository.workspace = true
 crate-type = ["cdylib"]
 
 [dependencies]
+ensomi-audio = { path = "../audio" }
 ensomi-gameplay = { path = "../gameplay" }
 ensomi-generate = { path = "../generate" }
 js-sys = "0.3"
