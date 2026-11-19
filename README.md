@@ -93,7 +93,9 @@ helper and the emulator tests.
 
 ## Licence
 
-Apache-2.0. The model published at `sed-i/ensomi-r2` is licensed MIT, as its
+Apache-2.0. The Android AAR and `@ensomi/runtime` include Symphonia (`crates/audio`, MPL-2.0; notice in
+`licenses/symphonia/LICENSE`, source at <https://github.com/pdeljanov/Symphonia>) for native and WebAssembly audio
+decoding. The model published at `sed-i/ensomi-r2` is licensed MIT, as its
 [card](https://huggingface.co/sed-i/ensomi-r2) states; BeatThis (CPJKU) keeps its own MIT notice
 (`onnx/BeatThis-LICENSE.txt`) for `onnx/beatthis.onnx`, an ONNX export of its `final0` checkpoint, and its front-end
 arrays `onnx/beatthis-mel-filter.bin` and `onnx/beatthis-hann-window.bin`. The package's manifest names that file as a

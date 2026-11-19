@@ -11,12 +11,15 @@
 //! A panic is written to `console.error` and thrown as a `WebAssembly.RuntimeError` with the panic's message,
 //! like the traps of the instance (an exhausted memory or stack). After either, the instance's memory may be
 //! inconsistent, so the JavaScript API replaces the instance (`js/src/core.js`).
+use ensomi_audio::{AudioError, AudioInfo};
 use ensomi_gameplay::{Judge, Ruleset};
 use ensomi_generate::{capabilities, generate, package, prepare, Action, Audio, Data, Draw, Event, GenerationResult, Generator, Lead, Mode, Models, Options, Page, Prepared, ReplayRandom, Request, Samples, Scheduler, Source, Step, Tensor, Tensors, TokenKind};
 use js_sys::{Array, BigInt64Array, Float32Array, Float64Array, Object, Reflect, Uint8Array};
 use std::cell::Cell;
 use std::collections::HashMap;
+use std::io::Cursor;
 use std::rc::Rc;
+use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 use wasm_bindgen::prelude::*;
 
@@ -531,4 +534,70 @@ impl WasmScheduler {
     pub fn prepared(&self) -> Option<Uint8Array> {
         self.inner.prepared().map(|p| Uint8Array::from(p.to_bytes().as_slice()))
     }
+}
+
+fn audio_hint(name: &Option<String>) -> Option<&str> {
+    name.as_deref().and_then(|n| n.rsplit_once('.').map(|(_, ext)| ext).filter(|ext| !ext.is_empty()))
+}
+
+fn audio_error(err: AudioError) -> JsValue {
+    let js = js_sys::Error::new(&err.to_string());
+    if matches!(err, AudioError::Unsupported { .. }) {
+        set(&js.clone().into(), "code", "UNSUPPORTED_AUDIO");
+    }
+    js.into()
+}
+
+fn audio_info_to_js(info: &AudioInfo) -> Object {
+    let object = Object::new();
+    set(&object, "sampleRate", info.sample_rate);
+    set(&object, "channels", u32::from(info.channels));
+    set(&object, "codec", info.codec.clone());
+    set(&object, "leadFrames", info.lead_frames);
+    if let Some(frames) = info.total_frames {
+        set(&object, "totalFrames", frames as f64);
+    }
+    if let Some(ms) = info.duration_ms {
+        set(&object, "durationMs", ms);
+    }
+    if let Some(title) = &info.title {
+        set(&object, "title", title.clone());
+    }
+    if let Some(artist) = &info.artist {
+        set(&object, "artist", artist.clone());
+    }
+    object
+}
+
+/// Probes an audio file's sample rate, channels, duration, tags (`title`, `artist`), codec and lead frames without
+/// decoding the full stream. Throws an `Error` (with `code: 'UNSUPPORTED_AUDIO'` when the container or codec is not
+/// implemented by Symphonia).
+#[wasm_bindgen(js_name = probeAudio)]
+pub fn probe_audio(bytes: Vec<u8>, name: Option<String>) -> Result<JsValue, JsValue> {
+    let info = ensomi_audio::probe(Cursor::new(bytes), audio_hint(&name)).map_err(audio_error)?;
+    Ok(audio_info_to_js(&info).into())
+}
+
+/// Decodes an audio file to mono `Float32Array` at its own sample rate with BASS / release-engine lead alignment, and
+/// returns `{samples, sampleRate, durationMs, info}`.
+#[wasm_bindgen(js_name = decodeAudioBytes)]
+pub fn decode_audio_bytes(bytes: Vec<u8>, name: Option<String>) -> Result<JsValue, JsValue> {
+    let flag = AtomicBool::new(false);
+    let decoded = ensomi_audio::decode_mono_f32(Cursor::new(bytes), audio_hint(&name), &flag).map_err(audio_error)?;
+    let duration_ms = decoded.samples.len() as f64 * 1000.0 / f64::from(decoded.sample_rate);
+    let object = Object::new();
+    set(&object, "samples", Float32Array::from(decoded.samples.as_slice()));
+    set(&object, "sampleRate", decoded.sample_rate);
+    set(&object, "durationMs", duration_ms);
+    set(&object, "info", audio_info_to_js(&decoded.info));
+    Ok(object.into())
+}
+
+/// Decodes an audio file to a 16-bit PCM RIFF WAVE (`Uint8Array`, mono for 1-channel sources and stereo otherwise) with
+/// BASS / release-engine lead alignment, for playback where `<audio>` does not support the source container or codec.
+#[wasm_bindgen(js_name = decodeAudioWav)]
+pub fn decode_audio_wav(bytes: Vec<u8>, name: Option<String>) -> Result<Uint8Array, JsValue> {
+    let flag = AtomicBool::new(false);
+    let wav = ensomi_audio::decode_wav_s16le(Cursor::new(bytes), audio_hint(&name), &flag).map_err(audio_error)?;
+    Ok(Uint8Array::from(wav.as_slice()))
 }

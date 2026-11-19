@@ -262,6 +262,38 @@ export declare class ChartScheduler {
     free(): void;
 }
 export declare function decodeAudio(arrayBuffer: ArrayBuffer): Promise<DecodedAudio>;
+export interface AudioInfo {
+    sampleRate: number;
+    channels: number;
+    totalFrames?: number;
+    durationMs?: number;
+    title?: string;
+    artist?: string;
+    codec: string;
+    leadFrames: number;
+}
+export interface AudioDecodeOptions {
+    /** File name whose extension hints the container when headers alone are ambiguous. */
+    name?: string;
+    /** The Wasm core: bytes, a `WebAssembly.Module` or a URL. Default: the package's `pkg/ensomi_generate_wasm_bg.wasm`. */
+    core?: BufferSource | WebAssembly.Module | URL | string;
+}
+export interface DecodedAudioBytes {
+    samples: Float32Array;
+    sampleRate: number;
+    durationMs: number;
+    info: AudioInfo;
+}
+/** Probes an audio file's sample rate, channels, duration, tags (`title`, `artist`), codec and lead frames with the
+ * Wasm core (Symphonia). Rejects with `code === 'UNSUPPORTED_AUDIO'` when the container or codec is not supported. */
+export declare function probeAudio(bytes: Uint8Array | ArrayBuffer, options?: AudioDecodeOptions): Promise<AudioInfo>;
+/** Decodes an audio file with the Wasm core (Symphonia: MP3, FLAC, WAV, Ogg Vorbis, M4A AAC/ALAC, AIFF, CAF, MKV/WebM)
+ * to mono `Float32Array` at its own sample rate with BASS / release-engine lead alignment. Rejects with
+ * `code === 'UNSUPPORTED_AUDIO'` when the container or codec is not supported. */
+export declare function decodeAudioBytes(bytes: Uint8Array | ArrayBuffer, options?: AudioDecodeOptions): Promise<DecodedAudioBytes>;
+/** Decodes an audio file with the Wasm core to a 16-bit PCM RIFF WAVE (`Uint8Array`, mono for 1-channel sources and
+ * stereo otherwise) with BASS / release-engine lead alignment. */
+export declare function decodeAudioWav(bytes: Uint8Array | ArrayBuffer, options?: AudioDecodeOptions): Promise<Uint8Array>;
 export declare function validateChart(chart: Chart): void;
 
 /** osu!mania star rating (20241007), four keys at clock rate 1; independent of generation.

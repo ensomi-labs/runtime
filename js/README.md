@@ -50,6 +50,12 @@ scheduler.work().then(({ result }) => {});                 // generates ahead of
 
 - `pcm` is mono `Float32Array` or `Float64Array`, or `{samples, channels}` with interleaved samples. PCM at a rate
   other than 22050 Hz is resampled with the soxr tables in the package's `resampler/` directory.
+- `decodeAudioBytes(bytes, {name, core})` decodes an audio file in the Wasm core with Symphonia (MP3, FLAC, WAV,
+  Ogg Vorbis, M4A AAC and ALAC, AIFF, CAF, MKV/WebM) to mono `Float32Array` at its own sample rate, with unified
+  BASS / release-engine lead alignment and tags (`title`, `artist` on `info`). `probeAudio` reads `AudioInfo` without
+  decoding the stream, and `decodeAudioWav` transcodes to a 16-bit PCM RIFF WAVE (`Uint8Array`, mono or stereo) for
+  `<audio>` elements in browsers that do not support the source container or codec. Unsupported codecs (such as Opus)
+  reject with `code === 'UNSUPPORTED_AUDIO'`.
 - `loadModels` fetches the package's manifest, `ensomi-package.json` ([docs/model-package.md](../docs/model-package.md)),
   first. With it, it checks the manifest, fetches the config it names and refuses a manifest that leaves out a file
   that config names, as Swift's `open` does, before fetching anything else; then it fetches the other files it lists
@@ -73,7 +79,9 @@ scheduler.work().then(({ result }) => {});                 // generates ahead of
   also goes to `console.error`. The core's instance is then replaced, and the next `generateChart` loads the model
   into the new one from `source` again.
 
-Apache-2.0. The model (`sed-i/ensomi-r2`) is licensed MIT, as its [card](https://huggingface.co/sed-i/ensomi-r2)
+Apache-2.0. Includes Symphonia (MPL-2.0, `licenses/symphonia/LICENSE`; source at
+<https://github.com/pdeljanov/Symphonia>) in the Wasm core for audio decoding. The model (`sed-i/ensomi-r2`) is
+licensed MIT, as its [card](https://huggingface.co/sed-i/ensomi-r2)
 states; BeatThis (CPJKU) keeps its own MIT notice (`onnx/BeatThis-LICENSE.txt`, in `models.notices`) for
 `onnx/beatthis.onnx`, an ONNX export of its `final0` checkpoint, and its front-end arrays
 `onnx/beatthis-mel-filter.bin` and `onnx/beatthis-hann-window.bin`.
