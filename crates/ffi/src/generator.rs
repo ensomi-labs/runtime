@@ -311,8 +311,28 @@ impl Prepared {
         Ok(Arc::new(Self(Arc::new(ensomi_generate::Prepared::from_bytes(&bytes).map_err(model_error)?))))
     }
 
+    /// Reads a stored `Prepared` directly from `path` in native memory, avoiding JVM heap copies.
+    /// Fails with `GeneratorError.Model` if the file cannot be read or is for another format,
+    /// runtime version, or model.
+    #[uniffi::constructor]
+    pub fn from_path(path: String) -> Result<Arc<Self>, GeneratorError> {
+        let bytes = std::fs::read(&path).map_err(|e| model_error(format!("prepared read {path}: {e}")))?;
+        Ok(Arc::new(Self(Arc::new(ensomi_generate::Prepared::from_bytes(&bytes).map_err(model_error)?))))
+    }
+
     pub fn bytes(&self) -> Vec<u8> {
         self.0.to_bytes()
+    }
+
+    /// Writes the stored `Prepared` directly to `path` from native memory, avoiding JVM heap copies.
+    pub fn save_to_path(&self, path: String) -> Result<(), GeneratorError> {
+        std::fs::write(&path, self.0.to_bytes())
+            .map_err(|e| model_error(format!("prepared save {path}: {e}")))
+    }
+
+    /// The prepared song's duration in milliseconds.
+    pub fn song_ms(&self) -> f64 {
+        self.0.song_ms
     }
 }
 
@@ -542,6 +562,30 @@ impl ChartGenerator {
     }
 }
 
+#[cfg(feature = "audio")]
+#[uniffi::export]
+impl ChartGenerator {
+    /// Decodes an audio file descriptor directly to mono PCM in native Rust memory with cooperative
+    /// cancellation, runs `prepare`, and drops the PCM immediately (zero JVM heap).
+    /// Takes ownership of `fd` and closes it on return, error, or cancellation.
+    pub fn prepare_from_fd(
+        &self,
+        fd: i32,
+        hint_ext: Option<String>,
+        cancellation: Option<Arc<Cancellation>>,
+    ) -> Result<Arc<Prepared>, GeneratorError> {
+        let file = crate::audio::file_from_fd(fd).map_err(|e| generation_error(e.to_string()))?;
+        let fallback_cancel = AtomicBool::new(false);
+        let cancel_flag = cancellation.as_ref().map_or(&fallback_cancel, |c| &c.0);
+        let decoded = ensomi_audio::decode_mono_f32(file, hint_ext.as_deref(), cancel_flag)
+            .map_err(|e| match e {
+                ensomi_audio::AudioError::Cancelled => GeneratorError::Cancelled,
+                other => generation_error(other.to_string()),
+            })?;
+        self.prepare(decoded.samples, f64::from(decoded.sample_rate), cancellation)
+    }
+}
+
 impl ChartGenerator {
     /// Mono PCM as the core takes it, with the resampler tables for its rate.
     pub(crate) fn audio(&self, pcm: Vec<f32>, sample_rate: f64) -> Result<Audio, GeneratorError> {
@@ -602,5 +646,27 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn prepared_saves_and_loads_from_path_with_song_ms() {
+        let core = ensomi_generate::Prepared {
+            features: vec![0.25_f32; 130 * 5],
+            segments: vec![ensomi_generate::fitter::Segment { offset_ms: 125.0, beat_length_ms: 500.0 }],
+            song_ms: 123_456.75,
+        };
+        let prepared = Prepared::new(core.to_bytes()).unwrap();
+        assert_eq!(prepared.song_ms(), 123_456.75);
+
+        let path = std::env::temp_dir().join(format!("ensomi-prepared-test-{}.bin", std::process::id()));
+        let path_str = path.to_string_lossy().into_owned();
+        prepared.save_to_path(path_str.clone()).unwrap();
+
+        let reloaded = Prepared::from_path(path_str.clone()).unwrap();
+        assert_eq!(reloaded.song_ms(), 123_456.75);
+        assert_eq!(reloaded.bytes(), prepared.bytes());
+
+        let _ = std::fs::remove_file(&path);
+        assert!(matches!(Prepared::from_path(path_str), Err(GeneratorError::Model { .. })));
     }
 }

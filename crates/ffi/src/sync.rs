@@ -124,6 +124,22 @@ impl SyncReference {
     }
 }
 
+#[cfg(feature = "audio")]
+#[uniffi::export]
+impl SyncReference {
+    /// Decodes an audio file descriptor directly to mono PCM in native Rust memory and indexes it
+    /// for live audio sync, dropping the PCM immediately. Takes ownership of `fd` and closes it.
+    #[uniffi::constructor]
+    pub fn from_fd(fd: i32, hint_ext: Option<String>) -> Result<Arc<Self>, SyncError> {
+        let file = crate::audio::file_from_fd(fd)
+            .map_err(|e| SyncError::Refused { detail: e.to_string() })?;
+        let cancel = std::sync::atomic::AtomicBool::new(false);
+        let decoded = ensomi_audio::decode_mono_f32(file, hint_ext.as_deref(), &cancel)
+            .map_err(|e| SyncError::Refused { detail: e.to_string() })?;
+        Ok(Arc::new(Self(Reference::from_pcm(&decoded.samples, f64::from(decoded.sample_rate))?)))
+    }
+}
+
 /// One listening session. Its lock makes calls safe from any thread, though a session serves one stream.
 #[derive(uniffi::Object)]
 pub struct SyncSession(Mutex<Session>);

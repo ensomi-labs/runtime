@@ -251,7 +251,7 @@ class RuntimeLoadTest {
         assertTrue(table.setLastModified(1_000))
         assertEquals(directory.absolutePath, bundledResamplerDirectory(context))
         assertEquals(1_000L, table.lastModified())
-        for (name in onnxRuntimeLicenseAssets) {
+        for (name in onnxRuntimeLicenseAssets + symphoniaLicenseAssets) {
             assertTrue(context.assets.open(name).use { it.readBytes().isNotEmpty() })
         }
     }
