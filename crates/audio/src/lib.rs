@@ -131,6 +131,16 @@ impl<R: Read + Seek + Send + Sync> MediaSource for SeekableSource<R> {
     }
 }
 
+struct OpenedSource {
+    format: Box<dyn FormatReader>,
+    decoder: Option<Box<dyn Decoder>>,
+    track_id: u32,
+    codec_type: CodecType,
+    time_base: Option<TimeBase>,
+    start_ts: u64,
+    info: AudioInfo,
+}
+
 struct OpenedTrack {
     format: Box<dyn FormatReader>,
     decoder: Box<dyn Decoder>,
@@ -145,7 +155,7 @@ fn open_source<R: Read + Seek + Send + Sync + 'static>(
     source: R,
     hint_ext: Option<&str>,
     need_decoder: bool,
-) -> Result<(Box<dyn FormatReader>, Option<Box<dyn Decoder>>, u32, CodecType, Option<TimeBase>, u64, AudioInfo), AudioError> {
+) -> Result<OpenedSource, AudioError> {
     let mut wrapped = SeekableSource::new(source).map_err(|e| AudioError::Open {
         message: format!("cannot inspect stream: {e}"),
     })?;
@@ -296,23 +306,30 @@ fn open_source<R: Read + Seek + Send + Sync + 'static>(
         lead_frames,
     };
 
-    Ok((probed.format, decoder, track_id, codec_type, time_base, start_ts, info))
+    Ok(OpenedSource {
+        format: probed.format,
+        decoder,
+        track_id,
+        codec_type,
+        time_base,
+        start_ts,
+        info,
+    })
 }
 
 fn open_track<R: Read + Seek + Send + Sync + 'static>(
     source: R,
     hint_ext: Option<&str>,
 ) -> Result<OpenedTrack, AudioError> {
-    let (format, decoder, track_id, codec_type, time_base, start_ts, info) =
-        open_source(source, hint_ext, true)?;
+    let opened = open_source(source, hint_ext, true)?;
     Ok(OpenedTrack {
-        format,
-        decoder: decoder.expect("decoder requested"),
-        track_id,
-        codec_type,
-        time_base,
-        start_ts,
-        info,
+        format: opened.format,
+        decoder: opened.decoder.expect("decoder requested"),
+        track_id: opened.track_id,
+        codec_type: opened.codec_type,
+        time_base: opened.time_base,
+        start_ts: opened.start_ts,
+        info: opened.info,
     })
 }
 
@@ -340,19 +357,18 @@ fn compute_lead_frames(
             let priming = lead::scale_to_sample_rate(media_time, timescale, sample_rate);
             return -(priming as i32);
         }
-        if let Some(delay) = codec_params_delay {
-            if delay > 0 {
-                return -(delay as i32);
-            }
+        if let Some(delay) = codec_params_delay
+            && delay > 0
+        {
+            return -(delay as i32);
         }
         return 0;
     }
-    if codec == CODEC_TYPE_VORBIS {
-        if let Some(delay) = codec_params_delay {
-            if delay > 0 {
-                return -(delay as i32);
-            }
-        }
+    if codec == CODEC_TYPE_VORBIS
+        && let Some(delay) = codec_params_delay
+        && delay > 0
+    {
+        return -(delay as i32);
     }
     0
 }
@@ -423,8 +439,7 @@ pub fn probe<R: Read + Seek + Send + Sync + 'static>(
     source: R,
     hint_ext: Option<&str>,
 ) -> Result<AudioInfo, AudioError> {
-    let (_, _, _, _, _, _, info) = open_source(source, hint_ext, false)?;
-    Ok(info)
+    Ok(open_source(source, hint_ext, false)?.info)
 }
 
 /// Streaming audio decoder for playback, preserving file sample rate and applying BASS/AAC lead
@@ -646,10 +661,10 @@ impl AudioStream {
     fn fill_next_packet(&mut self, cancelled: Option<&AtomicBool>) -> Result<bool, AudioError> {
         let mut consecutive_decode_errors = 0u32;
         loop {
-            if let Some(flag) = cancelled {
-                if flag.load(Ordering::Relaxed) {
-                    return Err(AudioError::Cancelled);
-                }
+            if let Some(flag) = cancelled
+                && flag.load(Ordering::Relaxed)
+            {
+                return Err(AudioError::Cancelled);
             }
 
             let packet = match self.format.next_packet() {

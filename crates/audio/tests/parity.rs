@@ -82,10 +82,10 @@ fn measure_lag_frames(decoded: &[f32], reference: &[f32], search_radius: isize) 
 
     for lag in -search_radius..=search_radius {
         let mut corr = 0.0_f64;
-        for i in win_start..win_end {
+        for (i, &ref_sample) in reference.iter().enumerate().take(win_end).skip(win_start) {
             let j = i as isize + lag;
             if j >= 0 && (j as usize) < decoded.len() {
-                corr += f64::from(reference[i]) * f64::from(decoded[j as usize]);
+                corr += f64::from(ref_sample) * f64::from(decoded[j as usize]);
             }
         }
         if corr > best_corr {
@@ -237,7 +237,7 @@ fn synthetic_wav_probe_decode_channels_seek_and_cancel() {
 #[test]
 fn mono_input_duplicates_to_stereo_and_multichannel_takes_first_two() {
     // 1-channel WAV
-    let mono_samples: Vec<i16> = (0..1024).map(|i| ((i as i32 * 31) % 20000 - 10000) as i16).collect();
+    let mono_samples: Vec<i16> = (0..1024i32).map(|i| ((i * 31) % 20000 - 10000) as i16).collect();
     let wav1 = encode_wav_s16(&mono_samples, 48_000, 1);
     let mut s = AudioStream::open(Cursor::new(wav1), Some("wav"), AudioChannels::Stereo).unwrap();
     let out = s.read_f32(1024).unwrap();

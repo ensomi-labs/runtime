@@ -357,10 +357,10 @@ fn parse_moov_elst<R: Read + Seek>(
 ) -> io::Result<Option<(u64, u32)>> {
     let mut pos = start;
     while let Some(b) = read_box_header(reader, pos, end)? {
-        if &b.kind == b"trak" {
-            if let Some(delay) = parse_trak_elst(reader, b.content_start, b.end)? {
-                return Ok(Some(delay));
-            }
+        if &b.kind == b"trak"
+            && let Some(delay) = parse_trak_elst(reader, b.content_start, b.end)?
+        {
+            return Ok(Some(delay));
         }
         pos = b.end;
     }
@@ -392,12 +392,12 @@ fn parse_trak_elst<R: Read + Seek>(
         pos = b.end;
     }
 
-    if is_audio {
-        if let (Some(mt), Some(ts)) = (elst_media_time, timescale) {
-            if mt > 0 && ts > 0 {
-                return Ok(Some((mt, ts)));
-            }
-        }
+    if is_audio
+        && let (Some(mt), Some(ts)) = (elst_media_time, timescale)
+        && mt > 0
+        && ts > 0
+    {
+        return Ok(Some((mt, ts)));
     }
     Ok(None)
 }
@@ -415,10 +415,8 @@ fn parse_mdia<R: Read + Seek>(
             b"mdhd" => {
                 timescale = parse_mdhd_timescale(reader, b.content_start, b.end)?;
             }
-            b"hdlr" => {
-                if parse_hdlr_is_sound(reader, b.content_start, b.end)? {
-                    is_audio = true;
-                }
+            b"hdlr" if parse_hdlr_is_sound(reader, b.content_start, b.end)? => {
+                is_audio = true;
             }
             _ => {}
         }
