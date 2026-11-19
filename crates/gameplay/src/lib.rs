@@ -20,7 +20,7 @@ pub use feedback::{
 };
 pub use layout::{Geometry, MINIMUM_HOLD_BODY_HEIGHT, geometry, y_position};
 pub use osu::{OsuBeatmap, OsuError, parse_osu};
-pub use rules::{Judge, Judgement, Ruleset, TAIL_LENIENCE, Tier, TierCounts, Windows};
+pub use rules::{HOLD_TICK_MS, Judge, Judgement, Ruleset, TAIL_LENIENCE, Tier, TierCounts, Windows};
 pub use session::{
     InputEvent, JudgementEvent, LANES, LaneState, Part, Phase, Score, Session, VisibleObject,
     VisibleState,

@@ -97,6 +97,10 @@ pub enum Judge {
 #[uniffi::remote(Record)]
 pub struct Ruleset {
     pub judge: Judge,
+    #[uniffi(default = true)]
+    pub tail_judgement: bool,
+    #[uniffi(default = false)]
+    pub hold_ticks: bool,
 }
 
 #[uniffi::remote(Enum)]

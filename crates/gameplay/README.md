@@ -6,12 +6,12 @@ popups and lane lighting, the screen position of notes, and the `.osu` loader. B
 [`conformance/gameplay`](../../conformance/gameplay).
 
 ```rust
-let mut session = Session::new(&chart, Ruleset { judge: Judge::C })?;
+let mut session = Session::new(&chart, Ruleset::new(Judge::C))?;
 let events = session.input(InputEvent { lane: 0, phase: Phase::Press, time_ms: 1040.0 });
 let events = session.advance(1500.0);   // every input stamped at or before 1500 has been delivered
 let score = session.score();
 
-let mut session = Session::streaming(Ruleset { judge: Judge::C });
+let mut session = Session::streaming(Ruleset::new(Judge::C));
 let events = session.append(&page.objects, page.coverage_ms.into(), page.end_of_stream)?;
 let behind = session.decided_through_ms() < watermark_ms;   // after advance(watermark_ms)
 
@@ -25,7 +25,8 @@ let beatmap = parse_osu(&text)?;   // beatmap.chart, beatmap.title, beatmap.arti
   time beyond the duration, a note starting before the previous note of its lane ends or starts). A hold
   may end where the next note of its lane starts. An `end_ms` equal to `start_ms` is accepted: the .osu
   loader produces such holds. A streamed chart arrives in pages instead (below).
-- **Ruleset**: the judge difficulty A to E.
+- **Ruleset**: the judge difficulty A to E, `tail_judgement` (default `true` in `Ruleset::new`), and
+  `hold_ticks` (default `false` in `Ruleset::new`).
 - **Input**: lane, press or release, chart time in milliseconds (audio time plus the audio offset, applied by
   the caller exactly once). `advance(watermark_ms)`: the caller declares that every input stamped at or
   before the watermark has been delivered.
@@ -51,11 +52,15 @@ note time.
 - **Tiers** `bigP`, `p1`, `p2`, `p3`, `g`, `m`. `bigP` shows Perfect, `p1` to `g` Good, `m` Miss.
 - **Tap**: a press resolves the first unresolved waiting note of its lane unless the error is below `-g`, in
   which case the press is ignored (too early). A note not hit by `start + g` is missed.
-- **Hold**: the head is judged like a tap but only starts the hold. Releasing within the tail windows (the
-  head windows times 1.5, so `±1.5 g` at the outside) resolves the hold with the worse of the head and tail
-  tiers. Releasing before `end - 1.5 g` misses it, as does still holding after `end + 1.5 g`, as does a head
-  that was never hit. A hold produces one event; its `offset_ms` is the head's error, also when it ends in a
-  tail outcome. There is no recovery from a miss of either end.
+- **Hold**: the head is judged like a tap. With `tail_judgement` enabled, hitting the head starts the
+  hold, releasing within the tail windows (the head windows times 1.5, so `±1.5 g` at the outside)
+  resolves the hold with the worse of the head and tail tiers, and releasing before `end - 1.5 g` or
+  holding past `end + 1.5 g` misses it. With `tail_judgement` disabled, hitting the head scores the
+  note immediately at `Part::Head`, and neither an early release nor holding past `end` can miss or
+  break combo; the hold stays held until released or until `end`. With `hold_ticks` enabled, holding a
+  body adds `1` to combo every `100 ms` (`HOLD_TICK_MS`, at `start + 100 k < end` after the press)
+  without changing `TierCounts` or accuracy. A hold produces one event; its `offset_ms` is the head's
+  error, also when it ends in a tail outcome. There is no recovery from a missed head (or missed tail).
 - **Note lock**: an unresolved note stops being hittable when the next unresolved note of its lane starts: it
   is missed at that start time. This applies to a held hold too.
 - **Score**: accuracy is the mean of the weights 1, .9, .85, .8, .4, 0 (bigP, p1, p2, p3, g, m) over resolved

@@ -89,7 +89,7 @@ fn pages_per_head_row_make_the_whole_chart() {
         assert_eq!(tokens, chart_tokens(&chart), "seed {seed}");
 
         // A streamed session takes every page, a hold's end in a later page than its start, and ends with the chart.
-        let mut session = Session::streaming(Ruleset { judge: Judge::C });
+        let mut session = Session::streaming(Ruleset::new(Judge::C));
         for page in &pages {
             let tokens: Vec<ChartToken> = page.tokens.iter().map(chart_token).collect();
             session.append_tokens(&tokens, page.coverage_ms, page.end_of_stream).unwrap_or_else(|e| panic!("seed {seed}: {e}"));

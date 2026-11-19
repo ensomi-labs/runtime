@@ -37,10 +37,18 @@ struct ObjectJson {
     end_ms: Option<u32>,
 }
 
+fn default_true() -> bool {
+    true
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct RulesetJson {
     judge: String,
+    #[serde(default = "default_true")]
+    tail_judgement: bool,
+    #[serde(default)]
+    hold_ticks: bool,
 }
 
 #[derive(Deserialize)]
@@ -132,20 +140,31 @@ fn tier(name: &str) -> Tier {
 }
 
 fn fixtures() -> Vec<(String, Fixture)> {
-    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../conformance/gameplay");
-    let mut paths: Vec<_> = std::fs::read_dir(&dir)
-        .expect("fixture directory")
-        .map(|entry| entry.unwrap().path())
-        .filter(|path| {
-            path.extension()
-                .is_some_and(|extension| extension == "json")
-        })
-        .collect();
+    let base = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../conformance/gameplay");
+    let mut paths = Vec::new();
+    for dir in [base.clone(), base.join("hold_options")] {
+        if !dir.exists() {
+            continue;
+        }
+        paths.extend(
+            std::fs::read_dir(&dir)
+                .expect("fixture directory")
+                .map(|entry| entry.unwrap().path())
+                .filter(|path| {
+                    path.extension()
+                        .is_some_and(|extension| extension == "json")
+                }),
+        );
+    }
     paths.sort();
     paths
         .into_iter()
         .map(|path| {
-            let name = path.file_name().unwrap().to_string_lossy().into_owned();
+            let name = path
+                .strip_prefix(&base)
+                .unwrap_or(&path)
+                .to_string_lossy()
+                .into_owned();
             let text = std::fs::read_to_string(&path).unwrap();
             let fixture =
                 serde_json::from_str(&text).unwrap_or_else(|error| panic!("{name}: {error}"));
@@ -220,7 +239,15 @@ fn setup(fixture: &Fixture) -> (Option<Chart>, Ruleset, Vec<Step>) {
         .collect();
     let streamed = steps.iter().any(|step| matches!(step, Step::Page(_)));
     assert_ne!(chart.is_some(), streamed, "a fixture has a chart or pages");
-    (chart, Ruleset { judge }, steps)
+    (
+        chart,
+        Ruleset {
+            judge,
+            tail_judgement: fixture.ruleset.tail_judgement,
+            hold_ticks: fixture.ruleset.hold_ticks,
+        },
+        steps,
+    )
 }
 
 fn session(chart: &Option<Chart>, ruleset: Ruleset) -> Session {

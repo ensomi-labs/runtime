@@ -12,10 +12,21 @@ pub enum Judge {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Ruleset {
     pub judge: Judge,
+    /// Whether releasing a held long note is judged: early release misses, release inside `±1.5 g`
+    /// clamps the head tier to the worse of head and tail, and holding past `end + 1.5 g` misses.
+    /// When `false`, hitting the head scores the note immediately and neither body nor tail can miss.
+    pub tail_judgement: bool,
+    /// Whether holding a long note's body adds `1` to combo every [`HOLD_TICK_MS`] before its end,
+    /// without changing [`TierCounts`] or accuracy.
+    pub hold_ticks: bool,
 }
 
 /// A hold's tail windows are the head windows times this.
 pub const TAIL_LENIENCE: f64 = 1.5;
+
+/// Interval in milliseconds at which holding a long note's body adds 1 to combo when
+/// [`Ruleset::hold_ticks`] is enabled.
+pub const HOLD_TICK_MS: f64 = 100.0;
 
 /// Inclusive symmetric half-windows in milliseconds.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -133,13 +144,26 @@ impl TierCounts {
 }
 
 impl Ruleset {
+    pub const fn new(judge: Judge) -> Self {
+        Self {
+            judge,
+            tail_judgement: true,
+            hold_ticks: false,
+        }
+    }
+
     pub fn windows(&self) -> Windows {
         Windows::new(self.judge)
     }
 
-    /// How far a streamed chart must reach past an input before a session can settle it: `1.5 g`, the miss window
-    /// of a hold's tail, the widest the session waits for. A scheduler keeps the chart at least this far ahead of play.
+    /// How far a streamed chart must reach past an input before a session can settle it: `1.5 g` when
+    /// hold tails are judged, else `g` (the head press window). A scheduler keeps the chart at least
+    /// this far ahead of play.
     pub fn settle_lead_ms(&self) -> f64 {
-        self.windows().g * TAIL_LENIENCE
+        if self.tail_judgement {
+            self.windows().g * TAIL_LENIENCE
+        } else {
+            self.windows().g
+        }
     }
 }

@@ -1,0 +1,32 @@
+{
+  "description": "Tail judgement enabled with 100 ms body ticks: holding earns 1 combo per 100 ms strictly before end, releasing on time adds the object's combo, and releasing early breaks combo while keeping earlier max_combo.",
+  "chart": {
+    "duration_ms": 4000,
+    "objects": [
+      {"lane": 0, "start_ms": 1000, "end_ms": 1400},
+      {"lane": 1, "start_ms": 2000, "end_ms": 2500}
+    ]
+  },
+  "ruleset": {"judge": "C", "tail_judgement": true, "hold_ticks": true},
+  "steps": [
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1000}},
+    {"input": {"lane": 0, "phase": "release", "time_ms": 1385}},
+    {"input": {"lane": 1, "phase": "press", "time_ms": 2000}},
+    {"input": {"lane": 1, "phase": "release", "time_ms": 2150}},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 0, "lane": 0, "part": "tail", "tier": "bigP", "offset_ms": 0, "time_ms": 1385},
+      {"object": 1, "lane": 1, "part": "tail", "tier": "m", "offset_ms": null, "time_ms": 2150}
+    ],
+    "score": {
+      "tier_counts": {"bigP": 1, "p1": 0, "p2": 0, "p3": 0, "g": 0, "m": 1},
+      "accuracy": 0.5,
+      "combo": 0,
+      "max_combo": 5,
+      "suggested_audio_offset_ms": 0
+    },
+    "late_inputs": 0
+  }
+}

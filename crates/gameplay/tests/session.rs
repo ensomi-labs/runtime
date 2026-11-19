@@ -24,7 +24,7 @@ fn chart(objects: Vec<ChartObject>) -> Chart {
 }
 
 fn session(objects: Vec<ChartObject>) -> Session {
-    Session::new(&chart(objects), Ruleset { judge: Judge::C }).unwrap()
+    Session::new(&chart(objects), Ruleset::new(Judge::C)).unwrap()
 }
 
 fn press(lane: u32, time_ms: f64) -> InputEvent {
@@ -272,4 +272,86 @@ fn a_session_without_objects_is_resolved_with_full_accuracy() {
         ),
         (1.0, 0, 0, None)
     );
+}
+
+#[test]
+fn hold_without_tail_judgement_scores_on_head_never_breaks_on_body_or_tail_and_earns_body_combo() {
+    let ruleset = Ruleset {
+        judge: Judge::C,
+        tail_judgement: false,
+        hold_ticks: true,
+    };
+    let mut session = Session::new(
+        &chart(vec![
+            hold(0, 1_000, 1_500),
+            tap(0, 1_500),
+            hold(1, 2_000, 2_500),
+        ]),
+        ruleset,
+    )
+    .unwrap();
+
+    // Press hold 0 on time: head scores immediately (+1 combo).
+    let hit = session.input(press(0, 1_000.0));
+    assert_eq!(hit.len(), 1);
+    assert_eq!((hit[0].part, hit[0].tier, hit[0].offset_ms), (Part::Head, Tier::BigP, Some(0.0)));
+    assert_eq!(session.score().combo, 1);
+
+    // Release midway at 1_250 ms: earns 1_100 and 1_200 ticks (+2 combo = 3), does NOT break combo,
+    // and frees lane 0 so tap 1 at 1_500 can be hit early at 1_485 ms.
+    assert!(session.input(release(0, 1_250.0)).is_empty());
+    assert_eq!(session.score().combo, 3);
+    assert_eq!(session.lane_states()[0].holding_object, None);
+
+    let tap_hit = session.input(press(0, 1_485.0));
+    assert_eq!(tap_hit.len(), 1);
+    assert_eq!((tap_hit[0].object, tap_hit[0].tier), (1, Tier::BigP));
+    assert_eq!(session.score().combo, 4);
+
+    // Hold 2 (2_000..2_500) held all the way past its end without ever releasing:
+    // earns +1 head + 4 ticks (2_100..2_400) = +5 -> 9 combo, completes cleanly at 2_500 with no overhold miss.
+    let hold2_hit = session.input(press(1, 2_010.0));
+    assert_eq!(hold2_hit.len(), 1);
+    assert_eq!(session.score().combo, 5);
+    assert!(session.advance(5_000.0).is_empty());
+    assert!(session.is_resolved());
+
+    let score = session.score();
+    assert_eq!(score.tier_counts, TierCounts { big_p: 3, p1: 0, p2: 0, p3: 0, g: 0, m: 0 });
+    assert_eq!(score.accuracy, 1.0);
+    assert_eq!((score.combo, score.max_combo), (9, 9));
+}
+
+#[test]
+fn hold_with_tail_judgement_and_body_ticks_matches_max_combo_and_still_judges_release() {
+    let ruleset = Ruleset {
+        judge: Judge::C,
+        tail_judgement: true,
+        hold_ticks: true,
+    };
+    let mut session = Session::new(
+        &chart(vec![hold(0, 1_000, 1_400), hold(1, 2_000, 2_500)]),
+        ruleset,
+    )
+    .unwrap();
+
+    // Hold 0 (1_000..1_400) held cleanly and released slightly early within BigP window (-20 ms):
+    // 3 body ticks (1_100, 1_200, 1_300) + 1 object resolution = 4 combo.
+    assert!(session.input(press(0, 1_000.0)).is_empty());
+    assert!(session.advance(1_250.0).is_empty());
+    assert_eq!(session.score().combo, 2);
+    let tail_ok = session.input(release(0, 1_380.0));
+    assert_eq!(tail_ok.len(), 1);
+    assert_eq!(tail_ok[0].tier, Tier::BigP);
+    assert_eq!(session.score().combo, 4);
+
+    // Hold 1 (2_000..2_500) held to 2_150 (1 tick -> combo 5) then released too early (< 2_500 - 300):
+    // breaks combo to 0 while preserving max_combo = 5.
+    assert!(session.input(press(1, 2_000.0)).is_empty());
+    let broken = session.input(release(1, 2_150.0));
+    assert_eq!(broken.len(), 1);
+    assert_eq!(broken[0].tier, Tier::M);
+    let score = session.score();
+    assert_eq!((score.combo, score.max_combo), (0, 5));
+    assert_eq!(score.tier_counts, TierCounts { big_p: 1, p1: 0, p2: 0, p3: 0, g: 0, m: 1 });
 }

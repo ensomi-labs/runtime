@@ -465,7 +465,7 @@ impl WasmScheduler {
         };
         let request = Request::from_json(request_json, seed, seed_is_bigint).map_err(error)?;
         let (options, replay_position) = options(setting, audio_name, clock, replay);
-        let lead = Lead { settle_ms: Ruleset { judge }.settle_lead_ms(), render_ms: render_lead_ms, margin_ms };
+        let lead = Lead { settle_ms: Ruleset::new(judge).settle_lead_ms(), render_ms: render_lead_ms, margin_ms };
         Ok(WasmScheduler { inner: Scheduler::new(models.inner.clone(), source, request, options, mode, lead), replay_position })
     }
 
