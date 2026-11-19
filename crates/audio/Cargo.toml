@@ -1,0 +1,22 @@
+[package]
+name = "ensomi-audio"
+description = "Native audio probing and decoding with unified BASS / release-engine timeline alignment"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+symphonia = { version = "0.5.5", default-features = false, features = [
+    "aac",
+    "alac",
+    "flac",
+    "isomp4",
+    "mkv",
+    "mp3",
+    "ogg",
+    "pcm",
+    "vorbis",
+    "wav",
+] }

@@ -8,18 +8,47 @@ changes, so a future UniFFI update must revisit this workaround.
 import sys
 from pathlib import Path
 
+
+def patch_exception(
+    source: str,
+    class_marker: str,
+    converter_marker: str,
+    expected_fields: int,
+    getters: list[tuple[str, int]],
+) -> str:
+    start = source.index(class_marker)
+    end = source.index(converter_marker, start)
+    errors = source[start:end]
+    field = "        val `message`: kotlin.String"
+    if errors.count(field) != expected_fields:
+        sys.exit(f"UniFFI error fields changed for {class_marker}")
+    errors = errors.replace(field, "        override val `message`: kotlin.String")
+    for expression, expected_count in getters:
+        getter = "        override val message\n            get() = " + expression + "\n"
+        if errors.count(getter) != expected_count:
+            sys.exit(f"UniFFI error message template changed for {class_marker}")
+        errors = errors.replace(getter, "")
+    return source[:start] + errors + source[end:]
+
+
 path = Path(sys.argv[1])
 source = path.read_text()
-start = source.index("sealed class GeneratorException:")
-end = source.index("public object FfiConverterTypeGeneratorError", start)
-errors = source[start:end]
-field = "        val `message`: kotlin.String"
-if errors.count(field) != 2:
-    sys.exit("UniFFI error fields changed")
-errors = errors.replace(field, "        override val `message`: kotlin.String")
-for expression in ['"message=${ `message` }"', '"code=${ `code` }, message=${ `message` }"']:
-    getter = "        override val message\n            get() = " + expression + "\n"
-    if errors.count(getter) != 1:
-        sys.exit("UniFFI error message template changed")
-    errors = errors.replace(getter, "")
-path.write_text(source[:start] + errors + source[end:])
+source = patch_exception(
+    source,
+    "sealed class GeneratorException:",
+    "public object FfiConverterTypeGeneratorError",
+    expected_fields=2,
+    getters=[
+        ('"message=${ `message` }"', 1),
+        ('"code=${ `code` }, message=${ `message` }"', 1),
+    ],
+)
+if "sealed class AudioException:" in source:
+    source = patch_exception(
+        source,
+        "sealed class AudioException:",
+        "public object FfiConverterTypeAudioError",
+        expected_fields=4,
+        getters=[('"message=${ `message` }"', 4)],
+    )
+path.write_text(source)

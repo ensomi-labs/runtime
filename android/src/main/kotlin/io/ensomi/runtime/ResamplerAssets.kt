@@ -11,6 +11,11 @@ val onnxRuntimeLicenseAssets: List<String> = listOf(
     "licenses/onnxruntime/ThirdPartyNotices.txt",
 )
 
+/** Symphonia's MPL-2.0 licence notice, for the app's acknowledgements. */
+val symphoniaLicenseAssets: List<String> = listOf(
+    "licenses/symphonia/LICENSE",
+)
+
 internal fun bundledResamplerDirectory(context: Context): String {
     val assets = context.assets
     val version = assets.open("resampler.sha256").bufferedReader().use { it.readText().trim() }

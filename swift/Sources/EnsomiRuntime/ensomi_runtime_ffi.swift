@@ -1938,6 +1938,16 @@ public protocol PreparedProtocol: AnyObject, Sendable {
     
     func bytes()  -> Data
     
+    /**
+     * Writes the stored `Prepared` directly to `path` from native memory, avoiding JVM heap copies.
+     */
+    func saveToPath(path: String) throws 
+    
+    /**
+     * The prepared song's duration in milliseconds.
+     */
+    func songMs()  -> Double
+    
 }
 /**
  * What `prepare` keeps of a song: the results of the stages that read only the audio, from which any request and
@@ -2006,11 +2016,46 @@ public convenience init(bytes: Data)throws  {
     }
 
     
+    /**
+     * Reads a stored `Prepared` directly from `path` in native memory, avoiding JVM heap copies.
+     * Fails with `GeneratorError.Model` if the file cannot be read or is for another format,
+     * runtime version, or model.
+     */
+public static func fromPath(path: String)throws  -> Prepared  {
+    return try  FfiConverterTypePrepared_lift(try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
+    uniffi_ensomi_runtime_ffi_fn_constructor_prepared_from_path(
+        FfiConverterString.lower(path),$0
+    )
+})
+}
+    
 
     
 open func bytes() -> Data  {
     return try!  FfiConverterData.lift(try! rustCall() {
     uniffi_ensomi_runtime_ffi_fn_method_prepared_bytes(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * Writes the stored `Prepared` directly to `path` from native memory, avoiding JVM heap copies.
+     */
+open func saveToPath(path: String)throws   {try rustCallWithError(FfiConverterTypeGeneratorError_lift) {
+    uniffi_ensomi_runtime_ffi_fn_method_prepared_save_to_path(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(path),$0
+    )
+}
+}
+    
+    /**
+     * The prepared song's duration in milliseconds.
+     */
+open func songMs() -> Double  {
+    return try!  FfiConverterDouble.lift(try! rustCall() {
+    uniffi_ensomi_runtime_ffi_fn_method_prepared_song_ms(
             self.uniffiCloneHandle(),$0
     )
 })
@@ -6390,6 +6435,12 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ensomi_runtime_ffi_checksum_method_prepared_bytes() != 48485) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_prepared_save_to_path() != 13364) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_method_prepared_song_ms() != 38600) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_ensomi_runtime_ffi_checksum_method_chartscheduler_heard() != 13955) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -6427,6 +6478,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_constructor_chartgenerator_open() != 6196) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ensomi_runtime_ffi_checksum_constructor_prepared_from_path() != 19160) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ensomi_runtime_ffi_checksum_constructor_prepared_new() != 62881) {

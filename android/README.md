@@ -10,12 +10,13 @@ with JVM target 17. No model is needed. Run all commands from the repository roo
 scripts/build-android.sh
 ```
 
-This builds `build/android/ensomi-runtime.aar`, with the bindings' `sync` feature on, and keeps the generated source
+This builds `build/android/ensomi-runtime.aar`, with the bindings' `sync` and `audio` features on, and keeps the generated source
 in `build/android/kotlin/`.
-It honours `CARGO_TARGET_DIR`, builds native code at API 24, rejects unresolved native symbols, and checks
+It honours `CARGO_TARGET_DIR` and `ORT_LIB_LOCATION`, builds native code at API 24, rejects unresolved native symbols, and checks
 that both native libraries have 16 KiB LOAD alignment. The AAR includes compiled bindings and helpers,
 `libensomi_runtime_ffi.so`, `libc++_shared.so`, the resampler assets, `assets/licenses/onnxruntime`
-(exposed as `onnxRuntimeLicenseAssets`) and Sonalign's notice at `assets/licenses/sonalign/LICENSE`. It is a local build,
+(exposed as `onnxRuntimeLicenseAssets`), `assets/licenses/symphonia/LICENSE` (exposed as `symphoniaLicenseAssets`),
+and Sonalign's notice at `assets/licenses/sonalign/LICENSE`. It is a local build,
 with no Android CI or release asset yet.
 
 `scripts/check-no-kleidiai.py` gates `libensomi_runtime_ffi.so` immediately after the native build and again

@@ -12,6 +12,7 @@ name = "ensomi_runtime_ffi"
 crate-type = ["staticlib", "cdylib", "lib"]
 
 [dependencies]
+ensomi-audio = { path = "../audio", optional = true }
 ensomi-gameplay = { path = "../gameplay" }
 ensomi-generate = { path = "../generate" }
 ensomi-generate-ort = { path = "../generate-ort" }
@@ -29,6 +30,8 @@ ensomi-generate-ort = { path = "../generate-ort", features = ["coreml"] }
 bindgen = ["uniffi/cli"]
 # Live audio sync, for Android. Off for Apple, whose apps link Sonalign as a Swift package.
 sync = ["dep:ensomi-sync"]
+# Native audio probing and decoding from file descriptors, for Android.
+audio = ["dep:ensomi-audio"]
 
 [[bin]]
 name = "uniffi-bindgen"

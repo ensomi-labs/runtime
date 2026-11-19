@@ -21,6 +21,8 @@ use ensomi_gameplay::{
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
+#[cfg(feature = "audio")]
+pub mod audio;
 pub mod generator;
 pub mod scheduler;
 #[cfg(feature = "sync")]
