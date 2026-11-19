@@ -61,7 +61,7 @@ fn percentile(sorted_us: &[f64], p: f64) -> f64 {
 fn play(count: u32) {
     let chart = chart(count);
     let inputs = inputs(&chart);
-    let mut session = Session::new(&chart, Ruleset { judge: Judge::C }).unwrap();
+    let mut session = Session::new(&chart, Ruleset::new(Judge::C)).unwrap();
     let mut next_input = 0;
     let mut frame_us = Vec::new();
     let mut render_ms = 0.0;

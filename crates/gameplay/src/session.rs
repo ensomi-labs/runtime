@@ -1,6 +1,6 @@
 use crate::{
-    Chart, ChartError, ChartObject, ChartToken, Ruleset, TAIL_LENIENCE, Tier, TierCounts,
-    TokenKind, Windows,
+    Chart, ChartError, ChartObject, ChartToken, HOLD_TICK_MS, Ruleset, TAIL_LENIENCE, Tier,
+    TierCounts, TokenKind, Windows,
 };
 use std::cmp::Ordering;
 use std::collections::VecDeque;
@@ -92,6 +92,13 @@ enum State {
     Holding {
         head_tier: Tier,
         head_offset_ms: f64,
+        next_tick_k: f64,
+    },
+    /// Tail judgement disabled: head tier and offset were already scored on press; the hold stays
+    /// active while held before `end` to earn body combo ticks and show held state.
+    HoldingHeadScored {
+        tier: Tier,
+        next_tick_k: f64,
     },
     Resolved(Tier),
 }
@@ -116,31 +123,46 @@ impl Object {
     }
 }
 
-/// A miss that is due: the first unresolved object of a lane ran out of time, either because the next
-/// object of the lane started (note lock) or because its window closed.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum ExpiryKind {
+    /// Note lock (`<= now`), decided at the next note's start.
+    Lock,
+    /// Natural completion of a head-scored hold at its `end` (`<= now`).
+    HoldEnd,
+    /// Miss window closing (`< now`), decided just after the window closes.
+    Window,
+}
+
+/// A time-based state transition that is due: a note lock miss, a head-scored hold reaching its end,
+/// or a miss window closing.
 #[derive(Clone, Copy)]
 struct Expiry {
     time: f64,
-    lock: bool,
+    kind: ExpiryKind,
     object: usize,
 }
 
 impl Expiry {
-    /// A lock is due at its time; a window closes just after it, so an input stamped on the closing
-    /// time still hits.
+    fn exact(&self) -> bool {
+        !matches!(self.kind, ExpiryKind::Window)
+    }
+
+    /// Locks and hold ends are due at their time; a window closes just after it, so an input stamped on
+    /// the closing time still hits.
     fn is_due(&self, now: f64) -> bool {
-        if self.lock {
+        if self.exact() {
             self.time <= now
         } else {
             self.time < now
         }
     }
 
-    /// Time order; at equal times locks first, then chart order.
+    /// Time order; at equal times exact boundaries (`Lock`, then `HoldEnd`) come before `Window`, then
+    /// chart order.
     fn order(&self, other: &Self) -> Ordering {
         self.time
             .total_cmp(&other.time)
-            .then(other.lock.cmp(&self.lock))
+            .then(self.kind.cmp(&other.kind))
             .then(self.object.cmp(&other.object))
     }
 }
@@ -162,6 +184,8 @@ impl Expiry {
 /// held-or-resolved objects, then waiting ones.
 pub struct Session {
     windows: Windows,
+    tail_judgement: bool,
+    hold_ticks: bool,
     objects: Vec<Object>,
     /// Object indexes per lane, in chart order.
     lanes: [Vec<usize>; LANES],
@@ -209,6 +233,8 @@ impl Session {
     pub fn streaming(ruleset: Ruleset) -> Self {
         Self {
             windows: ruleset.windows(),
+            tail_judgement: ruleset.tail_judgement,
+            hold_ticks: ruleset.hold_ticks,
             objects: Vec::new(),
             lanes: Default::default(),
             cursor: [0; LANES],
@@ -334,7 +360,7 @@ impl Session {
             .map(|lane| LaneState {
                 lane: lane as u32,
                 is_pressed: self.pressed[lane],
-                holding_object: self.holding(lane).map(|(index, ..)| index as u32),
+                holding_object: self.holding_index(lane).map(|index| index as u32),
             })
             .collect()
     }
@@ -391,7 +417,7 @@ impl Session {
             state: match object.state {
                 State::Waiting if object.hold && object.end.is_none() => VisibleState::OpenEnded,
                 State::Waiting => VisibleState::Waiting,
-                State::Holding { .. } => VisibleState::Holding,
+                State::Holding { .. } | State::HoldingHeadScored { .. } => VisibleState::Holding,
                 State::Resolved(Tier::M) => VisibleState::MissedButVisible,
                 State::Resolved(_) => VisibleState::Resolved,
             },
@@ -532,8 +558,9 @@ impl Session {
     }
 
     /// Whether the delivered objects decide an input, once everything due before it is resolved. A press
-    /// with no waiting note in its lane could hit one that starts up to `g` later; a release of a hold
-    /// whose end has not arrived is too early only if that end is known to lie beyond the tail window.
+    /// with no waiting note in its lane could hit one that starts up to `g` later; when tails are judged,
+    /// a release of a hold whose end has not arrived is too early only if that end is known to lie beyond
+    /// the tail window.
     fn is_settled(&self, input: &InputEvent) -> bool {
         let time = input.time_ms;
         if time > self.coverage {
@@ -545,15 +572,21 @@ impl Session {
         }
         match input.phase {
             Phase::Press => self.waiting(lane).is_some() || time + self.windows.g <= self.coverage,
-            Phase::Release => self.holding(lane).is_none_or(|(index, ..)| {
-                self.objects[index].end.is_some()
-                    || time + self.windows.g * TAIL_LENIENCE <= self.coverage
-            }),
+            Phase::Release => {
+                if !self.tail_judgement {
+                    true
+                } else {
+                    self.holding(lane).is_none_or(|(index, ..)| {
+                        self.objects[index].end.is_some()
+                            || time + self.windows.g * TAIL_LENIENCE <= self.coverage
+                    })
+                }
+            }
         }
     }
 
-    /// The miss due soonest in a lane. Only the first unresolved object of a lane can have one: the
-    /// lock on it precedes the window of any later object.
+    /// The miss or natural hold end due soonest in a lane. Only the first unresolved object of a lane
+    /// can have one: the lock on it precedes the window of any later object.
     fn expiry(&self, lane: usize) -> Option<Expiry> {
         let mut unresolved = self.lanes[lane][self.cursor[lane]..]
             .iter()
@@ -561,26 +594,52 @@ impl Session {
             .filter(|&i| !self.objects[i].is_resolved());
         let object = unresolved.next()?;
         let first = &self.objects[object];
-        let window = match first.state {
-            State::Holding { .. } => first
-                .end
-                .map_or(f64::INFINITY, |end| end + self.windows.g * TAIL_LENIENCE),
-            _ => first.start + self.windows.g,
-        };
-        Some(
-            match unresolved.next().map(|next| self.objects[next].start) {
-                Some(lock) if lock <= window => Expiry {
-                    time: lock,
-                    lock: true,
+        match first.state {
+            State::HoldingHeadScored { .. } => {
+                let end = first.end?;
+                Some(Expiry {
+                    time: end,
+                    kind: ExpiryKind::HoldEnd,
                     object,
-                },
-                _ => Expiry {
-                    time: window,
-                    lock: false,
-                    object,
-                },
-            },
-        )
+                })
+            }
+            State::Holding { .. } => {
+                let window = first
+                    .end
+                    .map_or(f64::INFINITY, |end| end + self.windows.g * TAIL_LENIENCE);
+                Some(
+                    match unresolved.next().map(|next| self.objects[next].start) {
+                        Some(lock) if lock <= window => Expiry {
+                            time: lock,
+                            kind: ExpiryKind::Lock,
+                            object,
+                        },
+                        _ => Expiry {
+                            time: window,
+                            kind: ExpiryKind::Window,
+                            object,
+                        },
+                    },
+                )
+            }
+            State::Waiting | State::Resolved(_) => {
+                let window = first.start + self.windows.g;
+                Some(
+                    match unresolved.next().map(|next| self.objects[next].start) {
+                        Some(lock) if lock <= window => Expiry {
+                            time: lock,
+                            kind: ExpiryKind::Lock,
+                            object,
+                        },
+                        _ => Expiry {
+                            time: window,
+                            kind: ExpiryKind::Window,
+                            object,
+                        },
+                    },
+                )
+            }
+        }
     }
 
     fn resolve_due(&mut self, now: f64, events: &mut Vec<JudgementEvent>) {
@@ -589,11 +648,94 @@ impl Session {
             .filter(|expiry| expiry.is_due(now))
             .min_by(Expiry::order)
         {
-            let part = match self.objects[expiry.object].state {
-                State::Holding { .. } => Part::Tail,
-                _ => Part::Head,
+            self.advance_ticks(expiry.time, !expiry.exact());
+            match self.objects[expiry.object].state {
+                State::HoldingHeadScored { tier, .. } => {
+                    self.complete_hold(expiry.object, tier);
+                }
+                State::Holding { .. } => {
+                    events.push(self.resolve(
+                        expiry.object,
+                        Tier::M,
+                        Part::Tail,
+                        None,
+                        expiry.time,
+                    ));
+                }
+                _ => {
+                    events.push(self.resolve(
+                        expiry.object,
+                        Tier::M,
+                        Part::Head,
+                        None,
+                        expiry.time,
+                    ));
+                }
+            }
+        }
+        self.advance_ticks(now, true);
+    }
+
+    /// Advances all held holds' body combo ticks up to `bound` (`<= bound` if `inclusive`, else
+    /// `< bound`), strictly before each hold's `end`. O(1) per lane regardless of duration.
+    fn advance_ticks(&mut self, bound: f64, inclusive: bool) {
+        if !self.hold_ticks || bound.is_nan() {
+            return;
+        }
+        for lane in 0..LANES {
+            let Some(index) = self.holding_index(lane) else {
+                continue;
             };
-            events.push(self.resolve(expiry.object, Tier::M, part, None, expiry.time));
+            let start = self.objects[index].start;
+            let end = self.objects[index].end;
+            let next_tick_k = match &mut self.objects[index].state {
+                State::Holding { next_tick_k, .. }
+                | State::HoldingHeadScored { next_tick_k, .. } => next_tick_k,
+                _ => continue,
+            };
+            if !next_tick_k.is_finite() {
+                continue;
+            }
+            let first_tick = start + *next_tick_k * HOLD_TICK_MS;
+            if end.is_some_and(|end_ms| first_tick >= end_ms) {
+                continue;
+            }
+            if if inclusive {
+                first_tick > bound
+            } else {
+                first_tick >= bound
+            } {
+                continue;
+            }
+            if bound == f64::INFINITY && end.is_none() {
+                *next_tick_k = f64::INFINITY;
+                self.combo = u32::MAX;
+                self.max_combo = u32::MAX;
+                continue;
+            }
+            let k_end = match end {
+                Some(end_ms) => max_tick_strictly_below(start, end_ms, *next_tick_k),
+                None => f64::INFINITY,
+            };
+            let k_bound = if bound == f64::INFINITY {
+                f64::INFINITY
+            } else if inclusive {
+                max_tick_at_or_below(start, bound, *next_tick_k)
+            } else {
+                max_tick_strictly_below(start, bound, *next_tick_k)
+            };
+            let max_k = k_end.min(k_bound);
+            if max_k >= *next_tick_k {
+                let delta = max_k - *next_tick_k + 1.0;
+                let add = if delta >= f64::from(u32::MAX) {
+                    u32::MAX
+                } else {
+                    delta as u32
+                };
+                self.combo = self.combo.saturating_add(add);
+                self.max_combo = self.max_combo.max(self.combo);
+                *next_tick_k = max_k + 1.0;
+            }
         }
     }
 
@@ -601,39 +743,63 @@ impl Session {
         let Some(index) = self.waiting(lane) else {
             return;
         };
-        let error_ms = now - self.objects[index].start;
+        let start = self.objects[index].start;
+        let error_ms = now - start;
         if error_ms < -self.windows.g {
             return;
         }
         let tier = self.windows.classify(error_ms, 1.0);
         if !self.objects[index].hold {
             events.push(self.resolve(index, tier, Part::Head, Some(error_ms), now));
-        } else {
+        } else if self.tail_judgement {
             self.objects[index].state = State::Holding {
                 head_tier: tier,
                 head_offset_ms: error_ms,
+                next_tick_k: first_tick_after(start, now),
             };
+        } else {
+            events.push(self.score_head(index, tier, error_ms, now));
+            if self.objects[index].end.is_some_and(|end| now >= end) {
+                self.complete_hold(index, tier);
+            } else {
+                self.objects[index].state = State::HoldingHeadScored {
+                    tier,
+                    next_tick_k: first_tick_after(start, now),
+                };
+            }
         }
     }
 
-    /// A release the coverage settles: an unknown end lies beyond the tail window.
+    /// A release the coverage settles: when tails are judged, an unknown end lies beyond the tail window.
     fn release(&mut self, lane: usize, now: f64, events: &mut Vec<JudgementEvent>) {
-        let Some((index, head_tier, head_offset_ms)) = self.holding(lane) else {
+        let Some(index) = self.holding_index(lane) else {
             return;
         };
-        let end = self.objects[index].end.unwrap_or(f64::INFINITY);
-        if now < end - self.windows.g * TAIL_LENIENCE {
-            events.push(self.resolve(index, Tier::M, Part::Tail, None, now));
-            return;
+        match self.objects[index].state {
+            State::HoldingHeadScored { tier, .. } => {
+                self.complete_hold(index, tier);
+            }
+            State::Holding {
+                head_tier,
+                head_offset_ms,
+                ..
+            } => {
+                let end = self.objects[index].end.unwrap_or(f64::INFINITY);
+                if now < end - self.windows.g * TAIL_LENIENCE {
+                    events.push(self.resolve(index, Tier::M, Part::Tail, None, now));
+                    return;
+                }
+                let tail_tier = self.windows.classify(now - end, TAIL_LENIENCE);
+                events.push(self.resolve(
+                    index,
+                    head_tier.max(tail_tier),
+                    Part::Tail,
+                    Some(head_offset_ms),
+                    now,
+                ));
+            }
+            _ => {}
         }
-        let tail_tier = self.windows.classify(now - end, TAIL_LENIENCE);
-        events.push(self.resolve(
-            index,
-            head_tier.max(tail_tier),
-            Part::Tail,
-            Some(head_offset_ms),
-            now,
-        ));
     }
 
     /// The first note of a lane waiting for its press.
@@ -641,7 +807,20 @@ impl Session {
         self.lanes[lane].get(self.first_waiting(lane)).copied()
     }
 
-    /// The first hold being held in a lane, with its head tier and press error.
+    /// Index of the hold currently held in a lane (tail-judged or head-scored).
+    fn holding_index(&self, lane: usize) -> Option<usize> {
+        self.lanes[lane][self.cursor[lane]..self.first_waiting(lane)]
+            .iter()
+            .copied()
+            .find(|&i| {
+                matches!(
+                    self.objects[i].state,
+                    State::Holding { .. } | State::HoldingHeadScored { .. }
+                )
+            })
+    }
+
+    /// The first tail-judged hold being held in a lane, with its head tier and press error.
     fn holding(&self, lane: usize) -> Option<(usize, Tier, f64)> {
         self.lanes[lane][self.cursor[lane]..self.first_waiting(lane)]
             .iter()
@@ -649,6 +828,7 @@ impl Session {
                 State::Holding {
                     head_tier,
                     head_offset_ms,
+                    ..
                 } => Some((i, head_tier, head_offset_ms)),
                 _ => None,
             })
@@ -663,6 +843,46 @@ impl Session {
                 .iter()
                 .take_while(|&&i| !matches!(self.objects[i].state, State::Waiting))
                 .count()
+    }
+
+    /// Records the score and event of a head-scored hold at its press, before its body finishes.
+    fn score_head(
+        &mut self,
+        index: usize,
+        tier: Tier,
+        error_ms: f64,
+        time_ms: f64,
+    ) -> JudgementEvent {
+        let lane = self.objects[index].lane;
+        self.counts.increment(tier);
+        self.combo = self.combo.saturating_add(1);
+        self.max_combo = self.max_combo.max(self.combo);
+        self.offset_sum += error_ms;
+        self.offset_count += 1;
+        let id = self.next_event_id;
+        self.next_event_id += 1;
+        JudgementEvent {
+            id,
+            object: index as u32,
+            lane: lane as u32,
+            part: Part::Head,
+            tier,
+            offset_ms: Some(error_ms),
+            time_ms,
+            object_time_ms: self.objects[index].start,
+        }
+    }
+
+    /// Finishes a head-scored hold (at release or at its end) without emitting a second event.
+    fn complete_hold(&mut self, index: usize, tier: Tier) {
+        self.objects[index].state = State::Resolved(tier);
+        self.resolved += 1;
+        let lane = self.objects[index].lane;
+        while let Some(&first) = self.lanes[lane].get(self.cursor[lane])
+            && self.objects[first].is_resolved()
+        {
+            self.cursor[lane] += 1;
+        }
     }
 
     fn resolve(
@@ -685,7 +905,7 @@ impl Session {
         if tier == Tier::M {
             self.combo = 0;
         } else {
-            self.combo += 1;
+            self.combo = self.combo.saturating_add(1);
             self.max_combo = self.max_combo.max(self.combo);
             if let Some(offset) = offset_ms {
                 self.offset_sum += offset;
@@ -705,4 +925,63 @@ impl Session {
             object_time_ms: self.objects[index].start,
         }
     }
+}
+
+const EXACT_INT_LIMIT: f64 = 9_007_199_254_740_992.0; // 2^53
+
+/// Smallest integer `k >= 1` with `start + k * HOLD_TICK_MS > press_time`.
+fn first_tick_after(start: f64, press_time: f64) -> f64 {
+    if press_time == f64::INFINITY {
+        return f64::INFINITY;
+    }
+    if press_time.is_nan() || press_time <= start {
+        return 1.0;
+    }
+    let mut k = ((press_time - start) / HOLD_TICK_MS).floor() + 1.0;
+    if k < 1.0 {
+        k = 1.0;
+    }
+    if k < EXACT_INT_LIMIT {
+        while k > 1.0 && start + (k - 1.0) * HOLD_TICK_MS > press_time {
+            k -= 1.0;
+        }
+        while start + k * HOLD_TICK_MS <= press_time {
+            k += 1.0;
+        }
+    }
+    k
+}
+
+/// Largest integer `k` with `start + k * HOLD_TICK_MS < ceiling` (or `min_k - 1.0` if none `>= min_k`).
+fn max_tick_strictly_below(start: f64, ceiling: f64, min_k: f64) -> f64 {
+    if ceiling.is_nan() || ceiling <= start + min_k * HOLD_TICK_MS {
+        return min_k - 1.0;
+    }
+    let mut k = ((ceiling - start) / HOLD_TICK_MS).ceil() - 1.0;
+    if k < EXACT_INT_LIMIT {
+        while start + (k + 1.0) * HOLD_TICK_MS < ceiling {
+            k += 1.0;
+        }
+        while k >= min_k && start + k * HOLD_TICK_MS >= ceiling {
+            k -= 1.0;
+        }
+    }
+    k
+}
+
+/// Largest integer `k` with `start + k * HOLD_TICK_MS <= ceiling` (or `min_k - 1.0` if none `>= min_k`).
+fn max_tick_at_or_below(start: f64, ceiling: f64, min_k: f64) -> f64 {
+    if ceiling.is_nan() || ceiling < start + min_k * HOLD_TICK_MS {
+        return min_k - 1.0;
+    }
+    let mut k = ((ceiling - start) / HOLD_TICK_MS).floor();
+    if k < EXACT_INT_LIMIT {
+        while start + (k + 1.0) * HOLD_TICK_MS <= ceiling {
+            k += 1.0;
+        }
+        while k >= min_k && start + k * HOLD_TICK_MS > ceiling {
+            k -= 1.0;
+        }
+    }
+    k
 }

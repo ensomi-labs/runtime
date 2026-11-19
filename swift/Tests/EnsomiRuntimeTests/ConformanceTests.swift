@@ -6,6 +6,7 @@ import XCTest
 final class ConformanceTests: XCTestCase {
     func testEveryFixtureReproducesItsExpectedOutput() throws {
         let fixtures = try fixtureFiles("conformance/gameplay", pathExtension: "json")
+            + fixtureFiles("conformance/gameplay/hold_options", pathExtension: "json")
         XCTAssertFalse(fixtures.isEmpty)
         for url in fixtures {
             try run(url)
@@ -90,14 +91,19 @@ final class ConformanceTests: XCTestCase {
         let fixture = try decoder.decode(Fixture.self, from: Data(contentsOf: url))
 
         let judge: Judge = ["A": .a, "B": .b, "C": .c, "D": .d, "E": .e][fixture.ruleset.judge]!
+        let ruleset = Ruleset(
+            judge: judge,
+            tailJudgement: fixture.ruleset.tailJudgement ?? true,
+            holdTicks: fixture.ruleset.holdTicks ?? false
+        )
         let session: GameplaySession
         if let chart = fixture.chart {
             session = try GameplaySession(
                 chart: Chart(durationMs: chart.durationMs, objects: chart.objects.map(object)),
-                ruleset: Ruleset(judge: judge)
+                ruleset: ruleset
             )
         } else {
-            session = GameplaySession.streaming(ruleset: Ruleset(judge: judge))
+            session = GameplaySession.streaming(ruleset: ruleset)
         }
 
         let kinds: [String: TokenKind] = ["tap": .tap, "hold_start": .holdStart, "hold_end": .holdEnd]
@@ -238,6 +244,8 @@ private struct ObjectFixture: Decodable {
 
 private struct RulesetFixture: Decodable {
     var judge: String
+    var tailJudgement: Bool?
+    var holdTicks: Bool?
 }
 
 private struct StepFixture: Decodable {

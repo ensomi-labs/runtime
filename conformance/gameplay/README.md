@@ -44,6 +44,8 @@ implementation (Rust, Swift, Kotlin, TypeScript) without the Rust code.
 | --- | --- |
 | `chart` | EnsomiProtocol's `Chart` with proto field names: `duration_ms`, `objects` of `lane` (0-3), `start_ms`, optional `end_ms` (a hold). Sorted by `start_ms`, then `lane`. An object's number below is its index in `objects`. |
 | `ruleset.judge` | `"A"` to `"E"`: the half-window table in the crate README. |
+| `ruleset.tail_judgement` | Optional boolean (`true` by default). When `false`, hold heads score immediately on press and neither body nor tail can miss (`hold_options/`). |
+| `ruleset.hold_ticks` | Optional boolean (`false` by default). When `true`, holding a body adds 1 combo every 100 ms before `end_ms` (`hold_options/`). |
 | `steps` | Executed in order. `{"input": ...}` delivers a key transition: `lane` 0-3, `phase` `"press"` or `"release"`, `time_ms` chart time as a number (fractions allowed). `{"advance": w}` declares every input stamped at or before `w` delivered. Streamed cases also have `{"page": ...}` and `{"decided_through_ms": t}` (below). |
 | `expected.events` | Every judgement event the steps produce, in the order produced (call by call, an input's or advance's events in order), one per object. |
 | `event.object`, `event.lane` | Index in `objects` and its lane. |

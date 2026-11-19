@@ -240,14 +240,25 @@ fn cuts(chart: &Chart) -> impl Strategy<Value = (Vec<(f64, f64)>, f64)> + use<> 
     )
 }
 
-fn case() -> impl Strategy<Value = (Chart, Judge, Vec<InputEvent>, Vec<f64>)> {
+fn case() -> impl Strategy<Value = (Chart, Ruleset, Vec<InputEvent>, Vec<f64>)> {
     (
         chart(),
         prop::sample::select(vec![Judge::A, Judge::B, Judge::C, Judge::D, Judge::E]),
+        any::<bool>(),
+        any::<bool>(),
     )
-        .prop_flat_map(|(chart, judge)| {
+        .prop_flat_map(|(chart, judge, tail_judgement, hold_ticks)| {
             let (inputs, watermarks) = (inputs(&chart), watermarks(&chart));
-            (Just(chart), Just(judge), inputs, watermarks)
+            (
+                Just(chart),
+                Just(Ruleset {
+                    judge,
+                    tail_judgement,
+                    hold_ticks,
+                }),
+                inputs,
+                watermarks,
+            )
         })
 }
 
@@ -255,8 +266,7 @@ proptest! {
     #![proptest_config(ProptestConfig::with_cases(5000))]
 
     #[test]
-    fn advance_cadence_does_not_change_the_outcome((chart, judge, inputs, watermarks) in case()) {
-        let ruleset = Ruleset { judge };
+    fn advance_cadence_does_not_change_the_outcome((chart, ruleset, inputs, watermarks) in case()) {
         let reference = run(complete(&chart, ruleset), &with_advances(&inputs, &[]));
         let cadenced = run(complete(&chart, ruleset), &with_advances(&inputs, &watermarks));
         prop_assert_eq!(&cadenced.events, &reference.events);
@@ -272,7 +282,7 @@ proptest! {
 
 type StreamCase = (
     Chart,
-    Judge,
+    Ruleset,
     Vec<InputEvent>,
     Vec<f64>,
     bool,
@@ -280,11 +290,11 @@ type StreamCase = (
 );
 
 fn stream_case() -> impl Strategy<Value = StreamCase> {
-    case().prop_flat_map(|(chart, judge, inputs, watermarks)| {
+    case().prop_flat_map(|(chart, ruleset, inputs, watermarks)| {
         let cuts = cuts(&chart);
         (
             Just(chart),
-            Just(judge),
+            Just(ruleset),
             Just(inputs),
             Just(watermarks),
             any::<bool>(),
@@ -300,9 +310,8 @@ proptest! {
     /// complete chart; `run` also checks that nothing is decided beyond the coverage.
     #[test]
     fn streamed_sessions_judge_as_the_complete_chart(
-        (chart, judge, inputs, watermarks, as_tokens, (cuts, end_at)) in stream_case()
+        (chart, ruleset, inputs, watermarks, as_tokens, (cuts, end_at)) in stream_case()
     ) {
-        let ruleset = Ruleset { judge };
         let reference = run(complete(&chart, ruleset), &with_advances(&inputs, &[]));
         for watermarks in [&[][..], &watermarks[..]] {
             let steps = schedule(&inputs, watermarks, pages(&chart, as_tokens, &cuts, end_at));
@@ -349,6 +358,7 @@ fn reference_visible(
 /// the inputs are handled as they arrive.
 fn check_queries(
     session: &Session,
+    ruleset: Ruleset,
     now: f64,
     windows: &[(f64, f64)],
     events: usize,
@@ -362,7 +372,14 @@ fn check_queries(
             VisibleState::Resolved | VisibleState::MissedButVisible
         )
     };
-    prop_assert_eq!(all.iter().filter(|o| resolved(o)).count(), events);
+    let expected_events = if ruleset.tail_judgement {
+        all.iter().filter(|o| resolved(o)).count()
+    } else {
+        all.iter()
+            .filter(|o| resolved(o) || o.state == VisibleState::Holding)
+            .count()
+    };
+    prop_assert_eq!(expected_events, events);
     prop_assert_eq!(
         session.is_resolved(),
         session.coverage_ms() == f64::INFINITY && all.iter().all(resolved)
@@ -403,10 +420,9 @@ proptest! {
     /// `is_resolved` equal their linear definitions.
     #[test]
     fn frame_queries_match_a_linear_reference(
-        ((chart, judge, inputs, watermarks, as_tokens, (cuts, end_at)), windows) in
+        ((chart, ruleset, inputs, watermarks, as_tokens, (cuts, end_at)), windows) in
             (stream_case(), query_windows())
     ) {
-        let ruleset = Ruleset { judge };
         let streamed = schedule(&inputs, &watermarks, pages(&chart, as_tokens, &cuts, end_at));
         for (mut session, steps, is_complete) in [
             (complete(&chart, ruleset), with_advances(&inputs, &watermarks), true),
@@ -451,7 +467,7 @@ proptest! {
                         ]
                     })
                     .collect();
-                check_queries(&session, now, &windows, events, is_complete.then_some(pressed))?;
+                check_queries(&session, ruleset, now, &windows, events, is_complete.then_some(pressed))?;
             }
         }
     }

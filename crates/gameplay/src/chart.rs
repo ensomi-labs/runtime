@@ -117,6 +117,6 @@ impl Chart {
     /// Checks what the protocol promises of a chart. A hold may end exactly where the next note of its
     /// lane starts.
     pub fn validate(&self) -> Result<(), ChartError> {
-        Session::new(self, Ruleset { judge: Judge::C }).map(drop)
+        Session::new(self, Ruleset::new(Judge::C)).map(drop)
     }
 }

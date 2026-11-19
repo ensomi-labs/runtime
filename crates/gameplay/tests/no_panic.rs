@@ -33,7 +33,15 @@ fn judge() -> impl Strategy<Value = Judge> {
     prop_oneof![Just(Judge::A), Just(Judge::B), Just(Judge::C), Just(Judge::D), Just(Judge::E)]
 }
 
-/// A chart in order, with gaps and holds that the windows and locks make interesting.
+fn ruleset() -> impl Strategy<Value = Ruleset> {
+    (judge(), any::<bool>(), any::<bool>()).prop_map(|(judge, tail_judgement, hold_ticks)| {
+        Ruleset {
+            judge,
+            tail_judgement,
+            hold_ticks,
+        }
+    })
+}
 fn chart_objects() -> impl Strategy<Value = Vec<ChartObject>> {
     prop::collection::vec((0u32..4, 0u32..300, prop::option::of(1u32..600)), 0..16).prop_map(|notes| {
         let mut earliest = [0u32; 4];
@@ -182,20 +190,20 @@ proptest! {
     #![proptest_config(ProptestConfig::with_cases(3000))]
 
     #[test]
-    fn a_complete_chart_never_panics((objects, ops) in chart_objects().prop_flat_map(|o| { let ops = ops(&o); (Just(o), ops) }), judge in judge()) {
+    fn a_complete_chart_never_panics((objects, ops) in chart_objects().prop_flat_map(|o| { let ops = ops(&o); (Just(o), ops) }), ruleset in ruleset()) {
         let duration_ms = objects.iter().map(|o| o.end_ms.unwrap_or(o.start_ms)).max().unwrap_or(0);
-        let session = Session::new(&Chart { duration_ms, objects: objects.clone() }, Ruleset { judge }).unwrap();
+        let session = Session::new(&Chart { duration_ms, objects: objects.clone() }, ruleset).unwrap();
         run(session, &objects, objects.len(), &ops);
     }
 
     #[test]
-    fn a_stream_never_panics((objects, ops) in chart_objects().prop_flat_map(|o| { let ops = ops(&o); (Just(o), ops) }), judge in judge()) {
-        run(Session::streaming(Ruleset { judge }), &objects, 0, &ops);
+    fn a_stream_never_panics((objects, ops) in chart_objects().prop_flat_map(|o| { let ops = ops(&o); (Just(o), ops) }), ruleset in ruleset()) {
+        run(Session::streaming(ruleset), &objects, 0, &ops);
     }
 
     #[test]
-    fn an_arbitrary_chart_never_panics(objects in junk_objects(), duration_ms in any::<u32>(), judge in judge(), ops in ops(&[])) {
-        if let Ok(session) = Session::new(&Chart { duration_ms, objects }, Ruleset { judge }) {
+    fn an_arbitrary_chart_never_panics(objects in junk_objects(), duration_ms in any::<u32>(), ruleset in ruleset(), ops in ops(&[])) {
+        if let Ok(session) = Session::new(&Chart { duration_ms, objects }, ruleset) {
             run(session, &[], 0, &ops);
         }
     }

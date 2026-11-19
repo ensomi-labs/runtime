@@ -30,7 +30,7 @@ fn median(values: &mut [f64]) -> Option<f64> {
 
 /// One generation: seconds to the first `Ready` and to `Done`, r at both, and what the receipt says of the passes.
 fn run(scheduler: Arc<ChartScheduler>, started: Instant) -> Value {
-    let session = GameplaySession::streaming(Ruleset { judge: Judge::C });
+    let session = GameplaySession::streaming(Ruleset::new(Judge::C));
     scheduler.start(0.0, session.clone());
     let ready = scheduler.work().unwrap();
     let ready_seconds = started.elapsed().as_secs_f64();
@@ -71,7 +71,7 @@ fn main() {
     let assets = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../assets/resampler");
     let options = GeneratorOptions { provider: ExecutionProvider::Cpu, resampler_directory: Some(assets.to_string_lossy().into_owned()), low_memory: None, beatthis_threads: None };
     let generator = ChartGenerator::open(model_dir.join("onnx").to_string_lossy().into_owned(), options).unwrap();
-    let lead = LeadPolicy { ruleset: Ruleset { judge: Judge::C }, render_lead_ms, margin_ms: 0.0 };
+    let lead = LeadPolicy { ruleset: Ruleset::new(Judge::C), render_lead_ms, margin_ms: 0.0 };
     let mut report = Map::new();
     report.insert("what".into(), json!("seconds from the start of a generation to the first Ready at 0 and to Done, through the UniFFI binding, native CPU, BeatThis on the performance cores and the other graphs on one ONNX Runtime thread"));
     report.insert("lead".into(), json!({"settle_ms": lead.ruleset.settle_lead_ms(), "render_ms": render_lead_ms, "margin_ms": 0.0}));

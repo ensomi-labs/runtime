@@ -3683,11 +3683,15 @@ public func FfiConverterTypePackageModel_lower(_ value: PackageModel) -> RustBuf
 
 public struct Ruleset: Equatable, Hashable {
     public var judge: Judge
+    public var tailJudgement: Bool
+    public var holdTicks: Bool
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(judge: Judge) {
+    public init(judge: Judge, tailJudgement: Bool = true, holdTicks: Bool = false) {
         self.judge = judge
+        self.tailJudgement = tailJudgement
+        self.holdTicks = holdTicks
     }
 
     
@@ -3706,12 +3710,16 @@ public struct FfiConverterTypeRuleset: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Ruleset {
         return
             try Ruleset(
-                judge: FfiConverterTypeJudge.read(from: &buf)
+                judge: FfiConverterTypeJudge.read(from: &buf), 
+                tailJudgement: FfiConverterBool.read(from: &buf), 
+                holdTicks: FfiConverterBool.read(from: &buf)
         )
     }
 
     public static func write(_ value: Ruleset, into buf: inout [UInt8]) {
         FfiConverterTypeJudge.write(value.judge, into: &buf)
+        FfiConverterBool.write(value.tailJudgement, into: &buf)
+        FfiConverterBool.write(value.holdTicks, into: &buf)
     }
 }
 

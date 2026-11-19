@@ -27,7 +27,7 @@ fn press(lane: u32, time_ms: f64) -> InputEvent {
 }
 
 fn stream() -> Session {
-    Session::streaming(Ruleset { judge: Judge::C })
+    Session::streaming(Ruleset::new(Judge::C))
 }
 
 #[test]
@@ -123,8 +123,36 @@ fn a_complete_chart_is_judged_up_to_the_clock() {
         duration_ms: 2_000,
         objects: vec![tap(0, 1_000)],
     };
-    let mut session = Session::new(&chart, Ruleset { judge: Judge::C }).unwrap();
+    let mut session = Session::new(&chart, Ruleset::new(Judge::C)).unwrap();
     assert_eq!(session.decided_through_ms(), f64::NEG_INFINITY);
     session.advance(1_500.0);
     assert_eq!(session.decided_through_ms(), 1_500.0);
+}
+
+#[test]
+fn open_ended_hold_without_tail_judgement_settles_release_without_waiting_for_end() {
+    let ruleset = Ruleset {
+        judge: Judge::C,
+        tail_judgement: false,
+        hold_ticks: true,
+    };
+    assert_eq!(ruleset.settle_lead_ms(), 200.0);
+    let mut session = Session::streaming(ruleset);
+    session
+        .append_tokens(&[token(0, 1_000.0, TokenKind::HoldStart)], 1_300.0, false)
+        .unwrap();
+    let hit = session.input(press(0, 1_000.0));
+    assert_eq!(hit.len(), 1);
+    assert_eq!((hit[0].part, hit[0].tier), (Part::Head, Tier::BigP));
+
+    let released = session.input(InputEvent {
+        lane: 0,
+        phase: Phase::Release,
+        time_ms: 1_250.0,
+    });
+    assert!(released.is_empty());
+    assert_eq!(session.decided_through_ms(), 1_250.0);
+    // Head +1, plus 1100 and 1200 ticks = 3 combo, accuracy 1.0, 1 judged object.
+    let score = session.score();
+    assert_eq!((score.combo, score.max_combo, score.accuracy, score.tier_counts.judged()), (3, 3, 1.0, 1));
 }

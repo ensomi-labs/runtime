@@ -1,0 +1,35 @@
+{
+  "description": "Tail judgement disabled with 100 ms body ticks: head hits score immediately on press, early release ends the hold without breaking combo so an adjacent tap hits cleanly, holding through end never times out, and body ticks raise combo without changing accuracy.",
+  "chart": {
+    "duration_ms": 4000,
+    "objects": [
+      {"lane": 0, "start_ms": 1000, "end_ms": 1500},
+      {"lane": 0, "start_ms": 1500},
+      {"lane": 1, "start_ms": 2000, "end_ms": 2400}
+    ]
+  },
+  "ruleset": {"judge": "C", "tail_judgement": false, "hold_ticks": true},
+  "steps": [
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1000}},
+    {"input": {"lane": 0, "phase": "release", "time_ms": 1250}},
+    {"input": {"lane": 0, "phase": "press", "time_ms": 1490}},
+    {"input": {"lane": 0, "phase": "release", "time_ms": 1540}},
+    {"input": {"lane": 1, "phase": "press", "time_ms": 2020}},
+    {"advance": 1000000}
+  ],
+  "expected": {
+    "events": [
+      {"object": 0, "lane": 0, "part": "head", "tier": "bigP", "offset_ms": 0, "time_ms": 1000},
+      {"object": 1, "lane": 0, "part": "head", "tier": "bigP", "offset_ms": -10, "time_ms": 1490},
+      {"object": 2, "lane": 1, "part": "head", "tier": "bigP", "offset_ms": 20, "time_ms": 2020}
+    ],
+    "score": {
+      "tier_counts": {"bigP": 3, "p1": 0, "p2": 0, "p3": 0, "g": 0, "m": 0},
+      "accuracy": 1.0,
+      "combo": 8,
+      "max_combo": 8,
+      "suggested_audio_offset_ms": -3.3333333333333335
+    },
+    "late_inputs": 0
+  }
+}
